@@ -77,8 +77,6 @@
   }
   .screen-body::-webkit-scrollbar { display: none; }
 
-  .status-bar { display: none; }
-
   /* BOTTOM NAV */
   .bottom-nav {
     display: flex;
@@ -148,7 +146,7 @@
   .toast.show { opacity: 1; transform: translateY(0) scale(1); }
   .toast.error { border-color: rgba(224,88,74,0.35); color: #ffb3ac; }
   .toast.error .toast-dot { background: var(--danger); }
-  .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--purple-light); flex-shrink: 0; }
 
   /* CONFIRM MODAL */
   .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.18s ease; padding: 28px; }
@@ -188,6 +186,16 @@
   .poster-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; padding: 10px 4px; display: flex; align-items: center; justify-content: center; height: 100%; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.06em; }
   .empty-grid { grid-column: 1 / -1; color: var(--text3); padding: 40px 20px; text-align: center; font-size: 14px; line-height: 1.5; }
 
+  /* HALF STAR */
+  .star-row { display: flex; gap: 4px; align-items: center; }
+  .star-wrap { position: relative; display: inline-block; cursor: pointer; font-size: 26px; line-height: 1; color: var(--bg4); }
+  .star-wrap .star-full { display: block; color: inherit; }
+  .star-wrap .star-half-overlay { position: absolute; top: 0; left: 0; width: 50%; overflow: hidden; color: var(--purple-light); pointer-events: none; }
+  .star-wrap.full { color: var(--purple-light); }
+  .star-wrap.half { color: var(--bg4); }
+  .star-wrap.half .star-half-overlay { display: block; }
+  .star-wrap:not(.half) .star-half-overlay { display: none; }
+
   /* MOVIE DETAIL */
   .md-hero { padding: 20px; display: flex; gap: 16px; }
   .md-poster { width: 110px; height: 165px; border-radius: 10px; flex-shrink: 0; object-fit: cover; background: var(--bg3); }
@@ -198,18 +206,22 @@
   .md-overview { padding: 0 20px 18px; font-size: 14px; color: var(--text2); line-height: 1.6; }
   .md-section-title { padding: 4px 20px 10px; font-size: 12px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
   .md-card { margin: 0 20px 16px; padding: 16px; background: var(--bg3); border-radius: 14px; border: 0.5px solid var(--border); }
-  .star-row { display: flex; gap: 6px; }
-  .star-btn { font-size: 26px; color: var(--bg4); cursor: pointer; transition: color 0.1s; line-height: 1; }
-  .star-btn.on { color: var(--green); }
+
+  /* HEART ICON (SVG, never emoji) */
+  .heart-icon { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.15s; }
+  .heart-icon svg { width: 22px; height: 22px; stroke: var(--text3); fill: none; stroke-width: 2; transition: stroke 0.15s, fill 0.15s; }
+  .heart-icon.on svg { stroke: var(--purple-light); fill: var(--purple-light); }
+
+  /* small heart for diary list */
+  .heart-icon-sm svg { width: 14px; height: 14px; stroke-width: 2; }
+
   .like-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
-  .like-toggle { font-size: 22px; color: var(--bg4); cursor: pointer; transition: color 0.1s; }
-  .like-toggle.on { color: var(--heart); }
   .md-field-label { font-size: 12px; font-weight: 500; color: var(--text3); margin-bottom: 6px; margin-top: 14px; }
-  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text2); }
-  .checkbox-row input { accent-color: var(--purple); width: 16px; height: 16px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text2); cursor: pointer; }
+  .checkbox-row input { accent-color: var(--purple); width: 16px; height: 16px; cursor: pointer; }
   .log-entry { margin: 0 20px 10px; padding: 13px 15px; background: var(--bg3); border-radius: 12px; border: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; }
   .log-date { flex: 1; font-size: 13px; color: var(--text2); }
-  .log-stars span { color: var(--green); font-size: 13px; }
+  .log-stars span { color: var(--purple-light); font-size: 13px; }
   .log-del { color: var(--text3); font-size: 18px; cursor: pointer; padding: 0 4px; }
   .pill-toggle { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 0.5px solid var(--border2); background: var(--bg3); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text); }
   .pill-toggle.on { background: rgba(124,92,191,0.18); border-color: var(--purple); color: var(--purple-light); }
@@ -224,9 +236,12 @@
   .diary-entry-title { font-size: 14px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .diary-entry-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
   .diary-entry-date { font-size: 12px; color: var(--text2); }
-  .diary-entry-stars { font-size: 11px; color: var(--green); }
-  .diary-entry-heart { font-size: 13px; color: var(--heart); }
+  .diary-entry-stars { font-size: 11px; color: var(--purple-light); }
   .diary-modal-review { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 18px; max-height: 200px; overflow-y: auto; text-align: left; white-space: pre-wrap; }
+
+  /* EDIT DIARY MODAL */
+  .edit-modal-card { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 18px; padding: 20px; width: 100%; max-width: 340px; transform: scale(0.94) translateY(6px); transition: transform 0.2s ease; max-height: 85vh; overflow-y: auto; }
+  .modal-overlay.show .edit-modal-card { transform: scale(1) translateY(0); }
 
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
@@ -252,22 +267,60 @@
     </div>
   </div>
 
-  <!-- DIARY ENTRY MODAL -->
+  <!-- DIARY VIEW MODAL -->
   <div class="modal-overlay" id="diary-modal">
     <div class="modal-card" style="max-width:300px;text-align:left;">
       <div style="display:flex;gap:12px;margin-bottom:14px;">
         <img id="diary-modal-poster" class="diary-entry-poster" style="width:56px;height:84px;" />
-        <div>
-          <div class="modal-title" id="diary-modal-title" style="margin-bottom:4px;text-align:left;"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="modal-title" id="diary-modal-title" style="margin-bottom:4px;text-align:left;font-size:15px;"></div>
           <div style="font-size:12px;color:var(--text2);" id="diary-modal-date"></div>
           <div style="margin-top:6px;font-size:14px;" id="diary-modal-stars"></div>
         </div>
       </div>
       <div class="diary-modal-review" id="diary-modal-review"></div>
-      <div class="modal-actions">
-        <button class="modal-btn cancel" id="diary-modal-close-btn">Close</button>
-        <button class="modal-btn danger" id="diary-modal-delete-btn">Remove</button>
+      <div class="modal-actions" style="flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:8px;">
+          <button class="modal-btn cancel" id="diary-modal-close-btn">Close</button>
+          <button class="modal-btn primary" id="diary-modal-edit-btn">Edit</button>
+        </div>
+        <button class="modal-btn danger" id="diary-modal-delete-btn" style="width:100%;">Remove Entry</button>
       </div>
+    </div>
+  </div>
+
+  <!-- EDIT DIARY MODAL -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="edit-modal-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="modal-title" style="margin-bottom:0;" id="edit-modal-title"></div>
+        <div onclick="closeEditModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+      </div>
+
+      <div class="md-field-label" style="margin-top:0;">RATING</div>
+      <div class="star-row" id="edit-star-row"></div>
+
+      <div class="like-row">
+        <span style="font-size:13px;color:var(--text2);">Loved it?</span>
+        <span class="heart-icon" id="edit-like-toggle" onclick="toggleEditLiked()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </span>
+      </div>
+
+      <div class="md-field-label">WATCHED ON</div>
+      <input type="date" class="form-input" id="edit-watched-date" />
+
+      <div class="md-field-label">REVIEW (OPTIONAL)</div>
+      <textarea class="form-input" id="edit-review-text" placeholder="What did you think?"></textarea>
+
+      <label class="checkbox-row" style="margin-top:10px;">
+        <input type="checkbox" id="edit-spoilers"> Contains spoilers
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="edit-rewatch"> Rewatch
+      </label>
+
+      <button class="btn-primary" style="margin-top:16px;" onclick="saveEditEntry()">Save Changes</button>
     </div>
   </div>
 
@@ -301,7 +354,7 @@
       <div class="feature-list">
         <div class="feature-item">
           <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M3 9h6M3 15h6"/></svg></div>
-          <div class="feature-text"><h4>Full Customization</h4><p>Change posters, banners, and cast & crew photos.</p></div>
+          <div class="feature-text"><h4>Full Customization</h4><p>Change posters, banners, and cast &amp; crew photos.</p></div>
         </div>
         <div class="feature-item">
           <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
@@ -309,7 +362,7 @@
         </div>
         <div class="feature-item">
           <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
-          <div class="feature-text"><h4>Movies & TV Shows</h4><p>Track movies, seasons, episodes and more.</p></div>
+          <div class="feature-text"><h4>Movies &amp; TV Shows</h4><p>Track movies, seasons, episodes and more.</p></div>
         </div>
         <div class="feature-item">
           <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
@@ -388,7 +441,7 @@
     <div class="home-header">
       <div class="logo-sm">better<span>boxd</span></div>
       <div class="header-icons">
-        <div onclick="goToSearch('quick')" style="cursor:pointer;" title="Quick search — Watched / Watchlist only">
+        <div onclick="goToSearch('quick')" style="cursor:pointer;" title="Search & add to Watched / Watchlist">
           <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
         <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -411,7 +464,7 @@
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
-      <div class="nav-item" onclick="goToSearch('log')"><div class="nav-add" title="Log a watch — full details"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="goToSearch('log')"><div class="nav-add" title="Log a film"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goTo('screen-stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
@@ -427,13 +480,12 @@
     <div class="screen-body">
       <div style="padding:0 20px 20px;">
         <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="stats-grid">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
           <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watched">—</div></div>
           <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watchlist">—</div></div>
           <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-avg">—</div></div>
         </div>
       </div>
-      <div style="height:20px;"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
@@ -472,37 +524,34 @@
 </div>
 
 <script>
-/* ---------------- CONFIG ---------------- */
+/* ---- CONFIG ---- */
 const TMDB_API_KEY = "8bd029505ebc69986406dc4f1fce9ba0";
 const TMDB_BASE = "https://api.themoviedb.org/3";
-
 const SUPABASE_URL  = 'https://kkikbbhucfiuqkrvjrqc.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtraWtiYmh1Y2ZpdXFrcnZqcnFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDk3NjEsImV4cCI6MjA5NDQyNTc2MX0.ey0kGdhvxR6bd0Dz1ZtSc3A4TKh1LWY1hd6D7A10I3E';
-
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { storage: window.localStorage, persistSession: true, autoRefreshToken: true }
 });
 
-/* ---------------- STATE ---------------- */
+/* ---- STATE ---- */
 let selectedMovie = null;
 let searchTimeout = null;
 let returnScreen = 'screen-home';
-let formRating = 0;
+let formRating = 0;      // 0–5 in 0.5 steps
 let formLiked = false;
 let formInWatchlist = false;
-
-// 'log'   -> opened via the + button: full form (rating, watched date, review) — no watchlist toggle
-// 'quick' -> opened via the search icon: Watched / Watchlist toggle buttons
 let searchPurpose = 'log';
 let detailMode = 'log';
 let formQuickWatched = false;
-
-// Diary state
 let diaryEntries = [];
+let editingEntry = null;
+let editRating = 0;
+let editLiked = false;
 
-/* ============================================================
-   TOAST + CONFIRM MODAL  (replace all alert()/confirm() calls)
-   ============================================================ */
+/* ---- HEART SVG helper ---- */
+const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+
+/* ---- TOAST ---- */
 function showToast(message, type = 'success', duration = 2600) {
   const stack = document.getElementById('toast-stack');
   const el = document.createElement('div');
@@ -510,40 +559,28 @@ function showToast(message, type = 'success', duration = 2600) {
   el.innerHTML = `<span class="toast-dot"></span><span>${message}</span>`;
   stack.appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
-  setTimeout(() => {
-    el.classList.remove('show');
-    setTimeout(() => el.remove(), 250);
-  }, duration);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 250); }, duration);
 }
 
+/* ---- CONFIRM MODAL ---- */
 function showConfirm({ title, message, confirmText = 'Confirm', danger = true, onConfirm }) {
   const overlay = document.getElementById('confirm-modal');
   document.getElementById('confirm-title').textContent = title;
   document.getElementById('confirm-msg').textContent = message;
   const okBtn = document.getElementById('confirm-ok-btn');
   const cancelBtn = document.getElementById('confirm-cancel-btn');
-  okBtn.textContent = confirmText;
-  okBtn.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
-
-  const close = () => overlay.classList.remove('show');
-
-  const okHandler = () => { close(); onConfirm && onConfirm(); };
-  const cancelHandler = () => close();
-
-  // avoid stacking listeners across repeated opens
   okBtn.replaceWith(okBtn.cloneNode(true));
   cancelBtn.replaceWith(cancelBtn.cloneNode(true));
   const newOk = document.getElementById('confirm-ok-btn');
   const newCancel = document.getElementById('confirm-cancel-btn');
   newOk.textContent = confirmText;
   newOk.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
-  newOk.addEventListener('click', okHandler);
-  newCancel.addEventListener('click', cancelHandler);
-
+  newOk.addEventListener('click', () => { overlay.classList.remove('show'); onConfirm && onConfirm(); });
+  newCancel.addEventListener('click', () => overlay.classList.remove('show'));
   overlay.classList.add('show');
 }
 
-/* ---------------- NAV ---------------- */
+/* ---- NAV ---- */
 function goTo(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
@@ -552,7 +589,6 @@ function goTo(id) {
   if (body) body.scrollTop = 0;
 }
 
-// purpose: 'log' (from the + button, full logging form) or 'quick' (from the search icon, Watched/Watchlist only)
 function goToSearch(purpose) {
   searchPurpose = purpose === 'quick' ? 'quick' : 'log';
   const input = document.getElementById('search-input');
@@ -566,7 +602,7 @@ function openDiary() {
   loadDiary();
 }
 
-/* ---------------- AUTH ---------------- */
+/* ---- AUTH ---- */
 async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) enterApp(session.user);
@@ -592,29 +628,12 @@ async function handleLogin() {
   const password = document.getElementById('login-password').value;
   const btn = document.getElementById('login-btn');
   const err = document.getElementById('login-error');
-
   err.classList.remove('show');
-
-  if (!email || !password) {
-    err.textContent = 'Please enter your email and password.';
-    err.classList.add('show');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Signing in...';
-
+  if (!email || !password) { err.textContent = 'Please enter your email and password.'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Signing in...';
   const { data, error } = await db.auth.signInWithPassword({ email, password });
-
-  btn.disabled = false;
-  btn.textContent = 'Sign In';
-
-  if (error) {
-    err.textContent = error.message;
-    err.classList.add('show');
-    return;
-  }
-
+  btn.disabled = false; btn.textContent = 'Sign In';
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
   enterApp(data.user);
 }
 
@@ -627,74 +646,31 @@ async function handleSignup() {
   const success = document.getElementById('signup-success');
   const successText = document.getElementById('signup-success-text');
   const successSpinner = document.getElementById('signup-success-spinner');
-
-  err.classList.remove('show');
-  success.classList.remove('show');
-
-  if (!name || !email || !password) {
-    err.textContent = 'Please fill in your name, email and password.';
-    err.classList.add('show');
-    return;
-  }
-  if (password.length < 6) {
-    err.textContent = 'Password must be at least 6 characters.';
-    err.classList.add('show');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Creating account...';
-
-  const { data, error } = await db.auth.signUp({
-    email, password, options: { data: { name } }
-  });
-
-  btn.disabled = false;
-  btn.textContent = 'Create Account';
-
-  if (error) {
-    err.textContent = error.message;
-    err.classList.add('show');
-    return;
-  }
-
-  // Show inline success beneath the button, then move on.
+  err.classList.remove('show'); success.classList.remove('show');
+  if (!name || !email || !password) { err.textContent = 'Please fill in your name, email and password.'; err.classList.add('show'); return; }
+  if (password.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.classList.add('show'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Creating account...';
+  const { data, error } = await db.auth.signUp({ email, password, options: { data: { name } } });
+  btn.disabled = false; btn.textContent = 'Create Account';
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
   successSpinner.style.display = 'inline-block';
   success.classList.add('show');
-
   if (data.session) {
-    // Email confirmation not required — log straight in.
     successText.textContent = "You're all set! Taking you home...";
-    setTimeout(() => {
-      successSpinner.style.display = 'none';
-      enterApp(data.user);
-    }, 1400);
+    setTimeout(() => { successSpinner.style.display = 'none'; enterApp(data.user); }, 1400);
   } else {
-    // Email confirmation required by the Supabase project.
     successText.textContent = 'Account created — check your email to confirm, then sign in.';
-    setTimeout(() => {
-      successSpinner.style.display = 'none';
-      document.getElementById('login-email').value = email;
-      goTo('screen-login');
-    }, 2200);
+    setTimeout(() => { successSpinner.style.display = 'none'; document.getElementById('login-email').value = email; goTo('screen-login'); }, 2200);
   }
 }
 
 function handleLogout() {
-  showConfirm({
-    title: 'Log out?',
-    message: 'You can sign back in anytime with the same email and password.',
-    confirmText: 'Log Out',
-    danger: true,
-    onConfirm: async () => {
-      await db.auth.signOut();
-      goTo('screen-onboard');
-      showToast('Signed out');
-    }
+  showConfirm({ title: 'Log out?', message: 'You can sign back in anytime.', confirmText: 'Log Out', danger: true,
+    onConfirm: async () => { await db.auth.signOut(); goTo('screen-onboard'); showToast('Signed out'); }
   });
 }
 
-/* ---------------- TMDB SEARCH ---------------- */
+/* ---- TMDB SEARCH ---- */
 function debouncedSearch(query) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -706,20 +682,15 @@ function debouncedSearch(query) {
 async function searchTMDB(query) {
   try {
     const res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
-    if (!res.ok) throw new Error('Search failed');
+    if (!res.ok) throw new Error();
     const data = await res.json();
     renderSearchResults(data.results || []);
-  } catch (e) {
-    showToast('Search failed — try again', 'error');
-  }
+  } catch { showToast('Search failed — try again', 'error'); }
 }
 
 function renderSearchResults(results = []) {
   const grid = document.getElementById('search-grid');
-  if (!results.length) {
-    grid.innerHTML = `<div class="empty-grid">No films found.</div>`;
-    return;
-  }
+  if (!results.length) { grid.innerHTML = `<div class="empty-grid">No films found.</div>`; return; }
   grid.innerHTML = results.map(movie => `
     <div class="film-card-wrap" onclick="openMovieDetail(${movie.id}, 'screen-search', '${searchPurpose}')">
       <div class="film-card">
@@ -727,15 +698,46 @@ function renderSearchResults(results = []) {
           ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
           : `<div class="poster-label">${escapeHtml(movie.title)}</div>`}
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function escapeHtml(str = '') {
   return str.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
-/* ---------------- MOVIE DETAIL ---------------- */
+/* ---- HALF-STAR RATING ---- */
+// rating: 0 to 5, in 0.5 increments
+function halfStarRowHtml(prefix, current) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const full = current >= i;
+    const half = !full && current >= i - 0.5;
+    html += `
+      <span class="star-wrap ${full ? 'full' : half ? 'half' : ''}"
+        onclick="event.stopPropagation();${prefix}(${i})"
+        onmousedown="event.preventDefault();">
+        <span class="star-full">★</span>
+        <span class="star-half-overlay">★</span>
+        <span style="position:absolute;top:0;left:0;width:50%;height:100%;z-index:2;"
+          onclick="event.stopPropagation();${prefix}(${i - 0.5})"></span>
+      </span>`;
+  }
+  return html;
+}
+
+// returns display-only stars (no click) in purple, for diary modal
+function starsDisplay(rating) {
+  if (!rating) return '';
+  let out = '';
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) out += `<span style="color:var(--purple-light);">★</span>`;
+    else if (rating >= i - 0.5) out += `<span style="color:var(--purple-light);opacity:0.5;">★</span>`;
+    else out += `<span style="color:var(--bg4);">★</span>`;
+  }
+  return out;
+}
+
+/* ---- MOVIE DETAIL ---- */
 async function openMovieDetail(id, fromScreen, mode) {
   returnScreen = fromScreen || 'screen-home';
   detailMode = mode === 'quick' ? 'quick' : 'log';
@@ -744,23 +746,21 @@ async function openMovieDetail(id, fromScreen, mode) {
 
   try {
     const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates`);
-    if (!res.ok) throw new Error('Could not load movie');
+    if (!res.ok) throw new Error();
     const movie = await res.json();
     selectedMovie = movie;
 
-    const { data: { user } } = await db.auth.getUser();
     const [{ data: logs }, { data: watchlistRow }] = await Promise.all([
       db.from('watched').select('*').eq('tmdb_id', movie.id).order('watched_on', { ascending: false }),
       db.from('watchlist').select('id').eq('tmdb_id', movie.id).maybeSingle()
     ]);
 
-    formRating = 0;
-    formLiked = false;
+    formRating = 0; formLiked = false;
     formInWatchlist = !!watchlistRow;
     formQuickWatched = !!(logs && logs.length);
 
     renderMovieDetail(movie);
-  } catch (e) {
+  } catch {
     document.getElementById('movie-detail').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this title.</div>`;
     showToast('Could not load movie details', 'error');
   }
@@ -775,15 +775,7 @@ function getBBFC(movie) {
   return cert ? `BBFC ${cert}` : 'Not rated';
 }
 
-function starRowHtml(prefix, current) {
-  let html = '';
-  for (let i = 1; i <= 5; i++) {
-    html += `<span class="star-btn ${i <= current ? 'on' : ''}" onclick="${prefix}(${i})">★</span>`;
-  }
-  return html;
-}
-
-/* ---- Quick mode (opened via the search icon): Watchlist + Watched toggle pills ---- */
+/* Quick mode: Watchlist + Watched pill toggles only — no diary logging */
 function quickActivityCardHtml() {
   return `
     <div class="md-card">
@@ -795,20 +787,19 @@ function quickActivityCardHtml() {
         <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
         <span id="quick-watched-toggle-text">${formQuickWatched ? 'Watched' : 'Mark as Watched'}</span>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-/* ---- Full mode (opened via the + button): rating, like, date, review — no watchlist toggle ---- */
+/* Full mode: the + button — full log form with rating, heart, date, review, rewatch, spoilers */
 function fullActivityCardHtml() {
   return `
     <div class="md-card">
       <div class="md-field-label" style="margin-top:0;">YOUR RATING</div>
-      <div class="star-row" id="rating-stars">${starRowHtml('setRating', formRating)}</div>
+      <div class="star-row" id="rating-stars">${halfStarRowHtml('setRating', formRating)}</div>
 
       <div class="like-row">
         <span style="font-size:13px;color:var(--text2);">Loved it?</span>
-        <span class="like-toggle ${formLiked ? 'on' : ''}" id="like-toggle" onclick="toggleLiked()">♥</span>
+        <span class="heart-icon ${formLiked ? 'on' : ''}" id="like-toggle" onclick="toggleLiked()">${heartSVG}</span>
       </div>
 
       <div class="md-field-label">WATCHED ON</div>
@@ -816,17 +807,17 @@ function fullActivityCardHtml() {
 
       <div class="md-field-label">REVIEW (OPTIONAL)</div>
       <textarea class="form-input" id="review-text" placeholder="What did you think?"></textarea>
+
       <label class="checkbox-row"><input type="checkbox" id="review-spoilers"> Contains spoilers</label>
+      <label class="checkbox-row"><input type="checkbox" id="log-rewatch"> Rewatch</label>
 
       <button class="btn-primary" style="margin-top:16px;" onclick="logWatch()">Log this Watch</button>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderMovieDetail(movie) {
   const el = document.getElementById('movie-detail');
   const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : '';
-
   el.innerHTML = `
     <div class="md-hero">
       ${movie.poster_path
@@ -838,19 +829,15 @@ function renderMovieDetail(movie) {
         <div class="md-cert">${getBBFC(movie)}</div>
       </div>
     </div>
-
     ${movie.overview ? `<div class="md-overview">${escapeHtml(movie.overview)}</div>` : ''}
-
     <div class="md-section-title">YOUR ACTIVITY</div>
     ${detailMode === 'quick' ? quickActivityCardHtml() : fullActivityCardHtml()}
-
-    <div style="height:30px;"></div>
-  `;
+    <div style="height:30px;"></div>`;
 }
 
 function setRating(n) {
   formRating = n;
-  document.getElementById('rating-stars').innerHTML = starRowHtml('setRating', formRating);
+  document.getElementById('rating-stars').innerHTML = halfStarRowHtml('setRating', formRating);
 }
 
 function toggleLiked() {
@@ -862,7 +849,6 @@ async function toggleWatchlist() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-
   if (formInWatchlist) {
     const { error } = await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
     if (error) { showToast('Could not update watchlist', 'error'); return; }
@@ -870,27 +856,23 @@ async function toggleWatchlist() {
     showToast('Removed from Watchlist');
   } else {
     const { error } = await db.from('watchlist').upsert({
-      user_id: user.id,
-      tmdb_id: selectedMovie.id,
-      media_type: 'movie',
-      title: selectedMovie.title,
-      poster_path: selectedMovie.poster_path
+      user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
+      title: selectedMovie.title, poster_path: selectedMovie.poster_path
     }, { onConflict: 'user_id,tmdb_id,media_type' });
     if (error) { showToast('Could not update watchlist', 'error'); return; }
     formInWatchlist = true;
     showToast('Added to Watchlist');
   }
-
   const toggle = document.getElementById('watchlist-toggle');
   if (toggle) {
     toggle.classList.toggle('on', formInWatchlist);
     document.getElementById('watchlist-toggle-text').textContent = formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist';
   }
-
   loadLibrary();
 }
 
-/* Quick-mode "Watched" toggle: no date picker, no review — just marks/unmarks it watched today. */
+/* Quick "Mark as Watched" — adds to 'watched' table but NOT to diary (no date/review/rating).
+   This shows the film in the Watched grid on Home. Diary only shows entries added via Log (full form). */
 async function toggleWatchedQuick() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
@@ -899,40 +881,36 @@ async function toggleWatchedQuick() {
   if (formQuickWatched) {
     showConfirm({
       title: 'Remove from Watched?',
-      message: 'This removes your logged watch(es) for this title.',
-      confirmText: 'Remove',
-      danger: true,
+      message: 'This removes your watch entry for this title.',
+      confirmText: 'Remove', danger: true,
       onConfirm: async () => {
         const { error } = await db.from('watched').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
         if (error) { showToast('Could not update', 'error'); return; }
         formQuickWatched = false;
         showToast('Removed from Watched');
-        loadLibrary();
-        loadStats();
+        loadLibrary(); loadStats();
         openMovieDetail(selectedMovie.id, returnScreen, detailMode);
       }
     });
     return;
   }
 
+  // Insert with a flag so diary can distinguish quick-marks from full logs
   const { error } = await db.from('watched').insert({
-    user_id: user.id,
-    tmdb_id: selectedMovie.id,
-    media_type: 'movie',
-    title: selectedMovie.title,
-    poster_path: selectedMovie.poster_path,
+    user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
+    title: selectedMovie.title, poster_path: selectedMovie.poster_path,
     watched_on: new Date().toISOString().slice(0,10),
-    rating: null,
-    liked: false
+    rating: null, liked: false,
+    quick_mark: true   // <-- marks this as a quick "watched" tap, not a diary entry
   });
   if (error) { showToast('Could not update', 'error'); return; }
   formQuickWatched = true;
   showToast('Added to Watched');
-  loadLibrary();
-  loadStats();
+  loadLibrary(); loadStats();
   openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
+/* Full log: always a diary entry (quick_mark = false) */
 async function logWatch() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
@@ -941,43 +919,33 @@ async function logWatch() {
   const watchedOn = document.getElementById('watched-date').value || new Date().toISOString().slice(0,10);
   const reviewText = document.getElementById('review-text').value.trim();
   const spoilers = document.getElementById('review-spoilers').checked;
+  const rewatch = document.getElementById('log-rewatch').checked;
 
   const { data: inserted, error } = await db.from('watched').insert({
-    user_id: user.id,
-    tmdb_id: selectedMovie.id,
-    media_type: 'movie',
-    title: selectedMovie.title,
-    poster_path: selectedMovie.poster_path,
-    watched_on: watchedOn,
-    rating: formRating || null,
-    liked: formLiked
+    user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
+    title: selectedMovie.title, poster_path: selectedMovie.poster_path,
+    watched_on: watchedOn, rating: formRating || null, liked: formLiked,
+    rewatch: rewatch,
+    quick_mark: false   // full diary entry
   }).select().single();
 
-  if (error) {
-    showToast('Could not log this watch', 'error');
-    return;
-  }
+  if (error) { showToast('Could not log this watch', 'error'); return; }
 
   if (reviewText) {
     const { error: reviewError } = await db.from('reviews').insert({
-      user_id: user.id,
-      watched_id: inserted.id,
-      tmdb_id: selectedMovie.id,
-      media_type: 'movie',
-      rating: formRating || null,
-      review_text: reviewText,
-      contains_spoilers: spoilers
+      user_id: user.id, watched_id: inserted.id, tmdb_id: selectedMovie.id,
+      media_type: 'movie', rating: formRating || null,
+      review_text: reviewText, contains_spoilers: spoilers
     });
     if (reviewError) showToast('Watch logged, but review failed to save', 'error');
   }
 
-  showToast('Added to your Watched list');
-  loadLibrary();
-  loadStats();
+  showToast('Added to your diary');
+  loadLibrary(); loadStats();
   openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
-/* ---------------- LIBRARY (Home grid) ---------------- */
+/* ---- LIBRARY (Home grid) ---- */
 async function loadLibrary() {
   const mode = document.getElementById('library-mode').value;
   const grid = document.getElementById('home-grid');
@@ -987,11 +955,7 @@ async function loadLibrary() {
   const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
 
   const { data, error } = await db.from(table).select('*').order(orderCol, { ascending: false });
-
-  if (error) {
-    grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`;
-    return;
-  }
+  if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`; return; }
   renderHomeGrid(data || []);
 }
 
@@ -1001,56 +965,64 @@ function renderHomeGrid(items = []) {
     grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a film.</div>`;
     return;
   }
-  grid.innerHTML = items.map(item => `
+  // Deduplicate by tmdb_id for home grid (show each film once)
+  const seen = new Set();
+  const unique = items.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+  grid.innerHTML = unique.map(item => `
     <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', 'log')">
       <div class="film-card">
         ${item.poster_path
           ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
           : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-/* ---------------- DIARY ---------------- */
+/* ---- DIARY ---- */
 async function loadDiary() {
   const body = document.getElementById('diary-body');
   body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  const { data: logs, error } = await db.from('watched').select('*').order('watched_on', { ascending: false });
+  // Only show entries that were full logs (quick_mark = false or quick_mark is null from old data that had no rating/review)
+  // We filter: quick_mark is false OR (quick_mark is null AND (rating is not null OR review exists))
+  // Simplest: filter where quick_mark = false explicitly, falling back to entries that have a rating or review
+  const { data: logs, error } = await db.from('watched')
+    .select('*')
+    .eq('quick_mark', false)
+    .order('watched_on', { ascending: false });
 
   if (error) {
-    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.</div>`;
-    return;
+    // Fallback: if column doesn't exist yet, show all
+    const { data: allLogs } = await db.from('watched').select('*').order('watched_on', { ascending: false });
+    return renderDiaryWithLogs(allLogs || []);
   }
+  renderDiaryWithLogs(logs || []);
+}
 
-  const ids = (logs || []).map(l => l.id);
+async function renderDiaryWithLogs(logs) {
+  const body = document.getElementById('diary-body');
+  const ids = logs.map(l => l.id);
   let reviewsById = {};
   if (ids.length) {
     const { data: reviews } = await db.from('reviews').select('*').in('watched_id', ids);
     (reviews || []).forEach(r => { reviewsById[r.watched_id] = r; });
   }
-
-  diaryEntries = (logs || []).map(l => ({ ...l, review: reviewsById[l.id] || null }));
+  diaryEntries = logs.map(l => ({ ...l, review: reviewsById[l.id] || null }));
   renderDiary(diaryEntries);
 }
 
 function renderDiary(entries) {
   const body = document.getElementById('diary-body');
   if (!entries.length) {
-    body.innerHTML = `<div class="empty-grid">Nothing logged yet.<br>Films you log will show up here.</div>`;
+    body.innerHTML = `<div class="empty-grid">Nothing logged yet.<br>Use the + button to log a film to your diary.</div>`;
     return;
   }
-
   const groups = [];
   let currentKey = null;
   entries.forEach(entry => {
     const d = new Date(entry.watched_on);
     const key = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    if (key !== currentKey) {
-      groups.push({ key, items: [] });
-      currentKey = key;
-    }
+    if (key !== currentKey) { groups.push({ key, items: [] }); currentKey = key; }
     groups[groups.length - 1].items.push(entry);
   });
 
@@ -1065,15 +1037,14 @@ function renderDiary(entries) {
             ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />`
             : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
           <div class="diary-entry-info">
-            <div class="diary-entry-title">${escapeHtml(entry.title)}</div>
+            <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ' <span style="font-size:10px;color:var(--text3);font-weight:600;background:var(--bg4);border-radius:4px;padding:1px 5px;vertical-align:middle;">↩ REWATCH</span>' : ''}</div>
             <div class="diary-entry-meta">
               <span class="diary-entry-date">${dateStr}</span>
-              ${entry.rating ? `<span class="diary-entry-stars">${'★'.repeat(Math.round(entry.rating))}</span>` : ''}
-              ${entry.liked ? `<span class="diary-entry-heart">♥</span>` : ''}
+              ${entry.rating ? `<span class="diary-entry-stars">${starsDisplay(entry.rating)}</span>` : ''}
+              ${entry.liked ? `<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>` : ''}
             </div>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join('')}
   `).join('');
 }
@@ -1093,48 +1064,123 @@ function openDiaryEntry(id) {
 
   document.getElementById('diary-modal-title').textContent = entry.title;
   document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  document.getElementById('diary-modal-stars').innerHTML = entry.rating
-    ? `<span style="color:var(--green);">${'★'.repeat(Math.round(entry.rating))}</span>`
-    : '';
-  document.getElementById('diary-modal-review').textContent = entry.review?.review_text
-    ? entry.review.review_text
-    : 'No review written for this watch.';
+  document.getElementById('diary-modal-stars').innerHTML = entry.rating ? starsDisplay(entry.rating) : '';
+  document.getElementById('diary-modal-review').textContent = entry.review?.review_text || 'No review written for this watch.';
 
-  document.getElementById('diary-modal-delete-btn').onclick = () => {
-    showConfirm({
-      title: 'Remove this entry?',
-      message: 'This log entry and rating will be deleted.',
-      confirmText: 'Remove',
-      danger: true,
-      onConfirm: async () => {
-        const { error } = await db.from('watched').delete().eq('id', entry.id);
-        if (error) { showToast('Could not remove entry', 'error'); return; }
-        document.getElementById('diary-modal').classList.remove('show');
-        showToast('Entry removed');
-        loadDiary();
-        loadStats();
-      }
-    });
-  };
-
-  document.getElementById('diary-modal-close-btn').onclick = () => {
+  // Edit button — closes view modal, opens edit modal
+  const editBtn = document.getElementById('diary-modal-edit-btn');
+  editBtn.onclick = () => {
     document.getElementById('diary-modal').classList.remove('show');
+    openEditModal(entry);
   };
+
+  // Delete button — confirm first, then delete
+  const deleteBtn = document.getElementById('diary-modal-delete-btn');
+  deleteBtn.onclick = () => {
+    // Close view modal first, THEN show confirm
+    document.getElementById('diary-modal').classList.remove('show');
+    setTimeout(() => {
+      showConfirm({
+        title: 'Remove this entry?',
+        message: 'This log entry will be deleted from your diary.',
+        confirmText: 'Remove', danger: true,
+        onConfirm: async () => {
+          const { error } = await db.from('watched').delete().eq('id', entry.id);
+          if (error) { showToast('Could not remove entry', 'error'); return; }
+          // Also remove from watched home if no other watches of same film
+          showToast('Entry removed');
+          loadDiary(); loadStats(); loadLibrary();
+        }
+      });
+    }, 220);
+  };
+
+  const closeBtn = document.getElementById('diary-modal-close-btn');
+  closeBtn.onclick = () => document.getElementById('diary-modal').classList.remove('show');
 
   document.getElementById('diary-modal').classList.add('show');
 }
 
-/* ---------------- STATS ---------------- */
+/* ---- EDIT DIARY ENTRY ---- */
+function openEditModal(entry) {
+  editingEntry = entry;
+  editRating = entry.rating || 0;
+  editLiked = !!entry.liked;
+
+  document.getElementById('edit-modal-title').textContent = entry.title;
+  document.getElementById('edit-watched-date').value = entry.watched_on;
+  document.getElementById('edit-review-text').value = entry.review?.review_text || '';
+  document.getElementById('edit-spoilers').checked = !!(entry.review?.contains_spoilers);
+  document.getElementById('edit-rewatch').checked = !!entry.rewatch;
+
+  document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
+  document.getElementById('edit-like-toggle').classList.toggle('on', editLiked);
+
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  editingEntry = null;
+}
+
+function setEditRating(n) {
+  editRating = n;
+  document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
+}
+
+function toggleEditLiked() {
+  editLiked = !editLiked;
+  document.getElementById('edit-like-toggle').classList.toggle('on', editLiked);
+}
+
+async function saveEditEntry() {
+  if (!editingEntry) return;
+  const watchedOn = document.getElementById('edit-watched-date').value;
+  const reviewText = document.getElementById('edit-review-text').value.trim();
+  const spoilers = document.getElementById('edit-spoilers').checked;
+  const rewatch = document.getElementById('edit-rewatch').checked;
+
+  const { error } = await db.from('watched').update({
+    watched_on: watchedOn,
+    rating: editRating || null,
+    liked: editLiked,
+    rewatch: rewatch
+  }).eq('id', editingEntry.id);
+
+  if (error) { showToast('Could not save changes', 'error'); return; }
+
+  // Update or upsert review
+  if (reviewText) {
+    if (editingEntry.review?.id) {
+      await db.from('reviews').update({ review_text: reviewText, contains_spoilers: spoilers, rating: editRating || null }).eq('id', editingEntry.review.id);
+    } else {
+      const { data: { user } } = await db.auth.getUser();
+      await db.from('reviews').insert({
+        user_id: user.id, watched_id: editingEntry.id, tmdb_id: editingEntry.tmdb_id,
+        media_type: 'movie', rating: editRating || null,
+        review_text: reviewText, contains_spoilers: spoilers
+      });
+    }
+  } else if (editingEntry.review?.id) {
+    // Review was cleared
+    await db.from('reviews').delete().eq('id', editingEntry.review.id);
+  }
+
+  showToast('Entry updated');
+  closeEditModal();
+  loadDiary(); loadStats();
+}
+
+/* ---- STATS ---- */
 async function loadStats() {
   const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([
     db.from('watched').select('*', { count: 'exact', head: true }),
     db.from('watchlist').select('*', { count: 'exact', head: true }),
     db.from('watched').select('rating').not('rating', 'is', null)
   ]);
-
   document.getElementById('stat-watched').textContent = watchedCount ?? 0;
   document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
-
   if (ratings && ratings.length) {
     const avg = ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length;
     document.getElementById('stat-avg').textContent = avg.toFixed(2);
@@ -1143,7 +1189,7 @@ async function loadStats() {
   }
 }
 
-/* ---------------- START ---------------- */
+/* ---- BOOT ---- */
 init();
 </script>
 </body>
