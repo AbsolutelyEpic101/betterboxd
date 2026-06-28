@@ -22,7 +22,8 @@
     --text3: #5f5e72;
     --border: rgba(255,255,255,0.07);
     --border2: rgba(255,255,255,0.12);
-    --heart: #e0584a;
+    --heart: var(--purple-light);
+    --danger: #e0584a;
   }
 
   html, body {
@@ -146,7 +147,7 @@
   .toast { background: var(--bg4); border: 0.5px solid var(--border2); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.45); display: flex; align-items: center; gap: 8px; max-width: 320px; opacity: 0; transform: translateY(16px) scale(0.98); transition: all 0.22s ease; }
   .toast.show { opacity: 1; transform: translateY(0) scale(1); }
   .toast.error { border-color: rgba(224,88,74,0.35); color: #ffb3ac; }
-  .toast.error .toast-dot { background: var(--heart); }
+  .toast.error .toast-dot { background: var(--danger); }
   .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
 
   /* CONFIRM MODAL */
@@ -159,7 +160,7 @@
   .modal-actions { display: flex; gap: 10px; }
   .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; }
   .modal-btn.cancel { background: var(--bg4); color: var(--text2); }
-  .modal-btn.danger { background: var(--heart); color: #fff; }
+  .modal-btn.danger { background: var(--danger); color: #fff; }
   .modal-btn.primary { background: var(--purple); color: #fff; }
 
   /* HOME */
@@ -214,6 +215,19 @@
   .pill-toggle.on { background: rgba(124,92,191,0.18); border-color: var(--purple); color: var(--purple-light); }
   .pill-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; flex-shrink: 0; }
 
+  /* DIARY */
+  .diary-month-header { padding: 18px 20px 8px; font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; }
+  .diary-entry { margin: 0 20px 10px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--bg3); border-radius: 12px; border: 0.5px solid var(--border); cursor: pointer; }
+  .diary-entry-poster { width: 42px; height: 63px; border-radius: 6px; object-fit: cover; background: var(--bg4); flex-shrink: 0; }
+  .diary-entry-poster-label { width: 42px; height: 63px; border-radius: 6px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--text3); text-align: center; padding: 2px; flex-shrink: 0; line-height: 1.1; }
+  .diary-entry-info { flex: 1; min-width: 0; }
+  .diary-entry-title { font-size: 14px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .diary-entry-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .diary-entry-date { font-size: 12px; color: var(--text2); }
+  .diary-entry-stars { font-size: 11px; color: var(--green); }
+  .diary-entry-heart { font-size: 13px; color: var(--heart); }
+  .diary-modal-review { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 18px; max-height: 200px; overflow-y: auto; text-align: left; white-space: pre-wrap; }
+
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
 </head>
@@ -234,6 +248,25 @@
       <div class="modal-actions">
         <button class="modal-btn cancel" id="confirm-cancel-btn">Cancel</button>
         <button class="modal-btn danger" id="confirm-ok-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIARY ENTRY MODAL -->
+  <div class="modal-overlay" id="diary-modal">
+    <div class="modal-card" style="max-width:300px;text-align:left;">
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <img id="diary-modal-poster" class="diary-entry-poster" style="width:56px;height:84px;" />
+        <div>
+          <div class="modal-title" id="diary-modal-title" style="margin-bottom:4px;text-align:left;"></div>
+          <div style="font-size:12px;color:var(--text2);" id="diary-modal-date"></div>
+          <div style="margin-top:6px;font-size:14px;" id="diary-modal-stars"></div>
+        </div>
+      </div>
+      <div class="diary-modal-review" id="diary-modal-review"></div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="diary-modal-close-btn">Close</button>
+        <button class="modal-btn danger" id="diary-modal-delete-btn">Remove</button>
       </div>
     </div>
   </div>
@@ -355,7 +388,7 @@
     <div class="home-header">
       <div class="logo-sm">better<span>boxd</span></div>
       <div class="header-icons">
-        <div onclick="goTo('screen-search')" style="cursor:pointer;">
+        <div onclick="goToSearch('quick')" style="cursor:pointer;" title="Quick search — Watched / Watchlist only">
           <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
         <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -377,8 +410,8 @@
     </div>
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Activity</span></div>
-      <div class="nav-item" onclick="goTo('screen-search')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
+      <div class="nav-item" onclick="goToSearch('log')"><div class="nav-add" title="Log a watch — full details"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goTo('screen-stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
@@ -404,9 +437,24 @@
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Activity</span></div>
-      <div class="nav-item" onclick="goTo('screen-search')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
+      <div class="nav-item" onclick="goToSearch('log')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- DIARY -->
+  <div class="screen" id="screen-diary">
+    <div class="home-header">
+      <div class="logo-sm">Diary</div>
+    </div>
+    <div class="screen-body" id="diary-body"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item active" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
+      <div class="nav-item" onclick="goToSearch('log')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="goTo('screen-stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
   </div>
@@ -442,6 +490,15 @@ let returnScreen = 'screen-home';
 let formRating = 0;
 let formLiked = false;
 let formInWatchlist = false;
+
+// 'log'   -> opened via the + button: full form (rating, watched date, review) — no watchlist toggle
+// 'quick' -> opened via the search icon: Watched / Watchlist toggle buttons
+let searchPurpose = 'log';
+let detailMode = 'log';
+let formQuickWatched = false;
+
+// Diary state
+let diaryEntries = [];
 
 /* ============================================================
    TOAST + CONFIRM MODAL  (replace all alert()/confirm() calls)
@@ -493,6 +550,20 @@ function goTo(id) {
   el.classList.add('active');
   const body = el.querySelector('.screen-body');
   if (body) body.scrollTop = 0;
+}
+
+// purpose: 'log' (from the + button, full logging form) or 'quick' (from the search icon, Watched/Watchlist only)
+function goToSearch(purpose) {
+  searchPurpose = purpose === 'quick' ? 'quick' : 'log';
+  const input = document.getElementById('search-input');
+  if (input) input.value = '';
+  document.getElementById('search-grid').innerHTML = '';
+  goTo('screen-search');
+}
+
+function openDiary() {
+  goTo('screen-diary');
+  loadDiary();
 }
 
 /* ---------------- AUTH ---------------- */
@@ -650,7 +721,7 @@ function renderSearchResults(results = []) {
     return;
   }
   grid.innerHTML = results.map(movie => `
-    <div class="film-card-wrap" onclick="openMovieDetail(${movie.id}, 'screen-search')">
+    <div class="film-card-wrap" onclick="openMovieDetail(${movie.id}, 'screen-search', '${searchPurpose}')">
       <div class="film-card">
         ${movie.poster_path
           ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -665,8 +736,9 @@ function escapeHtml(str = '') {
 }
 
 /* ---------------- MOVIE DETAIL ---------------- */
-async function openMovieDetail(id, fromScreen) {
+async function openMovieDetail(id, fromScreen, mode) {
   returnScreen = fromScreen || 'screen-home';
+  detailMode = mode === 'quick' ? 'quick' : 'log';
   goTo('screen-movie');
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
 
@@ -685,8 +757,9 @@ async function openMovieDetail(id, fromScreen) {
     formRating = 0;
     formLiked = false;
     formInWatchlist = !!watchlistRow;
+    formQuickWatched = !!(logs && logs.length);
 
-    renderMovieDetail(movie, logs || []);
+    renderMovieDetail(movie);
   } catch (e) {
     document.getElementById('movie-detail').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this title.</div>`;
     showToast('Could not load movie details', 'error');
@@ -710,7 +783,47 @@ function starRowHtml(prefix, current) {
   return html;
 }
 
-function renderMovieDetail(movie, logs) {
+/* ---- Quick mode (opened via the search icon): Watchlist + Watched toggle pills ---- */
+function quickActivityCardHtml() {
+  return `
+    <div class="md-card">
+      <div class="pill-toggle ${formInWatchlist ? 'on' : ''}" id="watchlist-toggle" onclick="toggleWatchlist()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <span id="watchlist-toggle-text">${formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist'}</span>
+      </div>
+      <div class="pill-toggle ${formQuickWatched ? 'on' : ''}" id="quick-watched-toggle" style="margin-top:10px;" onclick="toggleWatchedQuick()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="quick-watched-toggle-text">${formQuickWatched ? 'Watched' : 'Mark as Watched'}</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ---- Full mode (opened via the + button): rating, like, date, review — no watchlist toggle ---- */
+function fullActivityCardHtml() {
+  return `
+    <div class="md-card">
+      <div class="md-field-label" style="margin-top:0;">YOUR RATING</div>
+      <div class="star-row" id="rating-stars">${starRowHtml('setRating', formRating)}</div>
+
+      <div class="like-row">
+        <span style="font-size:13px;color:var(--text2);">Loved it?</span>
+        <span class="like-toggle ${formLiked ? 'on' : ''}" id="like-toggle" onclick="toggleLiked()">♥</span>
+      </div>
+
+      <div class="md-field-label">WATCHED ON</div>
+      <input type="date" class="form-input" id="watched-date" value="${new Date().toISOString().slice(0,10)}" />
+
+      <div class="md-field-label">REVIEW (OPTIONAL)</div>
+      <textarea class="form-input" id="review-text" placeholder="What did you think?"></textarea>
+      <label class="checkbox-row"><input type="checkbox" id="review-spoilers"> Contains spoilers</label>
+
+      <button class="btn-primary" style="margin-top:16px;" onclick="logWatch()">Log this Watch</button>
+    </div>
+  `;
+}
+
+function renderMovieDetail(movie) {
   const el = document.getElementById('movie-detail');
   const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : '';
 
@@ -729,43 +842,8 @@ function renderMovieDetail(movie, logs) {
     ${movie.overview ? `<div class="md-overview">${escapeHtml(movie.overview)}</div>` : ''}
 
     <div class="md-section-title">YOUR ACTIVITY</div>
-    <div class="md-card">
-      <div class="pill-toggle ${formInWatchlist ? 'on' : ''}" id="watchlist-toggle" onclick="toggleWatchlist()">
-        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-        <span id="watchlist-toggle-text">${formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist'}</span>
-      </div>
+    ${detailMode === 'quick' ? quickActivityCardHtml() : fullActivityCardHtml()}
 
-      <div class="md-field-label">YOUR RATING</div>
-      <div class="star-row" id="rating-stars">${starRowHtml('setRating', formRating)}</div>
-
-      <div class="like-row">
-        <span style="font-size:13px;color:var(--text2);">Loved it?</span>
-        <span class="like-toggle ${formLiked ? 'on' : ''}" id="like-toggle" onclick="toggleLiked()">♥</span>
-      </div>
-
-      <div class="md-field-label">WATCHED ON</div>
-      <input type="date" class="form-input" id="watched-date" value="${new Date().toISOString().slice(0,10)}" />
-
-      <div class="md-field-label">REVIEW (OPTIONAL)</div>
-      <textarea class="form-input" id="review-text" placeholder="What did you think?"></textarea>
-      <label class="checkbox-row"><input type="checkbox" id="review-spoilers"> Contains spoilers</label>
-
-      <button class="btn-primary" style="margin-top:16px;" onclick="logWatch()">Log this Watch</button>
-    </div>
-
-    <div class="md-section-title">YOUR LOG (${logs.length})</div>
-    <div id="log-list">
-      ${logs.length
-        ? logs.map(l => `
-          <div class="log-entry">
-            <div class="log-date">${new Date(l.watched_on).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}</div>
-            <div class="log-stars">${'★'.repeat(Math.round(l.rating || 0))}</div>
-            ${l.liked ? `<span style="color:var(--heart);">♥</span>` : ''}
-            <span class="log-del" onclick="deleteWatchEntry('${l.id}')">✕</span>
-          </div>
-        `).join('')
-        : `<div style="padding:0 20px 10px;color:var(--text3);font-size:13px;">You haven't logged this one yet.</div>`}
-    </div>
     <div style="height:30px;"></div>
   `;
 }
@@ -804,10 +882,55 @@ async function toggleWatchlist() {
   }
 
   const toggle = document.getElementById('watchlist-toggle');
-  toggle.classList.toggle('on', formInWatchlist);
-  document.getElementById('watchlist-toggle-text').textContent = formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist';
+  if (toggle) {
+    toggle.classList.toggle('on', formInWatchlist);
+    document.getElementById('watchlist-toggle-text').textContent = formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist';
+  }
 
   loadLibrary();
+}
+
+/* Quick-mode "Watched" toggle: no date picker, no review — just marks/unmarks it watched today. */
+async function toggleWatchedQuick() {
+  if (!selectedMovie) return;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  if (formQuickWatched) {
+    showConfirm({
+      title: 'Remove from Watched?',
+      message: 'This removes your logged watch(es) for this title.',
+      confirmText: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        const { error } = await db.from('watched').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
+        if (error) { showToast('Could not update', 'error'); return; }
+        formQuickWatched = false;
+        showToast('Removed from Watched');
+        loadLibrary();
+        loadStats();
+        openMovieDetail(selectedMovie.id, returnScreen, detailMode);
+      }
+    });
+    return;
+  }
+
+  const { error } = await db.from('watched').insert({
+    user_id: user.id,
+    tmdb_id: selectedMovie.id,
+    media_type: 'movie',
+    title: selectedMovie.title,
+    poster_path: selectedMovie.poster_path,
+    watched_on: new Date().toISOString().slice(0,10),
+    rating: null,
+    liked: false
+  });
+  if (error) { showToast('Could not update', 'error'); return; }
+  formQuickWatched = true;
+  showToast('Added to Watched');
+  loadLibrary();
+  loadStats();
+  openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
 async function logWatch() {
@@ -851,24 +974,7 @@ async function logWatch() {
   showToast('Added to your Watched list');
   loadLibrary();
   loadStats();
-  openMovieDetail(selectedMovie.id, returnScreen);
-}
-
-function deleteWatchEntry(id) {
-  showConfirm({
-    title: 'Remove this entry?',
-    message: 'This log entry and rating will be deleted.',
-    confirmText: 'Remove',
-    danger: true,
-    onConfirm: async () => {
-      const { error } = await db.from('watched').delete().eq('id', id);
-      if (error) { showToast('Could not remove entry', 'error'); return; }
-      showToast('Entry removed');
-      loadLibrary();
-      loadStats();
-      if (selectedMovie) openMovieDetail(selectedMovie.id, returnScreen);
-    }
-  });
+  openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
 /* ---------------- LIBRARY (Home grid) ---------------- */
@@ -896,7 +1002,7 @@ function renderHomeGrid(items = []) {
     return;
   }
   grid.innerHTML = items.map(item => `
-    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home')">
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', 'log')">
       <div class="film-card">
         ${item.poster_path
           ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -904,6 +1010,118 @@ function renderHomeGrid(items = []) {
       </div>
     </div>
   `).join('');
+}
+
+/* ---------------- DIARY ---------------- */
+async function loadDiary() {
+  const body = document.getElementById('diary-body');
+  body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+  const { data: logs, error } = await db.from('watched').select('*').order('watched_on', { ascending: false });
+
+  if (error) {
+    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.</div>`;
+    return;
+  }
+
+  const ids = (logs || []).map(l => l.id);
+  let reviewsById = {};
+  if (ids.length) {
+    const { data: reviews } = await db.from('reviews').select('*').in('watched_id', ids);
+    (reviews || []).forEach(r => { reviewsById[r.watched_id] = r; });
+  }
+
+  diaryEntries = (logs || []).map(l => ({ ...l, review: reviewsById[l.id] || null }));
+  renderDiary(diaryEntries);
+}
+
+function renderDiary(entries) {
+  const body = document.getElementById('diary-body');
+  if (!entries.length) {
+    body.innerHTML = `<div class="empty-grid">Nothing logged yet.<br>Films you log will show up here.</div>`;
+    return;
+  }
+
+  const groups = [];
+  let currentKey = null;
+  entries.forEach(entry => {
+    const d = new Date(entry.watched_on);
+    const key = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (key !== currentKey) {
+      groups.push({ key, items: [] });
+      currentKey = key;
+    }
+    groups[groups.length - 1].items.push(entry);
+  });
+
+  body.innerHTML = groups.map(g => `
+    <div class="diary-month-header">${g.key}</div>
+    ${g.items.map(entry => {
+      const d = new Date(entry.watched_on);
+      const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      return `
+        <div class="diary-entry" onclick="openDiaryEntry('${entry.id}')">
+          ${entry.poster_path
+            ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />`
+            : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
+          <div class="diary-entry-info">
+            <div class="diary-entry-title">${escapeHtml(entry.title)}</div>
+            <div class="diary-entry-meta">
+              <span class="diary-entry-date">${dateStr}</span>
+              ${entry.rating ? `<span class="diary-entry-stars">${'★'.repeat(Math.round(entry.rating))}</span>` : ''}
+              ${entry.liked ? `<span class="diary-entry-heart">♥</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `).join('');
+}
+
+function openDiaryEntry(id) {
+  const entry = diaryEntries.find(e => e.id === id);
+  if (!entry) return;
+
+  const posterImg = document.getElementById('diary-modal-poster');
+  if (entry.poster_path) {
+    posterImg.src = `https://image.tmdb.org/t/p/w200${entry.poster_path}`;
+    posterImg.style.display = 'block';
+  } else {
+    posterImg.removeAttribute('src');
+    posterImg.style.display = 'none';
+  }
+
+  document.getElementById('diary-modal-title').textContent = entry.title;
+  document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  document.getElementById('diary-modal-stars').innerHTML = entry.rating
+    ? `<span style="color:var(--green);">${'★'.repeat(Math.round(entry.rating))}</span>`
+    : '';
+  document.getElementById('diary-modal-review').textContent = entry.review?.review_text
+    ? entry.review.review_text
+    : 'No review written for this watch.';
+
+  document.getElementById('diary-modal-delete-btn').onclick = () => {
+    showConfirm({
+      title: 'Remove this entry?',
+      message: 'This log entry and rating will be deleted.',
+      confirmText: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        const { error } = await db.from('watched').delete().eq('id', entry.id);
+        if (error) { showToast('Could not remove entry', 'error'); return; }
+        document.getElementById('diary-modal').classList.remove('show');
+        showToast('Entry removed');
+        loadDiary();
+        loadStats();
+      }
+    });
+  };
+
+  document.getElementById('diary-modal-close-btn').onclick = () => {
+    document.getElementById('diary-modal').classList.remove('show');
+  };
+
+  document.getElementById('diary-modal').classList.add('show');
 }
 
 /* ---------------- STATS ---------------- */
