@@ -925,7 +925,7 @@ async function toggleWatchedQuick() {
   openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
-/* Full log: always a diary entry (quick_mark = false) */
+/* Full log via + button: writes to 'watched' AND 'diary' table */
 async function logWatch() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
@@ -936,30 +936,30 @@ async function logWatch() {
   const spoilers = document.getElementById('review-spoilers').checked;
   const rewatch = document.getElementById('log-rewatch').checked;
 
-  let insertRes = await db.from('watched').insert({
+  // 1. Insert into watched (for home grid)
+  const { data: inserted, error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
     title: selectedMovie.title, poster_path: selectedMovie.poster_path,
-    watched_on: watchedOn, rating: formRating || null, liked: formLiked,
-    rewatch: rewatch, quick_mark: false
+    watched_on: watchedOn, rating: formRating || null, liked: formLiked
   }).select().single();
-  if (insertRes.error && (insertRes.error.code === '42703' || /quick_mark|rewatch/.test(insertRes.error.message || ''))) {
-    insertRes = await db.from('watched').insert({
-      user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
-      title: selectedMovie.title, poster_path: selectedMovie.poster_path,
-      watched_on: watchedOn, rating: formRating || null, liked: formLiked
-    }).select().single();
-  }
-  const { data: inserted, error } = insertRes;
   if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
 
-  if (reviewText) {
-    const { error: reviewError } = await db.from('reviews').insert({
-      user_id: user.id, watched_id: inserted.id, tmdb_id: selectedMovie.id,
-      media_type: 'movie', rating: formRating || null,
-      review_text: reviewText, contains_spoilers: spoilers
-    });
-    if (reviewError) showToast('Watch logged, but review failed to save', 'error');
-  }
+  // 2. Insert into diary table (this is what makes it a diary entry)
+  const { error: diaryError } = await db.from('diary').insert({
+    user_id: user.id,
+    watched_id: inserted.id,
+    tmdb_id: selectedMovie.id,
+    media_type: 'movie',
+    title: selectedMovie.title,
+    poster_path: selectedMovie.poster_path,
+    watched_on: watchedOn,
+    rating: formRating || null,
+    liked: formLiked,
+    rewatch: rewatch,
+    review_text: reviewText || null,
+    contains_spoilers: spoilers
+  });
+  if (diaryError) { showToast('Logged to Watched but diary failed: ' + (diaryError.message || ''), 'error'); return; }
 
   showToast('Added to your diary');
   loadLibrary(); loadStats();
@@ -1004,35 +1004,18 @@ async function loadDiary() {
   const body = document.getElementById('diary-body');
   body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  // Diary = only entries logged via the + button (full log).
-  // Quick "Mark as Watched" entries have rating=null and no review — we exclude those.
-  // Strategy: load all watched rows, then load all reviews. A diary entry is any
-  // watched row that either (a) has a rating, (b) has a review, or (c) has quick_mark=false explicitly.
-  // This works whether or not the quick_mark column exists in Supabase.
-  const { data: allLogs, error } = await db.from('watched')
+  // Diary reads exclusively from the 'diary' table.
+  // Only the + button (logWatch) writes there. Quick "Mark as Watched" never touches it.
+  const { data: entries, error } = await db.from('diary')
     .select('*')
     .order('watched_on', { ascending: false });
 
   if (error) {
-    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.</div>`;
+    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.<br><small style="font-size:11px;color:var(--text3);">` + (error.message || '') + `</small></div>`;
     return;
   }
 
-  const ids = (allLogs || []).map(l => l.id);
-  let reviewsById = {};
-  if (ids.length) {
-    const { data: reviews } = await db.from('reviews').select('*').in('watched_id', ids);
-    (reviews || []).forEach(r => { reviewsById[r.watched_id] = r; });
-  }
-
-  // Filter: keep entry if it has a rating, a review, OR quick_mark is explicitly false
-  const diaryLogs = (allLogs || []).filter(l =>
-    l.rating != null ||
-    reviewsById[l.id] != null ||
-    l.quick_mark === false
-  );
-
-  diaryEntries = diaryLogs.map(l => ({ ...l, review: reviewsById[l.id] || null }));
+  diaryEntries = entries || [];
   renderDiary(diaryEntries);
 }
 
@@ -1091,7 +1074,7 @@ function openDiaryEntry(id) {
   document.getElementById('diary-modal-title').textContent = entry.title;
   document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   document.getElementById('diary-modal-stars').innerHTML = entry.rating ? starsDisplay(entry.rating) : '';
-  document.getElementById('diary-modal-review').textContent = entry.review?.review_text || 'No review written for this watch.';
+  document.getElementById('diary-modal-review').textContent = entry.review_text || 'No review written for this watch.';
 
   // Edit button — closes view modal, opens edit modal
   const editBtn = document.getElementById('diary-modal-edit-btn');
@@ -1111,11 +1094,10 @@ function openDiaryEntry(id) {
         message: 'This log entry will be deleted from your diary.',
         confirmText: 'Remove', danger: true,
         onConfirm: async () => {
-          const { error } = await db.from('watched').delete().eq('id', entry.id);
+          const { error } = await db.from('diary').delete().eq('id', entry.id);
           if (error) { showToast('Could not remove entry', 'error'); return; }
-          // Also remove from watched home if no other watches of same film
           showToast('Entry removed');
-          loadDiary(); loadStats(); loadLibrary();
+          loadDiary(); loadStats();
         }
       });
     }, 220);
@@ -1128,6 +1110,7 @@ function openDiaryEntry(id) {
 }
 
 /* ---- EDIT DIARY ENTRY ---- */
+// diary table has all fields inline: review_text, contains_spoilers, rewatch, rating, liked, watched_on
 function openEditModal(entry) {
   editingEntry = entry;
   editRating = entry.rating || 0;
@@ -1135,8 +1118,8 @@ function openEditModal(entry) {
 
   document.getElementById('edit-modal-title').textContent = entry.title;
   document.getElementById('edit-watched-date').value = entry.watched_on;
-  document.getElementById('edit-review-text').value = entry.review?.review_text || '';
-  document.getElementById('edit-spoilers').checked = !!(entry.review?.contains_spoilers);
+  document.getElementById('edit-review-text').value = entry.review_text || '';
+  document.getElementById('edit-spoilers').checked = !!entry.contains_spoilers;
   document.getElementById('edit-rewatch').checked = !!entry.rewatch;
 
   document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
@@ -1167,30 +1150,21 @@ async function saveEditEntry() {
   const spoilers = document.getElementById('edit-spoilers').checked;
   const rewatch = document.getElementById('edit-rewatch').checked;
 
-  const { error } = await db.from('watched').update({
+  // Update diary table (single source of truth for diary entries)
+  const { error } = await db.from('diary').update({
     watched_on: watchedOn,
     rating: editRating || null,
     liked: editLiked,
-    rewatch: rewatch
+    rewatch: rewatch,
+    review_text: reviewText || null,
+    contains_spoilers: spoilers
   }).eq('id', editingEntry.id);
 
-  if (error) { showToast('Could not save changes', 'error'); return; }
+  if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
 
-  // Update or upsert review
-  if (reviewText) {
-    if (editingEntry.review?.id) {
-      await db.from('reviews').update({ review_text: reviewText, contains_spoilers: spoilers, rating: editRating || null }).eq('id', editingEntry.review.id);
-    } else {
-      const { data: { user } } = await db.auth.getUser();
-      await db.from('reviews').insert({
-        user_id: user.id, watched_id: editingEntry.id, tmdb_id: editingEntry.tmdb_id,
-        media_type: 'movie', rating: editRating || null,
-        review_text: reviewText, contains_spoilers: spoilers
-      });
-    }
-  } else if (editingEntry.review?.id) {
-    // Review was cleared
-    await db.from('reviews').delete().eq('id', editingEntry.review.id);
+  // Also keep watched table in sync (rating, liked)
+  if (editingEntry.watched_id) {
+    await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
   }
 
   showToast('Entry updated');
