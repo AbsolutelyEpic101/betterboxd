@@ -275,6 +275,7 @@
         <div style="flex:1;min-width:0;">
           <div class="modal-title" id="diary-modal-title" style="margin-bottom:4px;text-align:left;font-size:15px;"></div>
           <div style="font-size:12px;color:var(--text2);" id="diary-modal-date"></div>
+          <div id="diary-modal-rewatch" style="display:none;font-size:10px;color:var(--text3);font-weight:600;background:var(--bg4);border-radius:4px;padding:1px 5px;margin-top:4px;width:fit-content;">↩ REWATCH</div>
           <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
             <div style="font-size:14px;" id="diary-modal-stars"></div>
             <span id="diary-modal-heart" style="display:none;" class="heart-icon heart-icon-sm on" style="pointer-events:none;"></span>
@@ -341,6 +342,7 @@
       <div class="logo-sm">Search</div>
       <div onclick="goTo('screen-home')" style="color:var(--text2);cursor:pointer;">Close</div>
     </div>
+    <div class="tabs" id="search-tabs" style="display:none;"></div>
     <div style="padding:10px 20px;">
       <input id="search-input" placeholder="Search films..." class="form-input" oninput="debouncedSearch(this.value)" autocomplete="off" />
     </div>
@@ -451,7 +453,11 @@
         <div class="avatar" id="home-avatar" onclick="handleLogout()" title="Tap to sign out">?</div>
       </div>
     </div>
-    <div class="tabs"><div class="tab active">Films</div><div class="tab">TV Shows</div><div class="tab">Lists</div></div>
+    <div class="tabs">
+      <div class="tab active" id="home-tab-films" onclick="setHomeMediaType('movie')">Films</div>
+      <div class="tab" id="home-tab-tv" onclick="setHomeMediaType('tv')">TV Shows</div>
+      <div class="tab">Lists</div>
+    </div>
     <div class="filter-bar">
       <select id="library-mode" class="filter-chip" onchange="loadLibrary()">
         <option value="watched">Watched</option>
@@ -538,18 +544,23 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 /* ---- STATE ---- */
 let selectedMovie = null;
+let selectedMediaType = 'movie'; // 'movie' or 'tv' — which kind of title is currently open in the detail screen
 let searchTimeout = null;
 let returnScreen = 'screen-home';
 let formRating = 0;      // 0–5 in 0.5 steps
 let formLiked = false;
 let formInWatchlist = false;
+let formRewatch = false; // defaults to true (on form) when this title has already been logged before
 let searchPurpose = 'log';
+let searchMediaType = 'movie'; // 'movie' or 'tv' — only relevant when searchPurpose === 'quick'
 let detailMode = 'log';
 let formQuickWatched = false;
+let formTvStatus = null; // null | 'watchlist' | 'watching' | 'watched'
 let diaryEntries = [];
 let editingEntry = null;
 let editRating = 0;
 let editLiked = false;
+let homeMediaType = 'movie'; // which Home tab (Films / TV Shows) is currently selected
 
 /* ---- HEART SVG helper ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -594,15 +605,61 @@ function goTo(id) {
 
 function goToSearch(purpose) {
   searchPurpose = purpose === 'quick' ? 'quick' : 'log';
+  searchMediaType = 'movie';
   const input = document.getElementById('search-input');
-  if (input) input.value = '';
+  if (input) { input.value = ''; input.placeholder = 'Search films...'; }
   document.getElementById('search-grid').innerHTML = '';
+  renderSearchTabs();
   goTo('screen-search');
+}
+
+function renderSearchTabs() {
+  const wrap = document.getElementById('search-tabs');
+  if (!wrap) return;
+  // Tabs only appear for the quick search (magnifying glass icon).
+  // The + button is for diary logging, which is movies-only, so no tabs there.
+  if (searchPurpose !== 'quick') { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  wrap.style.display = 'flex';
+  wrap.innerHTML = `
+    <div class="tab ${searchMediaType === 'movie' ? 'active' : ''}" onclick="setSearchMediaType('movie')">Movies</div>
+    <div class="tab ${searchMediaType === 'tv' ? 'active' : ''}" onclick="setSearchMediaType('tv')">TV Shows</div>`;
+}
+
+function setSearchMediaType(type) {
+  searchMediaType = type;
+  renderSearchTabs();
+  const input = document.getElementById('search-input');
+  if (input) input.placeholder = type === 'tv' ? 'Search TV shows...' : 'Search films...';
+  const q = input ? input.value.trim() : '';
+  if (q.length > 2) runSearch(q); else document.getElementById('search-grid').innerHTML = '';
 }
 
 function openDiary() {
   goTo('screen-diary');
   loadDiary();
+}
+
+function setHomeMediaType(type) {
+  homeMediaType = type === 'tv' ? 'tv' : 'movie';
+  document.getElementById('home-tab-films').classList.toggle('active', homeMediaType === 'movie');
+  document.getElementById('home-tab-tv').classList.toggle('active', homeMediaType === 'tv');
+  renderLibraryModeOptions();
+  loadLibrary();
+}
+
+function renderLibraryModeOptions() {
+  const select = document.getElementById('library-mode');
+  if (!select) return;
+  if (homeMediaType === 'tv') {
+    select.innerHTML = `
+      <option value="watchlist">Watchlist</option>
+      <option value="watching">Watching</option>
+      <option value="watched">Watched</option>`;
+  } else {
+    select.innerHTML = `
+      <option value="watched">Watched</option>
+      <option value="watchlist">Watchlist</option>`;
+  }
 }
 
 /* ---- AUTH ---- */
@@ -677,31 +734,37 @@ function handleLogout() {
 function debouncedSearch(query) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    if (query.trim().length > 2) searchTMDB(query);
+    if (query.trim().length > 2) runSearch(query);
     else document.getElementById('search-grid').innerHTML = '';
   }, 300);
 }
 
-async function searchTMDB(query) {
+async function runSearch(query) {
+  // The + button (log) is movies-only — TV is only searchable from the quick search tabs.
+  const type = searchPurpose === 'quick' ? searchMediaType : 'movie';
   try {
-    const res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
+    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
     if (!res.ok) throw new Error();
     const data = await res.json();
-    renderSearchResults(data.results || []);
+    renderSearchResults(data.results || [], type);
   } catch { showToast('Search failed — try again', 'error'); }
 }
 
-function renderSearchResults(results = []) {
+function renderSearchResults(results = [], type = 'movie') {
   const grid = document.getElementById('search-grid');
-  if (!results.length) { grid.innerHTML = `<div class="empty-grid">No films found.</div>`; return; }
-  grid.innerHTML = results.map(movie => `
-    <div class="film-card-wrap" onclick="openMovieDetail(${movie.id}, 'screen-search', '${searchPurpose}')">
+  if (!results.length) { grid.innerHTML = `<div class="empty-grid">No ${type === 'tv' ? 'TV shows' : 'films'} found.</div>`; return; }
+  grid.innerHTML = results.map(item => {
+    const name = type === 'tv' ? item.name : item.title;
+    return `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.id}, 'screen-search', '${searchPurpose}', '${type}')">
       <div class="film-card">
-        ${movie.poster_path
-          ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
-          : `<div class="poster-label">${escapeHtml(movie.title)}</div>`}
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(name)}</div>`}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function escapeHtml(str = '') {
@@ -709,15 +772,11 @@ function escapeHtml(str = '') {
 }
 
 /* ---- HALF-STAR RATING ---- */
-// rating: 0 to 5, in 0.5 increments
-// Single click on a star = full star. Click same full star again = half star.
-// No need to aim at left/right half — just tap once or twice.
 function halfStarRowHtml(prefix, current) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
     const full = current >= i;
     const half = !full && current >= i - 0.5;
-    // On click: if already full star at this position → downgrade to half. Otherwise → full.
     const clickVal = full ? (i - 0.5) : i;
     html += `
       <span class="star-wrap ${full ? 'full' : half ? 'half' : ''}"
@@ -730,7 +789,6 @@ function halfStarRowHtml(prefix, current) {
   return html;
 }
 
-// returns display-only stars in purple — works at any size
 function starsDisplay(rating) {
   if (!rating) return '';
   let out = '';
@@ -738,7 +796,6 @@ function starsDisplay(rating) {
     if (rating >= i) {
       out += `<span style="color:var(--purple-light);">★</span>`;
     } else if (rating >= i - 0.5) {
-      // Half star: overlay approach inline so it works at any font-size
       out += `<span style="position:relative;display:inline-block;color:var(--bg4);">★<span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:var(--purple-light);">★</span></span>`;
     } else {
       out += `<span style="color:var(--bg4);">★</span>`;
@@ -748,32 +805,46 @@ function starsDisplay(rating) {
 }
 
 /* ---- MOVIE DETAIL ---- */
-async function openMovieDetail(id, fromScreen, mode) {
+async function openMovieDetail(id, fromScreen, mode, mediaType) {
   returnScreen = fromScreen || 'screen-home';
   detailMode = mode === 'quick' ? 'quick' : 'log';
+  selectedMediaType = mediaType === 'tv' ? 'tv' : 'movie';
+  if (selectedMediaType === 'tv') detailMode = 'quick'; // TV shows only ever use the status-button UI, never the diary log form
   goTo('screen-movie');
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
 
   try {
-    const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates`);
-    if (!res.ok) throw new Error();
-    const movie = await res.json();
-    selectedMovie = movie;
+    if (selectedMediaType === 'tv') {
+      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}`);
+      if (!res.ok) throw new Error();
+      const show = await res.json();
+      selectedMovie = show;
 
-    const [{ data: logs }, { data: watchlistRow }] = await Promise.all([
-      db.from('watched').select('*').eq('tmdb_id', movie.id).order('watched_on', { ascending: false }),
-      db.from('watchlist').select('id').eq('tmdb_id', movie.id).maybeSingle()
-    ]);
+      const { data: statusRow } = await db.from('tv_status').select('*').eq('tmdb_id', show.id).maybeSingle();
+      formTvStatus = statusRow ? statusRow.status : null;
 
-    formRating = 0; formLiked = false;
-    formInWatchlist = !!watchlistRow;
-    formQuickWatched = !!(logs && logs.length);
-    formRewatch = !!(logs && logs.length);  // default rewatch on if already logged
+      renderMovieDetail(show);
+    } else {
+      const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates`);
+      if (!res.ok) throw new Error();
+      const movie = await res.json();
+      selectedMovie = movie;
 
-    renderMovieDetail(movie);
+      const [{ data: logs }, { data: watchlistRow }] = await Promise.all([
+        db.from('watched').select('*').eq('tmdb_id', movie.id).order('watched_on', { ascending: false }),
+        db.from('watchlist').select('id').eq('tmdb_id', movie.id).maybeSingle()
+      ]);
+
+      formRating = 0; formLiked = false;
+      formInWatchlist = !!watchlistRow;
+      formQuickWatched = !!(logs && logs.length);
+      formRewatch = !!(logs && logs.length);  // default rewatch on if already logged
+
+      renderMovieDetail(movie);
+    }
   } catch {
     document.getElementById('movie-detail').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this title.</div>`;
-    showToast('Could not load movie details', 'error');
+    showToast('Could not load details', 'error');
   }
 }
 
@@ -820,29 +891,93 @@ function fullActivityCardHtml() {
       <textarea class="form-input" id="review-text" placeholder="What did you think?"></textarea>
 
       <label class="checkbox-row"><input type="checkbox" id="review-spoilers"> Contains spoilers</label>
-      <label class="checkbox-row"><input type="checkbox" id="log-rewatch"> Rewatch</label>
+      <label class="checkbox-row"><input type="checkbox" id="log-rewatch" ${formRewatch ? 'checked' : ''}> Rewatch</label>
 
       <button class="btn-primary" style="margin-top:16px;" onclick="logWatch()">Log this Watch</button>
     </div>`;
 }
 
-function renderMovieDetail(movie) {
+/* TV mode: a single cycling button — Watchlist → Watching → Watched → (tap again) removes it */
+const TV_STATUS_LABELS = { watchlist: 'Watchlist', watching: 'Watching', watched: 'Watched' };
+
+function tvActivityCardHtml() {
+  if (!formTvStatus) {
+    return `
+      <div class="md-card">
+        <div class="pill-toggle" onclick="setTvStatus('watchlist')">
+          <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+          <span>Switch to Watchlist</span>
+        </div>
+      </div>`;
+  }
+  const nextMap = { watchlist: 'watching', watching: 'watched' };
+  const next = nextMap[formTvStatus]; // undefined once status is 'watched' — next tap removes it
+  return `
+    <div class="md-card">
+      <div class="pill-toggle on" style="cursor:default;">
+        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Status: ${TV_STATUS_LABELS[formTvStatus]}</span>
+      </div>
+      <div class="pill-toggle" style="margin-top:10px;" onclick="${next ? `setTvStatus('${next}')` : 'removeTvStatus()'}">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>${next ? `Switch to ${TV_STATUS_LABELS[next]}` : 'Remove from Watched'}</span>
+      </div>
+    </div>`;
+}
+
+async function setTvStatus(status) {
+  if (!selectedMovie) return;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.from('tv_status').upsert({
+    user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'tv',
+    title: selectedMovie.name, poster_path: selectedMovie.poster_path,
+    status: status, updated_on: new Date().toISOString()
+  }, { onConflict: 'user_id,tmdb_id' });
+  if (error) { showToast('Could not update status: ' + (error.message || ''), 'error'); return; }
+  formTvStatus = status;
+  showToast(`Marked as ${TV_STATUS_LABELS[status]}`);
+  renderMovieDetail(selectedMovie);
+  if (homeMediaType === 'tv') loadLibrary();
+}
+
+async function removeTvStatus() {
+  if (!selectedMovie || !formTvStatus) return;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.from('tv_status').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
+  if (error) { showToast('Could not remove', 'error'); return; }
+  formTvStatus = null;
+  showToast('Removed from Watched');
+  renderMovieDetail(selectedMovie);
+  if (homeMediaType === 'tv') loadLibrary();
+}
+
+function renderMovieDetail(item) {
   const el = document.getElementById('movie-detail');
-  const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : '';
+  const isTv = selectedMediaType === 'tv';
+  const title = isTv ? item.name : item.title;
+  const dateStr = isTv ? item.first_air_date : item.release_date;
+  let metaExtra = '';
+  if (isTv) {
+    if (item.number_of_seasons) metaExtra = `${item.number_of_seasons} season${item.number_of_seasons > 1 ? 's' : ''}`;
+  } else if (item.runtime) {
+    metaExtra = `${Math.floor(item.runtime / 60)}h ${item.runtime % 60}m`;
+  }
   el.innerHTML = `
     <div class="md-hero">
-      ${movie.poster_path
-        ? `<img class="md-poster" src="https://image.tmdb.org/t/p/w300${movie.poster_path}" />`
-        : `<div class="md-poster-label">${escapeHtml(movie.title)}</div>`}
+      ${item.poster_path
+        ? `<img class="md-poster" src="https://image.tmdb.org/t/p/w300${item.poster_path}" />`
+        : `<div class="md-poster-label">${escapeHtml(title)}</div>`}
       <div>
-        <div class="md-title">${escapeHtml(movie.title)}</div>
-        <div class="md-meta">${getYear(movie.release_date)}${runtime ? ' · ' + runtime : ''}</div>
-        <div class="md-cert">${getBBFC(movie)}</div>
+        <div class="md-title">${escapeHtml(title)}</div>
+        <div class="md-meta">${getYear(dateStr)}${metaExtra ? ' · ' + metaExtra : ''}</div>
+        ${isTv ? '' : `<div class="md-cert">${getBBFC(item)}</div>`}
       </div>
     </div>
-    ${movie.overview ? `<div class="md-overview">${escapeHtml(movie.overview)}</div>` : ''}
+    ${item.overview ? `<div class="md-overview">${escapeHtml(item.overview)}</div>` : ''}
     <div class="md-section-title">YOUR ACTIVITY</div>
-    ${detailMode === 'quick' ? quickActivityCardHtml() : fullActivityCardHtml()}
+    ${isTv ? tvActivityCardHtml() : (detailMode === 'quick' ? quickActivityCardHtml() : fullActivityCardHtml())}
     <div style="height:30px;"></div>`;
 }
 
@@ -906,7 +1041,6 @@ async function toggleWatchedQuick() {
     return;
   }
 
-  // Try inserting with quick_mark column first; fall back without it if column doesn't exist
   let error;
   ({ error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
@@ -916,7 +1050,6 @@ async function toggleWatchedQuick() {
     quick_mark: true
   }));
 
-  // If quick_mark / rewatch column doesn't exist yet, retry without it
   if (error && (error.code === '42703' || /quick_mark|column/.test(error.message || ''))) {
     ({ error } = await db.from('watched').insert({
       user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
@@ -947,7 +1080,6 @@ async function logWatch() {
   const spoilers = document.getElementById('review-spoilers').checked;
   const rewatch = document.getElementById('log-rewatch').checked;
 
-  // 1. Insert into watched (for home grid)
   const { data: inserted, error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
     title: selectedMovie.title, poster_path: selectedMovie.poster_path,
@@ -955,7 +1087,6 @@ async function logWatch() {
   }).select().single();
   if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
 
-  // 2. Insert into diary table (this is what makes it a diary entry)
   const { error: diaryError } = await db.from('diary').insert({
     user_id: user.id,
     watched_id: inserted.id,
@@ -983,25 +1114,31 @@ async function loadLibrary() {
   const grid = document.getElementById('home-grid');
   grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  const table = mode === 'watched' ? 'watched' : 'watchlist';
-  const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
+  let query;
+  if (homeMediaType === 'tv') {
+    query = db.from('tv_status').select('*').eq('status', mode).order('updated_on', { ascending: false });
+  } else {
+    const table = mode === 'watched' ? 'watched' : 'watchlist';
+    const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
+    query = db.from(table).select('*').order(orderCol, { ascending: false });
+  }
 
-  const { data, error } = await db.from(table).select('*').order(orderCol, { ascending: false });
+  const { data, error } = await query;
   if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`; return; }
-  renderHomeGrid(data || []);
+  renderHomeGrid(data || [], homeMediaType);
 }
 
-function renderHomeGrid(items = []) {
+function renderHomeGrid(items = [], mediaType = 'movie') {
   const grid = document.getElementById('home-grid');
   if (!items.length) {
-    grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a film.</div>`;
+    grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a ${mediaType === 'tv' ? 'TV show' : 'film'}.</div>`;
     return;
   }
-  // Deduplicate by tmdb_id for home grid (show each film once)
   const seen = new Set();
   const unique = items.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+  const mode = mediaType === 'tv' ? 'quick' : 'log';
   grid.innerHTML = unique.map(item => `
-    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', 'log')">
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', '${mode}', '${mediaType}')">
       <div class="film-card">
         ${item.poster_path
           ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -1015,8 +1152,6 @@ async function loadDiary() {
   const body = document.getElementById('diary-body');
   body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  // Diary reads exclusively from the 'diary' table.
-  // Only the + button (logWatch) writes there. Quick "Mark as Watched" never touches it.
   const { data: entries, error } = await db.from('diary')
     .select('*')
     .order('watched_on', { ascending: false });
@@ -1084,23 +1219,22 @@ function openDiaryEntry(id) {
 
   document.getElementById('diary-modal-title').textContent = entry.title;
   document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const rewatchEl = document.getElementById('diary-modal-rewatch');
+  rewatchEl.style.display = entry.rewatch ? 'inline-block' : 'none';
   document.getElementById('diary-modal-stars').innerHTML = entry.rating ? starsDisplay(entry.rating) : '';
   const heartEl = document.getElementById('diary-modal-heart');
   if (entry.liked) { heartEl.innerHTML = heartSVG; heartEl.style.display = 'inline-flex'; }
   else { heartEl.style.display = 'none'; heartEl.innerHTML = ''; }
   document.getElementById('diary-modal-review').textContent = entry.review_text || 'No review written for this watch.';
 
-  // Edit button — closes view modal, opens edit modal
   const editBtn = document.getElementById('diary-modal-edit-btn');
   editBtn.onclick = () => {
     document.getElementById('diary-modal').classList.remove('show');
     openEditModal(entry);
   };
 
-  // Delete button — confirm first, then delete
   const deleteBtn = document.getElementById('diary-modal-delete-btn');
   deleteBtn.onclick = () => {
-    // Close view modal first, THEN show confirm
     document.getElementById('diary-modal').classList.remove('show');
     setTimeout(() => {
       showConfirm({
@@ -1124,7 +1258,6 @@ function openDiaryEntry(id) {
 }
 
 /* ---- EDIT DIARY ENTRY ---- */
-// diary table has all fields inline: review_text, contains_spoilers, rewatch, rating, liked, watched_on
 function openEditModal(entry) {
   editingEntry = entry;
   editRating = entry.rating || 0;
@@ -1164,7 +1297,6 @@ async function saveEditEntry() {
   const spoilers = document.getElementById('edit-spoilers').checked;
   const rewatch = document.getElementById('edit-rewatch').checked;
 
-  // Update diary table (single source of truth for diary entries)
   const { error } = await db.from('diary').update({
     watched_on: watchedOn,
     rating: editRating || null,
@@ -1176,7 +1308,6 @@ async function saveEditEntry() {
 
   if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
 
-  // Also keep watched table in sync (rating, liked)
   if (editingEntry.watched_id) {
     await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
   }
