@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>betterboxd</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #141417;
+    --bg3: #1c1c21;
+    --bg4: #24242b;
+    --purple: #7c5cbf;
+    --purple-light: #9b7fe0;
+    --green: #4caf75;
+    --text: #f0eff5;
+    --text2: #9998a8;
+    --text3: #5f5e72;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --heart: #e0584a;
+  }
+
+  html, body {
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .desktop-msg {
+    display: none;
+    color: #888;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .phone {
+    width: 390px;
+    height: 100svh;
+    height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    background: var(--bg);
+  }
+  .screen.active { opacity: 1; pointer-events: all; }
+
+  .screen-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .screen-body::-webkit-scrollbar { display: none; }
+
+  .status-bar { display: none; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    display: flex;
+    padding: 8px 0 20px;
+    background: var(--bg2);
+    border-top: 0.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--text3); transition: color 0.15s; }
+  .nav-item.active { color: var(--text); }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-item span { font-size: 10px; font-weight: 500; }
+  .nav-add { width: 42px; height: 42px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; margin-top: -8px; cursor: pointer; }
+  .nav-add svg { width: 20px; height: 20px; stroke: #fff; }
+
+  /* ONBOARDING */
+  .onboard-body { flex: 1; display: flex; flex-direction: column; padding: 40px 32px 32px; }
+  .logo-big { font-size: 36px; font-weight: 300; color: var(--text); letter-spacing: -0.5px; }
+  .logo-big span { color: var(--purple-light); font-weight: 600; }
+  .tagline { font-size: 18px; color: var(--text2); margin-top: 10px; line-height: 1.4; font-weight: 300; }
+  .feature-list { display: flex; flex-direction: column; gap: 22px; margin-top: 48px; }
+  .feature-item { display: flex; gap: 16px; align-items: flex-start; }
+  .feature-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg3); border: 0.5px solid var(--border2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .feature-icon svg { width: 20px; height: 20px; stroke: var(--purple-light); fill: none; }
+  .feature-text h4 { font-size: 15px; font-weight: 500; color: var(--text); }
+  .feature-text p { font-size: 13px; color: var(--text2); margin-top: 2px; line-height: 1.45; }
+  .dots { display: flex; gap: 6px; margin-top: 40px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bg4); }
+  .dot.on { background: var(--text); }
+  .onboard-footer { padding: 0 32px 40px; display: flex; flex-direction: column; gap: 14px; }
+
+  .btn-primary { width: 100%; padding: 16px; background: var(--purple); border: none; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { width: 100%; padding: 14px; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 14px; color: var(--text); font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+  .btn-text { color: var(--purple-light); font-size: 15px; font-weight: 500; text-align: center; cursor: pointer; }
+
+  /* AUTH */
+  .auth-body { flex: 1; display: flex; flex-direction: column; padding: 48px 32px 24px; overflow-y: auto; scrollbar-width: none; }
+  .auth-body::-webkit-scrollbar { display: none; }
+  .auth-back { display: flex; align-items: center; gap: 6px; color: var(--text3); font-size: 14px; cursor: pointer; margin-bottom: 32px; width: fit-content; }
+  .auth-back svg { width: 18px; height: 18px; stroke: var(--text3); fill: none; }
+  .auth-title { font-size: 28px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; }
+  .auth-subtitle { font-size: 14px; color: var(--text2); margin-top: 6px; }
+  .auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 36px; }
+  .form-group { display: flex; flex-direction: column; gap: 7px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--text2); }
+  .form-input { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 12px; padding: 14px 16px; color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; width: 100%; }
+  .form-input::placeholder { color: var(--text3); }
+  .form-input:focus { border-color: var(--purple); }
+  textarea.form-input { resize: none; min-height: 80px; font-family: 'DM Sans', sans-serif; }
+  .auth-error { background: rgba(224,88,74,0.12); border: 0.5px solid rgba(224,88,74,0.3); border-radius: 10px; padding: 12px 14px; color: #e0584a; font-size: 13px; line-height: 1.45; display: none; }
+  .auth-error.show { display: block; }
+  .auth-success { background: rgba(76,175,117,0.12); border: 0.5px solid rgba(76,175,117,0.3); border-radius: 10px; padding: 12px 14px; color: var(--green); font-size: 13px; line-height: 1.45; display: none; align-items: center; gap: 8px; }
+  .auth-success.show { display: flex; }
+  .auth-footer { padding: 20px 32px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .auth-switch { text-align: center; font-size: 14px; color: var(--text2); }
+  .auth-switch span { color: var(--purple-light); font-weight: 500; cursor: pointer; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .spinner.dark { border: 2px solid rgba(124,92,191,0.25); border-top-color: var(--purple-light); }
+
+  /* TOAST */
+  .toast-stack { position: absolute; left: 0; right: 0; bottom: 96px; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 700; pointer-events: none; }
+  .toast { background: var(--bg4); border: 0.5px solid var(--border2); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.45); display: flex; align-items: center; gap: 8px; max-width: 320px; opacity: 0; transform: translateY(16px) scale(0.98); transition: all 0.22s ease; }
+  .toast.show { opacity: 1; transform: translateY(0) scale(1); }
+  .toast.error { border-color: rgba(224,88,74,0.35); color: #ffb3ac; }
+  .toast.error .toast-dot { background: var(--heart); }
+  .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+  /* CONFIRM MODAL */
+  .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 800; opacity: 0; pointer-events: none; transition: opacity 0.18s ease; padding: 28px; }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal-card { background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 18px; padding: 24px 22px; width: 100%; max-width: 290px; text-align: center; transform: scale(0.94) translateY(6px); transition: transform 0.2s ease; }
+  .modal-overlay.show .modal-card { transform: scale(1) translateY(0); }
+  .modal-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 8px; font-family: 'DM Serif Display', serif; }
+  .modal-msg { font-size: 13.5px; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; }
+  .modal-btn.cancel { background: var(--bg4); color: var(--text2); }
+  .modal-btn.danger { background: var(--heart); color: #fff; }
+  .modal-btn.primary { background: var(--purple); color: #fff; }
+
+  /* HOME */
+  .home-header { padding: 14px 20px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .logo-sm { font-size: 22px; font-weight: 300; color: var(--text); }
+  .logo-sm span { color: var(--purple-light); font-weight: 600; }
+  .header-icons { display: flex; gap: 18px; align-items: center; }
+  .header-icons svg { width: 22px; height: 22px; stroke: var(--text2); fill: none; cursor: pointer; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
+
+  .tabs { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .tab { padding: 10px 18px; font-size: 14px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .filter-bar { display: flex; gap: 10px; padding: 12px 20px; align-items: center; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border); }
+  .filter-chip.active { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+  .filter-chip svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+  select.filter-chip { -webkit-appearance: none; appearance: none; font-family: 'DM Sans', sans-serif; }
+
+  .film-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 20px 20px; min-height: 80px; }
+  .film-card { aspect-ratio: 2/3; background: var(--bg3); cursor: pointer; overflow: hidden; position: relative; border-radius: 10px; }
+  .film-card-wrap { display: flex; flex-direction: column; }
+  .poster-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; padding: 10px 4px; display: flex; align-items: center; justify-content: center; height: 100%; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.06em; }
+  .empty-grid { grid-column: 1 / -1; color: var(--text3); padding: 40px 20px; text-align: center; font-size: 14px; line-height: 1.5; }
+
+  /* MOVIE DETAIL */
+  .md-hero { padding: 20px; display: flex; gap: 16px; }
+  .md-poster { width: 110px; height: 165px; border-radius: 10px; flex-shrink: 0; object-fit: cover; background: var(--bg3); }
+  .md-poster-label { width: 110px; height: 165px; border-radius: 10px; flex-shrink: 0; background: var(--bg3); display: flex; align-items: center; justify-content: center; text-align: center; padding: 10px; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .md-title { font-size: 21px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; line-height: 1.2; }
+  .md-meta { font-size: 13px; color: var(--text2); margin-top: 6px; }
+  .md-cert { font-size: 12px; color: var(--text3); margin-top: 8px; }
+  .md-overview { padding: 0 20px 18px; font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .md-section-title { padding: 4px 20px 10px; font-size: 12px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .md-card { margin: 0 20px 16px; padding: 16px; background: var(--bg3); border-radius: 14px; border: 0.5px solid var(--border); }
+  .star-row { display: flex; gap: 6px; }
+  .star-btn { font-size: 26px; color: var(--bg4); cursor: pointer; transition: color 0.1s; line-height: 1; }
+  .star-btn.on { color: var(--green); }
+  .like-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .like-toggle { font-size: 22px; color: var(--bg4); cursor: pointer; transition: color 0.1s; }
+  .like-toggle.on { color: var(--heart); }
+  .md-field-label { font-size: 12px; font-weight: 500; color: var(--text3); margin-bottom: 6px; margin-top: 14px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text2); }
+  .checkbox-row input { accent-color: var(--purple); width: 16px; height: 16px; }
+  .log-entry { margin: 0 20px 10px; padding: 13px 15px; background: var(--bg3); border-radius: 12px; border: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .log-date { flex: 1; font-size: 13px; color: var(--text2); }
+  .log-stars span { color: var(--green); font-size: 13px; }
+  .log-del { color: var(--text3); font-size: 18px; cursor: pointer; padding: 0 4px; }
+  .pill-toggle { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 0.5px solid var(--border2); background: var(--bg3); cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text); }
+  .pill-toggle.on { background: rgba(124,92,191,0.18); border-color: var(--purple); color: var(--purple-light); }
+  .pill-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; flex-shrink: 0; }
+
+  @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
+</style>
+</head>
+<body>
+
+<p class="desktop-msg">betterboxd is a mobile-only experience.<br>Open this on your phone or resize your browser.</p>
+
+<div class="phone">
+
+  <!-- TOASTS -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- CONFIRM MODAL -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-card">
+      <div class="modal-title" id="confirm-title">Are you sure?</div>
+      <div class="modal-msg" id="confirm-msg"></div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="confirm-cancel-btn">Cancel</button>
+        <button class="modal-btn danger" id="confirm-ok-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="screen active" id="screen-loading">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+      <div class="logo-big" style="font-size:32px;">better<span>boxd</span></div>
+      <div class="spinner dark" style="width:32px;height:32px;"></div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="screen" id="screen-search">
+    <div class="home-header">
+      <div class="logo-sm">Search</div>
+      <div onclick="goTo('screen-home')" style="color:var(--text2);cursor:pointer;">Close</div>
+    </div>
+    <div style="padding:10px 20px;">
+      <input id="search-input" placeholder="Search films..." class="form-input" oninput="debouncedSearch(this.value)" autocomplete="off" />
+    </div>
+    <div class="screen-body">
+      <div class="film-grid" id="search-grid"></div>
+    </div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div class="screen" id="screen-onboard">
+    <div class="onboard-body">
+      <div class="logo-big">better<span>boxd</span></div>
+      <div class="tagline">Track everything you watch.<br>Your way.</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M3 9h6M3 15h6"/></svg></div>
+          <div class="feature-text"><h4>Full Customization</h4><p>Change posters, banners, and cast & crew photos.</p></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="feature-text"><h4>In-Depth Stats</h4><p>Detailed insights into your watching habits.</p></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+          <div class="feature-text"><h4>Movies & TV Shows</h4><p>Track movies, seasons, episodes and more.</p></div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+          <div class="feature-text"><h4>All For Free</h4><p>All the features you wish Letterboxd had. Free.</p></div>
+        </div>
+      </div>
+      <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+    <div class="onboard-footer">
+      <button class="btn-primary" onclick="goTo('screen-signup')">Get Started</button>
+      <div class="btn-text" onclick="goTo('screen-login')">Log In</div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="screen" id="screen-login">
+    <div class="auth-body">
+      <div class="auth-back" onclick="goTo('screen-onboard')">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </div>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-subtitle">Sign in to your betterboxd account</div>
+      <div class="auth-form">
+        <div id="login-error" class="auth-error"></div>
+        <div class="form-group">
+          <div class="form-label">Email</div>
+          <input class="form-input" type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Password</div>
+          <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+      </div>
+    </div>
+    <div class="auth-footer">
+      <button class="btn-primary" id="login-btn" onclick="handleLogin()">Sign In</button>
+      <div class="auth-switch">Don't have an account? <span onclick="goTo('screen-signup')">Sign up</span></div>
+    </div>
+  </div>
+
+  <!-- SIGNUP -->
+  <div class="screen" id="screen-signup">
+    <div class="auth-body">
+      <div class="auth-back" onclick="goTo('screen-onboard')">
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </div>
+      <div class="auth-title">Create account</div>
+      <div class="auth-subtitle">Join betterboxd and start tracking</div>
+      <div class="auth-form">
+        <div id="signup-error" class="auth-error"></div>
+        <div id="signup-success" class="auth-success"><span class="spinner" id="signup-success-spinner" style="display:none;"></span><span id="signup-success-text"></span></div>
+        <div class="form-group">
+          <div class="form-label">Name</div>
+          <input class="form-input" type="text" id="signup-name" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Email</div>
+          <input class="form-input" type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Password</div>
+          <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
+        </div>
+      </div>
+    </div>
+    <div class="auth-footer">
+      <button class="btn-primary" id="signup-btn" onclick="handleSignup()">Create Account</button>
+      <div class="auth-switch">Already have an account? <span onclick="goTo('screen-login')">Sign in</span></div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="screen-home">
+    <div class="home-header">
+      <div class="logo-sm">better<span>boxd</span></div>
+      <div class="header-icons">
+        <div onclick="goTo('screen-search')" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="avatar" id="home-avatar" onclick="handleLogout()" title="Tap to sign out">?</div>
+      </div>
+    </div>
+    <div class="tabs"><div class="tab active">Films</div><div class="tab">TV Shows</div><div class="tab">Lists</div></div>
+    <div class="filter-bar">
+      <select id="library-mode" class="filter-chip" onchange="loadLibrary()">
+        <option value="watched">Watched</option>
+        <option value="watchlist">Watchlist</option>
+      </select>
+      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>DECADE</div>
+      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
+      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="screen-body">
+      <div class="film-grid" id="home-grid"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Activity</span></div>
+      <div class="nav-item" onclick="goTo('screen-search')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="goTo('screen-stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="screen" id="screen-stats">
+    <div class="stats-header" style="padding:14px 20px;flex-shrink:0;"><div style="font-size:24px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">Stats</div></div>
+    <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;">
+      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--text);color:var(--bg);cursor:pointer;">ALL TIME</div>
+      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);cursor:pointer;">THIS YEAR</div>
+    </div>
+    <div class="screen-body">
+      <div style="padding:0 20px 20px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="stats-grid">
+          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watched">—</div></div>
+          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watchlist">—</div></div>
+          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-avg">—</div></div>
+        </div>
+      </div>
+      <div style="height:20px;"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goTo('screen-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Activity</span></div>
+      <div class="nav-item" onclick="goTo('screen-search')"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- MOVIE DETAIL -->
+  <div class="screen" id="screen-movie">
+    <div class="home-header">
+      <div onclick="goTo(returnScreen)" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div class="screen-body" id="movie-detail"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+const TMDB_API_KEY = "8bd029505ebc69986406dc4f1fce9ba0";
+const TMDB_BASE = "https://api.themoviedb.org/3";
+
+const SUPABASE_URL  = 'https://kkikbbhucfiuqkrvjrqc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtraWtiYmh1Y2ZpdXFrcnZqcnFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDk3NjEsImV4cCI6MjA5NDQyNTc2MX0.ey0kGdhvxR6bd0Dz1ZtSc3A4TKh1LWY1hd6D7A10I3E';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { storage: window.localStorage, persistSession: true, autoRefreshToken: true }
+});
+
+/* ---------------- STATE ---------------- */
+let selectedMovie = null;
+let searchTimeout = null;
+let returnScreen = 'screen-home';
+let formRating = 0;
+let formLiked = false;
+let formInWatchlist = false;
+
+/* ============================================================
+   TOAST + CONFIRM MODAL  (replace all alert()/confirm() calls)
+   ============================================================ */
+function showToast(message, type = 'success', duration = 2600) {
+  const stack = document.getElementById('toast-stack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'error' ? ' error' : '');
+  el.innerHTML = `<span class="toast-dot"></span><span>${message}</span>`;
+  stack.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, duration);
+}
+
+function showConfirm({ title, message, confirmText = 'Confirm', danger = true, onConfirm }) {
+  const overlay = document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = message;
+  const okBtn = document.getElementById('confirm-ok-btn');
+  const cancelBtn = document.getElementById('confirm-cancel-btn');
+  okBtn.textContent = confirmText;
+  okBtn.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
+
+  const close = () => overlay.classList.remove('show');
+
+  const okHandler = () => { close(); onConfirm && onConfirm(); };
+  const cancelHandler = () => close();
+
+  // avoid stacking listeners across repeated opens
+  okBtn.replaceWith(okBtn.cloneNode(true));
+  cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+  const newOk = document.getElementById('confirm-ok-btn');
+  const newCancel = document.getElementById('confirm-cancel-btn');
+  newOk.textContent = confirmText;
+  newOk.className = 'modal-btn ' + (danger ? 'danger' : 'primary');
+  newOk.addEventListener('click', okHandler);
+  newCancel.addEventListener('click', cancelHandler);
+
+  overlay.classList.add('show');
+}
+
+/* ---------------- NAV ---------------- */
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  const body = el.querySelector('.screen-body');
+  if (body) body.scrollTop = 0;
+}
+
+/* ---------------- AUTH ---------------- */
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) enterApp(session.user);
+  else goTo('screen-onboard');
+}
+
+function setAvatar(user) {
+  const av = document.getElementById('home-avatar');
+  if (!av) return;
+  const name = user.user_metadata?.name || user.email || '?';
+  av.textContent = name[0].toUpperCase();
+}
+
+function enterApp(user) {
+  setAvatar(user);
+  goTo('screen-home');
+  loadLibrary();
+  loadStats();
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+
+  err.classList.remove('show');
+
+  if (!email || !password) {
+    err.textContent = 'Please enter your email and password.';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Signing in...';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false;
+  btn.textContent = 'Sign In';
+
+  if (error) {
+    err.textContent = error.message;
+    err.classList.add('show');
+    return;
+  }
+
+  enterApp(data.user);
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const btn = document.getElementById('signup-btn');
+  const err = document.getElementById('signup-error');
+  const success = document.getElementById('signup-success');
+  const successText = document.getElementById('signup-success-text');
+  const successSpinner = document.getElementById('signup-success-spinner');
+
+  err.classList.remove('show');
+  success.classList.remove('show');
+
+  if (!name || !email || !password) {
+    err.textContent = 'Please fill in your name, email and password.';
+    err.classList.add('show');
+    return;
+  }
+  if (password.length < 6) {
+    err.textContent = 'Password must be at least 6 characters.';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Creating account...';
+
+  const { data, error } = await db.auth.signUp({
+    email, password, options: { data: { name } }
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Create Account';
+
+  if (error) {
+    err.textContent = error.message;
+    err.classList.add('show');
+    return;
+  }
+
+  // Show inline success beneath the button, then move on.
+  successSpinner.style.display = 'inline-block';
+  success.classList.add('show');
+
+  if (data.session) {
+    // Email confirmation not required — log straight in.
+    successText.textContent = "You're all set! Taking you home...";
+    setTimeout(() => {
+      successSpinner.style.display = 'none';
+      enterApp(data.user);
+    }, 1400);
+  } else {
+    // Email confirmation required by the Supabase project.
+    successText.textContent = 'Account created — check your email to confirm, then sign in.';
+    setTimeout(() => {
+      successSpinner.style.display = 'none';
+      document.getElementById('login-email').value = email;
+      goTo('screen-login');
+    }, 2200);
+  }
+}
+
+function handleLogout() {
+  showConfirm({
+    title: 'Log out?',
+    message: 'You can sign back in anytime with the same email and password.',
+    confirmText: 'Log Out',
+    danger: true,
+    onConfirm: async () => {
+      await db.auth.signOut();
+      goTo('screen-onboard');
+      showToast('Signed out');
+    }
+  });
+}
+
+/* ---------------- TMDB SEARCH ---------------- */
+function debouncedSearch(query) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    if (query.trim().length > 2) searchTMDB(query);
+    else document.getElementById('search-grid').innerHTML = '';
+  }, 300);
+}
+
+async function searchTMDB(query) {
+  try {
+    const res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
+    if (!res.ok) throw new Error('Search failed');
+    const data = await res.json();
+    renderSearchResults(data.results || []);
+  } catch (e) {
+    showToast('Search failed — try again', 'error');
+  }
+}
+
+function renderSearchResults(results = []) {
+  const grid = document.getElementById('search-grid');
+  if (!results.length) {
+    grid.innerHTML = `<div class="empty-grid">No films found.</div>`;
+    return;
+  }
+  grid.innerHTML = results.map(movie => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${movie.id}, 'screen-search')">
+      <div class="film-card">
+        ${movie.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(movie.title)}</div>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str = '') {
+  return str.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+/* ---------------- MOVIE DETAIL ---------------- */
+async function openMovieDetail(id, fromScreen) {
+  returnScreen = fromScreen || 'screen-home';
+  goTo('screen-movie');
+  document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates`);
+    if (!res.ok) throw new Error('Could not load movie');
+    const movie = await res.json();
+    selectedMovie = movie;
+
+    const { data: { user } } = await db.auth.getUser();
+    const [{ data: logs }, { data: watchlistRow }] = await Promise.all([
+      db.from('watched').select('*').eq('tmdb_id', movie.id).order('watched_on', { ascending: false }),
+      db.from('watchlist').select('id').eq('tmdb_id', movie.id).maybeSingle()
+    ]);
+
+    formRating = 0;
+    formLiked = false;
+    formInWatchlist = !!watchlistRow;
+
+    renderMovieDetail(movie, logs || []);
+  } catch (e) {
+    document.getElementById('movie-detail').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this title.</div>`;
+    showToast('Could not load movie details', 'error');
+  }
+}
+
+function getYear(date) { return date ? date.split('-')[0] : '—'; }
+
+function getBBFC(movie) {
+  const uk = movie.release_dates?.results?.find(r => r.iso_3166_1 === 'GB');
+  if (!uk || !uk.release_dates?.length) return 'Not rated';
+  const cert = uk.release_dates[0].certification;
+  return cert ? `BBFC ${cert}` : 'Not rated';
+}
+
+function starRowHtml(prefix, current) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span class="star-btn ${i <= current ? 'on' : ''}" onclick="${prefix}(${i})">★</span>`;
+  }
+  return html;
+}
+
+function renderMovieDetail(movie, logs) {
+  const el = document.getElementById('movie-detail');
+  const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : '';
+
+  el.innerHTML = `
+    <div class="md-hero">
+      ${movie.poster_path
+        ? `<img class="md-poster" src="https://image.tmdb.org/t/p/w300${movie.poster_path}" />`
+        : `<div class="md-poster-label">${escapeHtml(movie.title)}</div>`}
+      <div>
+        <div class="md-title">${escapeHtml(movie.title)}</div>
+        <div class="md-meta">${getYear(movie.release_date)}${runtime ? ' · ' + runtime : ''}</div>
+        <div class="md-cert">${getBBFC(movie)}</div>
+      </div>
+    </div>
+
+    ${movie.overview ? `<div class="md-overview">${escapeHtml(movie.overview)}</div>` : ''}
+
+    <div class="md-section-title">YOUR ACTIVITY</div>
+    <div class="md-card">
+      <div class="pill-toggle ${formInWatchlist ? 'on' : ''}" id="watchlist-toggle" onclick="toggleWatchlist()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <span id="watchlist-toggle-text">${formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist'}</span>
+      </div>
+
+      <div class="md-field-label">YOUR RATING</div>
+      <div class="star-row" id="rating-stars">${starRowHtml('setRating', formRating)}</div>
+
+      <div class="like-row">
+        <span style="font-size:13px;color:var(--text2);">Loved it?</span>
+        <span class="like-toggle ${formLiked ? 'on' : ''}" id="like-toggle" onclick="toggleLiked()">♥</span>
+      </div>
+
+      <div class="md-field-label">WATCHED ON</div>
+      <input type="date" class="form-input" id="watched-date" value="${new Date().toISOString().slice(0,10)}" />
+
+      <div class="md-field-label">REVIEW (OPTIONAL)</div>
+      <textarea class="form-input" id="review-text" placeholder="What did you think?"></textarea>
+      <label class="checkbox-row"><input type="checkbox" id="review-spoilers"> Contains spoilers</label>
+
+      <button class="btn-primary" style="margin-top:16px;" onclick="logWatch()">Log this Watch</button>
+    </div>
+
+    <div class="md-section-title">YOUR LOG (${logs.length})</div>
+    <div id="log-list">
+      ${logs.length
+        ? logs.map(l => `
+          <div class="log-entry">
+            <div class="log-date">${new Date(l.watched_on).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}</div>
+            <div class="log-stars">${'★'.repeat(Math.round(l.rating || 0))}</div>
+            ${l.liked ? `<span style="color:var(--heart);">♥</span>` : ''}
+            <span class="log-del" onclick="deleteWatchEntry('${l.id}')">✕</span>
+          </div>
+        `).join('')
+        : `<div style="padding:0 20px 10px;color:var(--text3);font-size:13px;">You haven't logged this one yet.</div>`}
+    </div>
+    <div style="height:30px;"></div>
+  `;
+}
+
+function setRating(n) {
+  formRating = n;
+  document.getElementById('rating-stars').innerHTML = starRowHtml('setRating', formRating);
+}
+
+function toggleLiked() {
+  formLiked = !formLiked;
+  document.getElementById('like-toggle').classList.toggle('on', formLiked);
+}
+
+async function toggleWatchlist() {
+  if (!selectedMovie) return;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  if (formInWatchlist) {
+    const { error } = await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
+    if (error) { showToast('Could not update watchlist', 'error'); return; }
+    formInWatchlist = false;
+    showToast('Removed from Watchlist');
+  } else {
+    const { error } = await db.from('watchlist').upsert({
+      user_id: user.id,
+      tmdb_id: selectedMovie.id,
+      media_type: 'movie',
+      title: selectedMovie.title,
+      poster_path: selectedMovie.poster_path
+    }, { onConflict: 'user_id,tmdb_id,media_type' });
+    if (error) { showToast('Could not update watchlist', 'error'); return; }
+    formInWatchlist = true;
+    showToast('Added to Watchlist');
+  }
+
+  const toggle = document.getElementById('watchlist-toggle');
+  toggle.classList.toggle('on', formInWatchlist);
+  document.getElementById('watchlist-toggle-text').textContent = formInWatchlist ? 'On your Watchlist' : 'Add to Watchlist';
+
+  loadLibrary();
+}
+
+async function logWatch() {
+  if (!selectedMovie) return;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  const watchedOn = document.getElementById('watched-date').value || new Date().toISOString().slice(0,10);
+  const reviewText = document.getElementById('review-text').value.trim();
+  const spoilers = document.getElementById('review-spoilers').checked;
+
+  const { data: inserted, error } = await db.from('watched').insert({
+    user_id: user.id,
+    tmdb_id: selectedMovie.id,
+    media_type: 'movie',
+    title: selectedMovie.title,
+    poster_path: selectedMovie.poster_path,
+    watched_on: watchedOn,
+    rating: formRating || null,
+    liked: formLiked
+  }).select().single();
+
+  if (error) {
+    showToast('Could not log this watch', 'error');
+    return;
+  }
+
+  if (reviewText) {
+    const { error: reviewError } = await db.from('reviews').insert({
+      user_id: user.id,
+      watched_id: inserted.id,
+      tmdb_id: selectedMovie.id,
+      media_type: 'movie',
+      rating: formRating || null,
+      review_text: reviewText,
+      contains_spoilers: spoilers
+    });
+    if (reviewError) showToast('Watch logged, but review failed to save', 'error');
+  }
+
+  showToast('Added to your Watched list');
+  loadLibrary();
+  loadStats();
+  openMovieDetail(selectedMovie.id, returnScreen);
+}
+
+function deleteWatchEntry(id) {
+  showConfirm({
+    title: 'Remove this entry?',
+    message: 'This log entry and rating will be deleted.',
+    confirmText: 'Remove',
+    danger: true,
+    onConfirm: async () => {
+      const { error } = await db.from('watched').delete().eq('id', id);
+      if (error) { showToast('Could not remove entry', 'error'); return; }
+      showToast('Entry removed');
+      loadLibrary();
+      loadStats();
+      if (selectedMovie) openMovieDetail(selectedMovie.id, returnScreen);
+    }
+  });
+}
+
+/* ---------------- LIBRARY (Home grid) ---------------- */
+async function loadLibrary() {
+  const mode = document.getElementById('library-mode').value;
+  const grid = document.getElementById('home-grid');
+  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+  const table = mode === 'watched' ? 'watched' : 'watchlist';
+  const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
+
+  const { data, error } = await db.from(table).select('*').order(orderCol, { ascending: false });
+
+  if (error) {
+    grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`;
+    return;
+  }
+  renderHomeGrid(data || []);
+}
+
+function renderHomeGrid(items = []) {
+  const grid = document.getElementById('home-grid');
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a film.</div>`;
+    return;
+  }
+  grid.innerHTML = items.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- STATS ---------------- */
+async function loadStats() {
+  const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([
+    db.from('watched').select('*', { count: 'exact', head: true }),
+    db.from('watchlist').select('*', { count: 'exact', head: true }),
+    db.from('watched').select('rating').not('rating', 'is', null)
+  ]);
+
+  document.getElementById('stat-watched').textContent = watchedCount ?? 0;
+  document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
+
+  if (ratings && ratings.length) {
+    const avg = ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length;
+    document.getElementById('stat-avg').textContent = avg.toFixed(2);
+  } else {
+    document.getElementById('stat-avg').textContent = '—';
+  }
+}
+
+/* ---------------- START ---------------- */
+init();
+</script>
+</body>
+</html>
