@@ -871,8 +871,8 @@ async function toggleWatchlist() {
   loadLibrary();
 }
 
-/* Quick "Mark as Watched" — adds to 'watched' table but NOT to diary (no date/review/rating).
-   This shows the film in the Watched grid on Home. Diary only shows entries added via Log (full form). */
+/* Quick "Mark as Watched" — adds to 'watched' table but NOT to diary.
+   Diary only shows full log entries (quick_mark = false). */
 async function toggleWatchedQuick() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
@@ -895,15 +895,30 @@ async function toggleWatchedQuick() {
     return;
   }
 
-  // Insert with a flag so diary can distinguish quick-marks from full logs
-  const { error } = await db.from('watched').insert({
+  // Try inserting with quick_mark column first; fall back without it if column doesn't exist
+  let error;
+  ({ error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
     title: selectedMovie.title, poster_path: selectedMovie.poster_path,
     watched_on: new Date().toISOString().slice(0,10),
     rating: null, liked: false,
-    quick_mark: true   // <-- marks this as a quick "watched" tap, not a diary entry
-  });
-  if (error) { showToast('Could not update', 'error'); return; }
+    quick_mark: true
+  }));
+
+  // If quick_mark / rewatch column doesn't exist yet, retry without it
+  if (error && (error.code === '42703' || /quick_mark|column/.test(error.message || ''))) {
+    ({ error } = await db.from('watched').insert({
+      user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
+      title: selectedMovie.title, poster_path: selectedMovie.poster_path,
+      watched_on: new Date().toISOString().slice(0,10),
+      rating: null, liked: false
+    }));
+  }
+
+  if (error) {
+    showToast('Could not mark as watched: ' + (error.message || 'unknown error'), 'error');
+    return;
+  }
   formQuickWatched = true;
   showToast('Added to Watched');
   loadLibrary(); loadStats();
@@ -921,15 +936,21 @@ async function logWatch() {
   const spoilers = document.getElementById('review-spoilers').checked;
   const rewatch = document.getElementById('log-rewatch').checked;
 
-  const { data: inserted, error } = await db.from('watched').insert({
+  let insertRes = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
     title: selectedMovie.title, poster_path: selectedMovie.poster_path,
     watched_on: watchedOn, rating: formRating || null, liked: formLiked,
-    rewatch: rewatch,
-    quick_mark: false   // full diary entry
+    rewatch: rewatch, quick_mark: false
   }).select().single();
-
-  if (error) { showToast('Could not log this watch', 'error'); return; }
+  if (insertRes.error && (insertRes.error.code === '42703' || /quick_mark|rewatch/.test(insertRes.error.message || ''))) {
+    insertRes = await db.from('watched').insert({
+      user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
+      title: selectedMovie.title, poster_path: selectedMovie.poster_path,
+      watched_on: watchedOn, rating: formRating || null, liked: formLiked
+    }).select().single();
+  }
+  const { data: inserted, error } = insertRes;
+  if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
 
   if (reviewText) {
     const { error: reviewError } = await db.from('reviews').insert({
@@ -983,33 +1004,38 @@ async function loadDiary() {
   const body = document.getElementById('diary-body');
   body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  // Only show entries that were full logs (quick_mark = false or quick_mark is null from old data that had no rating/review)
-  // We filter: quick_mark is false OR (quick_mark is null AND (rating is not null OR review exists))
-  // Simplest: filter where quick_mark = false explicitly, falling back to entries that have a rating or review
-  const { data: logs, error } = await db.from('watched')
+  // Diary = only entries logged via the + button (full log).
+  // Quick "Mark as Watched" entries have rating=null and no review — we exclude those.
+  // Strategy: load all watched rows, then load all reviews. A diary entry is any
+  // watched row that either (a) has a rating, (b) has a review, or (c) has quick_mark=false explicitly.
+  // This works whether or not the quick_mark column exists in Supabase.
+  const { data: allLogs, error } = await db.from('watched')
     .select('*')
-    .eq('quick_mark', false)
     .order('watched_on', { ascending: false });
 
   if (error) {
-    // Fallback: if column doesn't exist yet, show all
-    const { data: allLogs } = await db.from('watched').select('*').order('watched_on', { ascending: false });
-    return renderDiaryWithLogs(allLogs || []);
+    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.</div>`;
+    return;
   }
-  renderDiaryWithLogs(logs || []);
-}
 
-async function renderDiaryWithLogs(logs) {
-  const body = document.getElementById('diary-body');
-  const ids = logs.map(l => l.id);
+  const ids = (allLogs || []).map(l => l.id);
   let reviewsById = {};
   if (ids.length) {
     const { data: reviews } = await db.from('reviews').select('*').in('watched_id', ids);
     (reviews || []).forEach(r => { reviewsById[r.watched_id] = r; });
   }
-  diaryEntries = logs.map(l => ({ ...l, review: reviewsById[l.id] || null }));
+
+  // Filter: keep entry if it has a rating, a review, OR quick_mark is explicitly false
+  const diaryLogs = (allLogs || []).filter(l =>
+    l.rating != null ||
+    reviewsById[l.id] != null ||
+    l.quick_mark === false
+  );
+
+  diaryEntries = diaryLogs.map(l => ({ ...l, review: reviewsById[l.id] || null }));
   renderDiary(diaryEntries);
 }
+
 
 function renderDiary(entries) {
   const body = document.getElementById('diary-body');
