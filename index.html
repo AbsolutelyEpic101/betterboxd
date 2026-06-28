@@ -275,7 +275,10 @@
         <div style="flex:1;min-width:0;">
           <div class="modal-title" id="diary-modal-title" style="margin-bottom:4px;text-align:left;font-size:15px;"></div>
           <div style="font-size:12px;color:var(--text2);" id="diary-modal-date"></div>
-          <div style="margin-top:6px;font-size:14px;" id="diary-modal-stars"></div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+            <div style="font-size:14px;" id="diary-modal-stars"></div>
+            <span id="diary-modal-heart" style="display:none;" class="heart-icon heart-icon-sm on" style="pointer-events:none;"></span>
+          </div>
         </div>
       </div>
       <div class="diary-modal-review" id="diary-modal-review"></div>
@@ -707,32 +710,39 @@ function escapeHtml(str = '') {
 
 /* ---- HALF-STAR RATING ---- */
 // rating: 0 to 5, in 0.5 increments
+// Single click on a star = full star. Click same full star again = half star.
+// No need to aim at left/right half — just tap once or twice.
 function halfStarRowHtml(prefix, current) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
     const full = current >= i;
     const half = !full && current >= i - 0.5;
+    // On click: if already full star at this position → downgrade to half. Otherwise → full.
+    const clickVal = full ? (i - 0.5) : i;
     html += `
       <span class="star-wrap ${full ? 'full' : half ? 'half' : ''}"
-        onclick="event.stopPropagation();${prefix}(${i})"
+        onclick="event.stopPropagation();${prefix}(${clickVal})"
         onmousedown="event.preventDefault();">
         <span class="star-full">★</span>
         <span class="star-half-overlay">★</span>
-        <span style="position:absolute;top:0;left:0;width:50%;height:100%;z-index:2;"
-          onclick="event.stopPropagation();${prefix}(${i - 0.5})"></span>
       </span>`;
   }
   return html;
 }
 
-// returns display-only stars (no click) in purple, for diary modal
+// returns display-only stars in purple — works at any size
 function starsDisplay(rating) {
   if (!rating) return '';
   let out = '';
   for (let i = 1; i <= 5; i++) {
-    if (rating >= i) out += `<span style="color:var(--purple-light);">★</span>`;
-    else if (rating >= i - 0.5) out += `<span style="color:var(--purple-light);opacity:0.5;">★</span>`;
-    else out += `<span style="color:var(--bg4);">★</span>`;
+    if (rating >= i) {
+      out += `<span style="color:var(--purple-light);">★</span>`;
+    } else if (rating >= i - 0.5) {
+      // Half star: overlay approach inline so it works at any font-size
+      out += `<span style="position:relative;display:inline-block;color:var(--bg4);">★<span style="position:absolute;top:0;left:0;width:50%;overflow:hidden;color:var(--purple-light);">★</span></span>`;
+    } else {
+      out += `<span style="color:var(--bg4);">★</span>`;
+    }
   }
   return out;
 }
@@ -758,6 +768,7 @@ async function openMovieDetail(id, fromScreen, mode) {
     formRating = 0; formLiked = false;
     formInWatchlist = !!watchlistRow;
     formQuickWatched = !!(logs && logs.length);
+    formRewatch = !!(logs && logs.length);  // default rewatch on if already logged
 
     renderMovieDetail(movie);
   } catch {
@@ -1074,6 +1085,9 @@ function openDiaryEntry(id) {
   document.getElementById('diary-modal-title').textContent = entry.title;
   document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   document.getElementById('diary-modal-stars').innerHTML = entry.rating ? starsDisplay(entry.rating) : '';
+  const heartEl = document.getElementById('diary-modal-heart');
+  if (entry.liked) { heartEl.innerHTML = heartSVG; heartEl.style.display = 'inline-flex'; }
+  else { heartEl.style.display = 'none'; heartEl.innerHTML = ''; }
   document.getElementById('diary-modal-review').textContent = entry.review_text || 'No review written for this watch.';
 
   // Edit button — closes view modal, opens edit modal
