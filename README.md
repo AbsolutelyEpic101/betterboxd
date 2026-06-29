@@ -1,3 +1,3 @@
 # betterboxd
 
-a free movie tracker powered by TMDB.
+a free movie and tv show tracker powered by TMDB.
