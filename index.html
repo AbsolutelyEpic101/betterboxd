@@ -80,10 +80,13 @@
   /* BOTTOM NAV */
   .bottom-nav {
     display: flex;
-    padding: 8px 0 20px;
+    padding: 10px 0 10px;
     background: var(--bg2);
-    border-top: 0.5px solid var(--border);
+    border: 0.5px solid var(--border2);
     flex-shrink: 0;
+    margin: 0 14px 16px;
+    border-radius: 22px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.4);
   }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--text3); transition: color 0.15s; }
   .nav-item.active { color: var(--text); }
@@ -184,7 +187,7 @@
   .film-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 20px 20px; min-height: 80px; }
   .film-card-wrap { display: flex; flex-direction: column; cursor: pointer; }
   .film-card { aspect-ratio: 2/3; background: var(--bg3); overflow: hidden; position: relative; border-radius: 10px; flex-shrink: 0; }
-  .film-card-rating { font-size: 11px; text-align: center; color: var(--purple-light); padding: 4px 2px 0; letter-spacing: 0.01em; min-height: 18px; }
+  .film-card-rating { display: flex; align-items: center; gap: 5px; font-size: 11px; text-align: left; color: var(--purple-light); padding: 4px 2px 0; letter-spacing: 0.01em; min-height: 18px; }
   .poster-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; padding: 10px 4px; display: flex; align-items: center; justify-content: center; height: 100%; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.06em; }
   .empty-grid { grid-column: 1 / -1; color: var(--text3); padding: 40px 20px; text-align: center; font-size: 14px; line-height: 1.5; }
 
@@ -615,9 +618,15 @@ let logFormRating = 0;
 let logFormLiked = false;
 let logFormRewatch = false;
 
+// Movie detail "more info" tabs state
+let detailActiveTab = 'cast';
+let castExpanded = false;
+let crewExpanded = false;
+
 /* ---- HEART SVG helper ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 const REWATCH_SYMBOL = '&#8634;';
+const REVIEW_ICON_SVG = `<svg viewBox="0 0 24 24" stroke-width="2" width="11" height="11" style="stroke:var(--text2);fill:none;flex-shrink:0;display:block;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>`;
 
 /* ---- TOAST ---- */
 function showToast(message, type = 'success', duration = 2600) {
@@ -1072,6 +1081,9 @@ async function openMovieDetail(id, fromScreen, mode, mediaType) {
   detailMode = mode === 'quick' ? 'quick' : 'log';
   selectedMediaType = mediaType === 'tv' ? 'tv' : 'movie';
   if (selectedMediaType === 'tv') detailMode = 'quick';
+  detailActiveTab = 'cast';
+  castExpanded = false;
+  crewExpanded = false;
   goTo('screen-movie');
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
 
@@ -1110,7 +1122,7 @@ async function openMovieDetail(id, fromScreen, mode, mediaType) {
 
       renderMovieDetail(show);
     } else {
-      const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates`);
+      const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates,credits`);
       if (!res.ok) throw new Error();
       const movie = await res.json();
       selectedMovie = movie;
@@ -1143,13 +1155,11 @@ function getBBFC(movie) {
   return cert ? `BBFC ${cert}` : 'Not rated';
 }
 
-/* Get UK TV content rating from content_ratings response */
+/* Get UK (BBFC) TV content rating from content_ratings response — BBFC only, else Not rated */
 function getTvRating(show) {
   const ratings = show.content_ratings?.results || [];
   const uk = ratings.find(r => r.iso_3166_1 === 'GB');
   if (uk && uk.rating) return `BBFC ${uk.rating}`;
-  const us = ratings.find(r => r.iso_3166_1 === 'US');
-  if (us && us.rating) return us.rating;
   return 'Not rated';
 }
 
@@ -1266,6 +1276,107 @@ async function removeTvStatus() {
   loadLibrary(); loadStats();
 }
 
+/* ---- MOVIE "MORE INFO" TABS (Cast / Crew / Details / Genres) ---- */
+function getOriginalReleaseDate(movie) {
+  const originCountry = movie.production_countries?.[0]?.iso_3166_1;
+  if (originCountry && movie.release_dates?.results) {
+    const entry = movie.release_dates.results.find(r => r.iso_3166_1 === originCountry);
+    if (entry && entry.release_dates?.length) {
+      const sorted = [...entry.release_dates]
+        .filter(rd => rd.release_date)
+        .sort((a, b) => new Date(a.release_date) - new Date(b.release_date));
+      if (sorted.length) return sorted[0].release_date.split('T')[0];
+    }
+  }
+  return movie.release_date || null;
+}
+
+function formatLongDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+const DETAIL_TABS = ['cast', 'crew', 'details', 'genres'];
+
+function movieTabsSectionHtml() {
+  return `
+    <div class="md-section-title" style="padding-top:6px;">MORE INFO</div>
+    <div style="display:flex;gap:8px;padding:0 20px 14px;overflow-x:auto;scrollbar-width:none;" id="detail-tab-bar">
+      ${DETAIL_TABS.map(t => `
+        <div class="filter-chip ${detailActiveTab === t ? 'active' : ''}" onclick="setDetailTab('${t}')" style="text-transform:capitalize;">${t}</div>
+      `).join('')}
+    </div>
+    <div id="detail-tab-content" style="padding:0 20px 8px;"></div>`;
+}
+
+function setDetailTab(tab) {
+  detailActiveTab = tab;
+  castExpanded = false;
+  crewExpanded = false;
+  const bar = document.getElementById('detail-tab-bar');
+  if (bar) {
+    Array.from(bar.children).forEach((el, i) => el.classList.toggle('active', DETAIL_TABS[i] === tab));
+  }
+  renderDetailTabContent();
+}
+
+function renderDetailTabContent() {
+  const el = document.getElementById('detail-tab-content');
+  if (!el || !selectedMovie) return;
+  const movie = selectedMovie;
+
+  if (detailActiveTab === 'cast') {
+    const cast = movie.credits?.cast || [];
+    if (!cast.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No cast info available.</div>`; return; }
+    const shown = castExpanded ? cast : cast.slice(0, 6);
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${shown.map(c => `
+          <div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;">
+            <span style="color:var(--text);font-weight:500;">${escapeHtml(c.name)}</span>
+            <span style="color:var(--text2);text-align:right;">${escapeHtml(c.character || '—')}</span>
+          </div>`).join('')}
+      </div>
+      ${cast.length > 6 ? `<div class="btn-text" style="margin-top:14px;text-align:left;padding-bottom:16px;" onclick="toggleCastExpanded()">${castExpanded ? 'Show less' : `See ${cast.length - 6} more`}</div>` : `<div style="padding-bottom:16px;"></div>`}
+    `;
+  } else if (detailActiveTab === 'crew') {
+    const crew = movie.credits?.crew || [];
+    if (!crew.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No crew info available.</div>`; return; }
+    const shown = crewExpanded ? crew : crew.slice(0, 6);
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${shown.map(c => `
+          <div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;">
+            <span style="color:var(--text);font-weight:500;">${escapeHtml(c.name)}</span>
+            <span style="color:var(--text2);text-align:right;">${escapeHtml(c.job || '—')}</span>
+          </div>`).join('')}
+      </div>
+      ${crew.length > 6 ? `<div class="btn-text" style="margin-top:14px;text-align:left;padding-bottom:16px;" onclick="toggleCrewExpanded()">${crewExpanded ? 'Show less' : `See ${crew.length - 6} more`}</div>` : `<div style="padding-bottom:16px;"></div>`}
+    `;
+  } else if (detailActiveTab === 'details') {
+    const studios = (movie.production_companies || []).map(c => c.name).join(', ') || '—';
+    const countries = (movie.production_countries || []).map(c => c.name).join(', ') || '—';
+    const languages = (movie.spoken_languages || []).map(l => l.english_name || l.name).join(', ') || '—';
+    const origDate = formatLongDate(getOriginalReleaseDate(movie));
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:16px;">
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Studio</div><div style="font-size:13px;color:var(--text);">${escapeHtml(studios)}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Country</div><div style="font-size:13px;color:var(--text);">${escapeHtml(countries)}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Language</div><div style="font-size:13px;color:var(--text);">${escapeHtml(languages)}</div></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Original Release Date</div><div style="font-size:13px;color:var(--text);">${origDate}</div></div>
+      </div>`;
+  } else if (detailActiveTab === 'genres') {
+    const genres = movie.genres || [];
+    if (!genres.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No genre info available.</div>`; return; }
+    el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;padding-bottom:16px;">${genres.map(g => `<span style="padding:6px 14px;border-radius:20px;background:var(--bg3);border:0.5px solid var(--border2);font-size:13px;color:var(--text);">${escapeHtml(g.name)}</span>`).join('')}</div>`;
+  }
+}
+
+function toggleCastExpanded() { castExpanded = true; renderDetailTabContent(); }
+function toggleCrewExpanded() { crewExpanded = true; renderDetailTabContent(); }
+
 function renderMovieDetail(item) {
   const el = document.getElementById('movie-detail');
   const isTv = selectedMediaType === 'tv';
@@ -1295,10 +1406,11 @@ function renderMovieDetail(item) {
     </div>
     ${item.overview ? `<div class="md-overview">${escapeHtml(item.overview)}</div>` : ''}
     <div class="md-section-title">YOUR ACTIVITY</div>
-    ${isTv ? tvActivityCardHtml() : (detailMode === 'quick' ? quickActivityCardHtml() : quickActivityCardHtml())}
+    ${isTv ? tvActivityCardHtml() : quickActivityCardHtml()}
+    ${!isTv ? movieTabsSectionHtml() : ''}
     <div style="height:30px;"></div>`;
-  // Note: the detail screen now always shows quick activity (watchlist + watched toggles)
-  // for movies coming from the quick search. Full diary logging is via the + modal.
+
+  if (!isTv) renderDetailTabContent();
 }
 
 function setRating(n) {
@@ -1398,7 +1510,7 @@ async function loadLibrary() {
     const { data, error } = await db.from('tv_status').select('*').eq('status', mode).order('updated_on', { ascending: false });
     if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`; return; }
     items = data || [];
-    renderHomeGrid(items, 'tv');
+    renderHomeGrid(items, 'tv', {}, {}, new Set());
   } else {
     const table = mode === 'watched' ? 'watched' : 'watchlist';
     const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
@@ -1407,19 +1519,27 @@ async function loadLibrary() {
     items = data || [];
 
     if (mode === 'watched') {
-      // Build a map of tmdb_id -> most recent rating
+      // Build maps of tmdb_id -> most recent rating / liked
       const ratingMap = {};
+      const likedMap = {};
       for (const item of items) {
-        if (!ratingMap[item.tmdb_id] && item.rating) ratingMap[item.tmdb_id] = item.rating;
+        if (!(item.tmdb_id in ratingMap) && item.rating) ratingMap[item.tmdb_id] = item.rating;
+        if (item.liked) likedMap[item.tmdb_id] = true;
       }
-      renderHomeGrid(items, 'movie', ratingMap);
+      // Pull review text from diary to know which titles have ever been reviewed
+      let reviewedSet = new Set();
+      try {
+        const { data: diaryRows } = await db.from('diary').select('tmdb_id, review_text').not('review_text', 'is', null);
+        reviewedSet = new Set((diaryRows || []).filter(d => d.review_text && d.review_text.trim().length).map(d => d.tmdb_id));
+      } catch {}
+      renderHomeGrid(items, 'movie', ratingMap, likedMap, reviewedSet);
     } else {
-      renderHomeGrid(items, 'movie', {});
+      renderHomeGrid(items, 'movie', {}, {}, new Set());
     }
   }
 }
 
-function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}) {
+function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMap = {}, reviewedSet = new Set()) {
   const grid = document.getElementById('home-grid');
   if (!items.length) {
     grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a ${mediaType === 'tv' ? 'TV show' : 'film'}.</div>`;
@@ -1433,7 +1553,14 @@ function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}) {
     // Rating: for movies use ratingMap (most recent rating by tmdb_id),
     // for TV use item.rating from tv_status directly
     const rating = mediaType === 'tv' ? (item.rating || 0) : (ratingMap[item.tmdb_id] || 0);
-    const ratingHtml = rating ? `<div class="film-card-rating">${starsCompact(rating)}</div>` : `<div class="film-card-rating"></div>`;
+    const liked = mediaType === 'tv' ? false : !!likedMap[item.tmdb_id];
+    const reviewed = mediaType === 'tv' ? false : reviewedSet.has(item.tmdb_id);
+
+    const parts = [];
+    if (rating) parts.push(`<span>${starsCompact(rating)}</span>`);
+    if (liked) parts.push(`<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>`);
+    if (reviewed) parts.push(REVIEW_ICON_SVG);
+    const ratingHtml = parts.length ? `<div class="film-card-rating">${parts.join('')}</div>` : `<div class="film-card-rating"></div>`;
 
     return `
     <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', '${mode}', '${mediaType}')">
@@ -1609,10 +1736,13 @@ async function saveEditEntry() {
 
 /* ---- STATS ---- */
 async function loadStats() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
   const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([
-    db.from('watched').select('*', { count: 'exact', head: true }),
-    db.from('watchlist').select('*', { count: 'exact', head: true }),
-    db.from('watched').select('rating').not('rating', 'is', null)
+    db.from('watched').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    db.from('watchlist').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    db.from('watched').select('rating').eq('user_id', user.id).not('rating', 'is', null)
   ]);
   document.getElementById('stat-watched').textContent = watchedCount ?? 0;
   document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
