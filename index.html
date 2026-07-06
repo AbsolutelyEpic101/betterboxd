@@ -27,7 +27,7 @@
   }
 
   html, body {
-    background: #111;
+    background: #0a0a0c;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -77,22 +77,24 @@
   }
   .screen-body::-webkit-scrollbar { display: none; }
 
-  /* BOTTOM NAV */
+  /* FLOATING BOTTOM NAV */
   .bottom-nav {
     display: flex;
-    padding: 10px 0 10px;
-    background: var(--bg2);
-    border: 0.5px solid var(--border2);
-    flex-shrink: 0;
-    margin: 0 14px 16px;
+    padding: 10px 4px 14px;
+    background: rgba(22,22,27,0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-radius: 22px;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+    border: 0.5px solid var(--border2);
+    margin: 0 10px 14px;
+    flex-shrink: 0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
   }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; color: var(--text3); transition: color 0.15s; }
   .nav-item.active { color: var(--text); }
   .nav-item svg { width: 22px; height: 22px; }
   .nav-item span { font-size: 10px; font-weight: 500; }
-  .nav-add { width: 42px; height: 42px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; margin-top: -8px; cursor: pointer; }
+  .nav-add { width: 42px; height: 42px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; margin-top: -8px; cursor: pointer; box-shadow: 0 4px 16px rgba(124,92,191,0.45); }
   .nav-add svg { width: 20px; height: 20px; stroke: #fff; }
 
   /* ONBOARDING */
@@ -144,7 +146,7 @@
   .spinner.dark { border: 2px solid rgba(124,92,191,0.25); border-top-color: var(--purple-light); }
 
   /* TOAST */
-  .toast-stack { position: absolute; left: 0; right: 0; bottom: 96px; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 700; pointer-events: none; }
+  .toast-stack { position: absolute; left: 0; right: 0; bottom: 110px; display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 700; pointer-events: none; }
   .toast { background: var(--bg4); border: 0.5px solid var(--border2); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.45); display: flex; align-items: center; gap: 8px; max-width: 320px; opacity: 0; transform: translateY(16px) scale(0.98); transition: all 0.22s ease; }
   .toast.show { opacity: 1; transform: translateY(0) scale(1); }
   .toast.error { border-color: rgba(224,88,74,0.35); color: #ffb3ac; }
@@ -179,15 +181,28 @@
   .filter-bar { display: flex; gap: 10px; padding: 12px 20px; align-items: center; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
   .filter-bar::-webkit-scrollbar { display: none; }
   .filter-chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; background: var(--bg3); color: var(--text2); border: 0.5px solid var(--border); }
-  .filter-chip.active { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+  .filter-chip.active { background: rgba(124,92,191,0.18); color: var(--purple-light); border-color: var(--purple); }
   .filter-chip svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
   select.filter-chip { -webkit-appearance: none; appearance: none; font-family: 'DM Sans', sans-serif; }
 
-  /* HOME GRID — card wrap now has a label row below poster */
+  /* HOME GRID */
   .film-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 4px 20px 20px; min-height: 80px; }
   .film-card-wrap { display: flex; flex-direction: column; cursor: pointer; }
   .film-card { aspect-ratio: 2/3; background: var(--bg3); overflow: hidden; position: relative; border-radius: 10px; flex-shrink: 0; }
-  .film-card-rating { display: flex; align-items: center; gap: 5px; font-size: 11px; text-align: left; color: var(--purple-light); padding: 4px 2px 0; letter-spacing: 0.01em; min-height: 18px; }
+
+  /* POSTER METADATA ROW — left aligned, heart + review icon */
+  .film-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 1px 0;
+    min-height: 18px;
+    flex-wrap: wrap;
+  }
+  .film-card-meta .stars-sm { display: flex; align-items: center; gap: 0; line-height: 1; }
+  .film-card-meta .heart-sm svg { width: 9px; height: 9px; stroke: var(--purple-light); fill: var(--purple-light); stroke-width: 2; display: block; }
+  .film-card-meta .review-sm svg { width: 9px; height: 9px; stroke: var(--text3); fill: none; stroke-width: 2.2; display: block; }
+
   .poster-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; padding: 10px 4px; display: flex; align-items: center; justify-content: center; height: 100%; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.06em; }
   .empty-grid { grid-column: 1 / -1; color: var(--text3); padding: 40px 20px; text-align: center; font-size: 14px; line-height: 1.5; }
 
@@ -212,12 +227,37 @@
   .md-section-title { padding: 4px 20px 10px; font-size: 12px; font-weight: 600; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
   .md-card { margin: 0 20px 16px; padding: 16px; background: var(--bg3); border-radius: 14px; border: 0.5px solid var(--border); }
 
-  /* HEART ICON (SVG, never emoji) */
+  /* DETAIL TABS */
+  .detail-tabs-bar { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; margin-top: 4px; }
+  .detail-tabs-bar::-webkit-scrollbar { display: none; }
+  .detail-tab { padding: 9px 14px; font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
+  .detail-tab.active { color: var(--text); border-bottom-color: var(--purple-light); }
+  .detail-tab-content { padding: 14px 20px 8px; display: none; }
+  .detail-tab-content.active { display: block; }
+
+  /* CAST / CREW rows */
+  .person-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .person-row:last-child { border-bottom: none; }
+  .person-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg4); object-fit: cover; flex-shrink: 0; }
+  .person-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); flex-shrink: 0; }
+  .person-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .person-role { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .see-more-btn { width: 100%; padding: 10px; background: var(--bg4); border: 0.5px solid var(--border); border-radius: 10px; color: var(--text2); font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 10px; }
+
+  /* DETAIL INFO rows */
+  .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 0.5px solid var(--border); gap: 12px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { font-size: 12px; font-weight: 500; color: var(--text3); flex-shrink: 0; }
+  .info-value { font-size: 13px; color: var(--text); text-align: right; }
+
+  /* GENRE CHIPS */
+  .genre-chips { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+  .genre-chip { padding: 6px 14px; border-radius: 20px; background: var(--bg4); border: 0.5px solid var(--border2); font-size: 13px; color: var(--text2); font-weight: 500; }
+
+  /* HEART ICON */
   .heart-icon { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.15s; }
   .heart-icon svg { width: 22px; height: 22px; stroke: var(--text3); fill: none; stroke-width: 2; transition: stroke 0.15s, fill 0.15s; }
   .heart-icon.on svg { stroke: var(--purple-light); fill: var(--purple-light); }
-
-  /* small heart for diary list */
   .heart-icon-sm svg { width: 14px; height: 14px; stroke-width: 2; }
 
   .like-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
@@ -247,7 +287,7 @@
   .diary-entry-stars { font-size: 11px; color: var(--purple-light); }
   .diary-modal-review { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 18px; max-height: 200px; overflow-y: auto; text-align: left; white-space: pre-wrap; }
 
-  /* EDIT / LOG MODAL — shared card style */
+  /* EDIT / LOG MODAL */
   .edit-modal-card {
     background: var(--bg3);
     border: 0.5px solid var(--border2);
@@ -264,7 +304,7 @@
   .edit-modal-card::-webkit-scrollbar { display: none; }
   .modal-overlay.show .edit-modal-card { transform: scale(1) translateY(0); }
 
-  /* SEARCH LOG MODAL */
+  /* LOG SEARCH MODAL */
   #log-search-modal { z-index: 810; }
   .log-search-card {
     background: var(--bg3);
@@ -282,6 +322,69 @@
   .log-search-card::-webkit-scrollbar { display: none; }
   .modal-overlay.show .log-search-card { transform: scale(1) translateY(0); }
 
+  /* SERVICE PICKER BOTTOM SHEET */
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 820;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .sheet-overlay.show { opacity: 1; pointer-events: all; }
+  .service-sheet {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--bg2);
+    border-radius: 22px 22px 0 0;
+    border: 0.5px solid var(--border2);
+    border-bottom: none;
+    padding: 0 0 32px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 821;
+  }
+  .sheet-overlay.show .service-sheet { transform: translateY(0); }
+  .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border2); margin: 12px auto 0; }
+  .sheet-header { padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .sheet-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .sheet-close { font-size: 20px; color: var(--text3); cursor: pointer; padding: 0 4px; line-height: 1; }
+  .sheet-body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 4px 20px 0; }
+  .sheet-body::-webkit-scrollbar { display: none; }
+  .service-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .service-row:last-child { border-bottom: none; }
+  .service-logo {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    flex-shrink: 0; letter-spacing: -0.3px;
+  }
+  .service-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .service-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .service-check.checked { background: var(--purple); border-color: var(--purple); }
+  .service-check svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2.5; }
+  .sheet-footer { padding: 14px 20px 0; display: flex; gap: 10px; flex-shrink: 0; }
+  .sheet-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; }
+  .sheet-btn.secondary { background: var(--bg4); color: var(--text2); }
+  .sheet-btn.primary { background: var(--purple); color: #fff; }
+
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
 </head>
@@ -293,6 +396,22 @@
 
   <!-- TOASTS -->
   <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- SERVICE PICKER SHEET -->
+  <div class="sheet-overlay" id="service-sheet-overlay" onclick="closeServiceSheet(event)">
+    <div class="service-sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">Streaming Services</div>
+        <div class="sheet-close" onclick="closeServiceSheet()">×</div>
+      </div>
+      <div class="sheet-body" id="service-sheet-body"></div>
+      <div class="sheet-footer">
+        <button class="sheet-btn secondary" onclick="clearServiceFilter()">Clear</button>
+        <button class="sheet-btn primary" onclick="applyServiceFilter()">Apply Filter</button>
+      </div>
+    </div>
+  </div>
 
   <!-- CONFIRM MODAL -->
   <div class="modal-overlay" id="confirm-modal">
@@ -339,39 +458,31 @@
         <div class="modal-title" style="margin-bottom:0;" id="edit-modal-title"></div>
         <div onclick="closeEditModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
       </div>
-
       <div class="md-field-label" style="margin-top:0;">RATING</div>
       <div class="star-row" id="edit-star-row"></div>
-
       <div class="like-row">
         <span style="font-size:13px;color:var(--text2);">Loved it?</span>
         <span class="heart-icon" id="edit-like-toggle" onclick="toggleEditLiked()">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </span>
       </div>
-
       <div class="md-field-label">WATCHED ON</div>
       <input type="date" class="form-input" id="edit-watched-date" />
-
       <div class="md-field-label">REVIEW (OPTIONAL)</div>
       <textarea class="form-input" id="edit-review-text" placeholder="What did you think?"></textarea>
-
       <label class="checkbox-row" style="margin-top:10px;">
         <input type="checkbox" id="edit-spoilers"> Contains spoilers
       </label>
       <label class="checkbox-row">
         <input type="checkbox" id="edit-rewatch"> Rewatch
       </label>
-
       <button class="btn-primary" style="margin-top:16px;" onclick="saveEditEntry()">Save Changes</button>
     </div>
   </div>
 
-  <!-- LOG SEARCH MODAL (+ button flow — search then log in one modal) -->
+  <!-- LOG SEARCH MODAL -->
   <div class="modal-overlay" id="log-search-modal">
-    <div class="log-search-card" id="log-search-card">
-      <!-- content injected by JS -->
-    </div>
+    <div class="log-search-card" id="log-search-card"></div>
   </div>
 
   <!-- LOADING -->
@@ -382,7 +493,7 @@
     </div>
   </div>
 
-  <!-- SEARCH (quick / magnifying glass) -->
+  <!-- SEARCH -->
   <div class="screen" id="screen-search">
     <div class="home-header">
       <div class="logo-sm">Search</div>
@@ -432,8 +543,7 @@
   <div class="screen" id="screen-login">
     <div class="auth-body">
       <div class="auth-back" onclick="goTo('screen-onboard')">
-        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Back
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
       <div class="auth-title">Welcome back</div>
       <div class="auth-subtitle">Sign in to your betterboxd account</div>
@@ -459,8 +569,7 @@
   <div class="screen" id="screen-signup">
     <div class="auth-body">
       <div class="auth-back" onclick="goTo('screen-onboard')">
-        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Back
+        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
       <div class="auth-title">Create account</div>
       <div class="auth-subtitle">Join betterboxd and start tracking</div>
@@ -492,7 +601,7 @@
     <div class="home-header">
       <div class="logo-sm">better<span>boxd</span></div>
       <div class="header-icons">
-        <div onclick="goToSearch('quick')" style="cursor:pointer;" title="Search & add to Watched / Watchlist">
+        <div onclick="goToSearch('quick')" style="cursor:pointer;">
           <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
         <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -505,11 +614,14 @@
       <div class="tab">Lists</div>
     </div>
     <div class="filter-bar">
-      <select id="library-mode" class="filter-chip" onchange="loadLibrary()">
+      <select id="library-mode" class="filter-chip" onchange="onLibraryModeChange()">
         <option value="watched">Watched</option>
         <option value="watchlist">Watchlist</option>
       </select>
-      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>DECADE</div>
+      <div class="filter-chip" id="service-filter-chip" onclick="openServiceSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <span id="service-chip-label">SERVICE</span>
+      </div>
       <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
       <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
     </div>
@@ -519,7 +631,7 @@
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
-      <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add" title="Log a film"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
@@ -527,7 +639,7 @@
 
   <!-- STATS -->
   <div class="screen" id="screen-stats">
-    <div class="stats-header" style="padding:14px 20px;flex-shrink:0;"><div style="font-size:24px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">Stats</div></div>
+    <div style="padding:14px 20px;flex-shrink:0;"><div style="font-size:24px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">Stats</div></div>
     <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;">
       <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--text);color:var(--bg);cursor:pointer;">ALL TIME</div>
       <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);cursor:pointer;">THIS YEAR</div>
@@ -553,9 +665,7 @@
 
   <!-- DIARY -->
   <div class="screen" id="screen-diary">
-    <div class="home-header">
-      <div class="logo-sm">Diary</div>
-    </div>
+    <div class="home-header"><div class="logo-sm">Diary</div></div>
     <div class="screen-body" id="diary-body"></div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
@@ -588,6 +698,22 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { storage: window.localStorage, persistSession: true, autoRefreshToken: true }
 });
 
+/* ---- STREAMING SERVICES (TMDB provider IDs, UK focused) ---- */
+const STREAMING_SERVICES = [
+  { id: 8,   name: 'Netflix',         bg: '#E50914', label: 'N' },
+  { id: 9,   name: 'Prime Video',     bg: '#00A8E0', label: 'P' },
+  { id: 337, name: 'Disney+',         bg: '#113CCF', label: 'D+' },
+  { id: 350, name: 'Apple TV+',       bg: '#1c1c1e', label: '▶' },
+  { id: 531, name: 'Paramount+',      bg: '#0064FF', label: 'P+' },
+  { id: 29,  name: 'NOW',             bg: '#00C274', label: 'N' },
+  { id: 11,  name: 'MUBI',            bg: '#738FFF', label: 'M' },
+  { id: 151, name: 'BritBox',         bg: '#C8102E', label: 'B' },
+  { id: 99,  name: 'Shudder',         bg: '#181818', label: 'S' },
+  { id: 283, name: 'Crunchyroll',     bg: '#F47521', label: 'C' },
+  { id: 188, name: 'YouTube Premium', bg: '#FF0000', label: 'YT' },
+  { id: 386, name: 'Peacock',         bg: '#000078', label: 'P' },
+];
+
 /* ---- STATE ---- */
 let selectedMovie = null;
 let selectedMediaType = 'movie';
@@ -603,30 +729,35 @@ let searchMediaType = 'movie';
 let detailMode = 'log';
 let formQuickWatched = false;
 let formTvStatus = null;
-let formTvRating = 0; // rating for a watched TV show
+let formTvRating = 0;
 let diaryEntries = [];
 let editingEntry = null;
 let editRating = 0;
 let editLiked = false;
 let homeMediaType = 'movie';
-
-// Log search modal state
-let logSearchQuery = '';
-let logSearchResults = [];
-let logFormMovie = null;  // the movie selected inside the log modal
+let logFormMovie = null;
 let logFormRating = 0;
 let logFormLiked = false;
 let logFormRewatch = false;
+let logSearchQuery = '';
+let logSearchResults = [];
 
-// Movie detail "more info" tabs state
-let detailActiveTab = 'cast';
-let castExpanded = false;
-let crewExpanded = false;
+// Library cache (for service filtering)
+let libraryItemsCache = [];
+let libraryRatingMapCache = {};
+let libraryLikedMapCache = {};
+let libraryReviewedSetCache = new Set();
+let libraryMediaTypeCache = 'movie';
 
-/* ---- HEART SVG helper ---- */
+// Service filter state
+let selectedServiceIds = new Set(); // pending (in sheet)
+let appliedServiceIds = new Set();  // currently applied
+let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
+
+/* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+const checkSVG = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
 const REWATCH_SYMBOL = '&#8634;';
-const REVIEW_ICON_SVG = `<svg viewBox="0 0 24 24" stroke-width="2" width="11" height="11" style="stroke:var(--text2);fill:none;flex-shrink:0;display:block;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>`;
 
 /* ---- TOAST ---- */
 function showToast(message, type = 'success', duration = 2600) {
@@ -655,6 +786,118 @@ function showConfirm({ title, message, confirmText = 'Confirm', danger = true, o
   newOk.addEventListener('click', () => { overlay.classList.remove('show'); onConfirm && onConfirm(); });
   newCancel.addEventListener('click', () => overlay.classList.remove('show'));
   overlay.classList.add('show');
+}
+
+/* ---- SERVICE SHEET ---- */
+function openServiceSheet() {
+  // Clone applied → pending
+  selectedServiceIds = new Set(appliedServiceIds);
+  renderServiceSheet();
+  document.getElementById('service-sheet-overlay').classList.add('show');
+}
+
+function closeServiceSheet(e) {
+  if (e && e.target !== document.getElementById('service-sheet-overlay')) return;
+  document.getElementById('service-sheet-overlay').classList.remove('show');
+}
+
+function renderServiceSheet() {
+  const body = document.getElementById('service-sheet-body');
+  body.innerHTML = STREAMING_SERVICES.map(s => `
+    <div class="service-row" onclick="toggleServiceId(${s.id})">
+      <div class="service-logo" style="background:${s.bg};">${escapeHtml(s.label)}</div>
+      <div class="service-name">${escapeHtml(s.name)}</div>
+      <div class="service-check ${selectedServiceIds.has(s.id) ? 'checked' : ''}" id="svc-check-${s.id}">
+        ${selectedServiceIds.has(s.id) ? checkSVG : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleServiceId(id) {
+  if (selectedServiceIds.has(id)) selectedServiceIds.delete(id);
+  else selectedServiceIds.add(id);
+  // update just this checkbox
+  const el = document.getElementById(`svc-check-${id}`);
+  if (el) {
+    el.className = 'service-check' + (selectedServiceIds.has(id) ? ' checked' : '');
+    el.innerHTML = selectedServiceIds.has(id) ? checkSVG : '';
+  }
+}
+
+function clearServiceFilter() {
+  selectedServiceIds.clear();
+  appliedServiceIds.clear();
+  updateServiceChip();
+  document.getElementById('service-sheet-overlay').classList.remove('show');
+  renderFilteredGrid();
+}
+
+async function applyServiceFilter() {
+  appliedServiceIds = new Set(selectedServiceIds);
+  updateServiceChip();
+  document.getElementById('service-sheet-overlay').classList.remove('show');
+  await renderFilteredGrid();
+}
+
+function updateServiceChip() {
+  const chip = document.getElementById('service-filter-chip');
+  const label = document.getElementById('service-chip-label');
+  if (appliedServiceIds.size > 0) {
+    chip.classList.add('active');
+    const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
+    label.textContent = names.length === 1 ? names[0] : `${names.length} Services`;
+  } else {
+    chip.classList.remove('active');
+    label.textContent = 'SERVICE';
+  }
+}
+
+async function renderFilteredGrid() {
+  if (appliedServiceIds.size === 0) {
+    // No filter — show full cache
+    renderHomeGrid(libraryItemsCache, libraryMediaTypeCache, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache);
+    return;
+  }
+
+  const grid = document.getElementById('home-grid');
+  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+  // Fetch providers for all items (use cache when available)
+  const type = libraryMediaTypeCache;
+  const endpoint = type === 'tv' ? 'tv' : 'movie';
+
+  const seen = new Set();
+  const unique = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+
+  await Promise.all(unique.map(async item => {
+    const cacheKey = `${endpoint}-${item.tmdb_id}`;
+    if (providerCache[cacheKey] !== undefined) return;
+    try {
+      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
+      if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+      const data = await res.json();
+      const gb = data.results?.GB;
+      const providers = new Set();
+      const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
+      addList(gb?.flatrate);
+      addList(gb?.free);
+      providerCache[cacheKey] = providers;
+    } catch { providerCache[cacheKey] = new Set(); }
+  }));
+
+  const filtered = unique.filter(item => {
+    const cacheKey = `${endpoint}-${item.tmdb_id}`;
+    const providers = providerCache[cacheKey] || new Set();
+    return [...appliedServiceIds].some(sid => providers.has(sid));
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
+    return;
+  }
+
+  renderHomeGrid(filtered, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
 }
 
 /* ---- NAV ---- */
@@ -715,6 +958,8 @@ function setHomeMediaType(type) {
   homeMediaType = type === 'tv' ? 'tv' : 'movie';
   document.getElementById('home-tab-films').classList.toggle('active', homeMediaType === 'movie');
   document.getElementById('home-tab-tv').classList.toggle('active', homeMediaType === 'tv');
+  appliedServiceIds.clear();
+  updateServiceChip();
   renderLibraryModeOptions();
   loadLibrary();
 }
@@ -732,6 +977,12 @@ function renderLibraryModeOptions() {
       <option value="watched">Watched</option>
       <option value="watchlist">Watchlist</option>`;
   }
+}
+
+function onLibraryModeChange() {
+  appliedServiceIds.clear();
+  updateServiceChip();
+  loadLibrary();
 }
 
 /* ---- AUTH ---- */
@@ -802,7 +1053,7 @@ function handleLogout() {
   });
 }
 
-/* ---- TMDB SEARCH (quick screen) ---- */
+/* ---- TMDB SEARCH ---- */
 function debouncedSearch(query) {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
@@ -839,7 +1090,7 @@ function renderSearchResults(results = [], type = 'movie') {
 }
 
 function escapeHtml(str = '') {
-  return str.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
 /* ---- HALF-STAR RATING ---- */
@@ -875,7 +1126,6 @@ function starsDisplay(rating) {
   return out;
 }
 
-/* Compact star display for under-poster labels */
 function starsCompact(rating) {
   if (!rating) return '';
   let out = '';
@@ -891,18 +1141,13 @@ function starsCompact(rating) {
   return out;
 }
 
-/* ---- LOG SEARCH MODAL (+ button) ---- */
+/* ---- LOG SEARCH MODAL ---- */
 function openLogSearchModal() {
-  logFormMovie = null;
-  logFormRating = 0;
-  logFormLiked = false;
-  logFormRewatch = false;
-  logSearchQuery = '';
-  logSearchResults = [];
+  logFormMovie = null; logFormRating = 0; logFormLiked = false; logFormRewatch = false;
+  logSearchQuery = ''; logSearchResults = [];
   renderLogSearchStep();
   document.getElementById('log-search-modal').classList.add('show');
 }
-
 function closeLogSearchModal() {
   document.getElementById('log-search-modal').classList.remove('show');
   logFormMovie = null;
@@ -915,20 +1160,10 @@ function renderLogSearchStep() {
       <div class="modal-title" style="margin-bottom:0;">Log a Film</div>
       <div onclick="closeLogSearchModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
     </div>
-    <input
-      id="log-modal-search-input"
-      class="form-input"
-      placeholder="Search films..."
-      oninput="debouncedLogSearch(this.value)"
-      autocomplete="off"
-      style="margin-bottom:10px;"
-    />
-    <div id="log-modal-results" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;scrollbar-width:none;"></div>
-  `;
-  setTimeout(() => {
-    const inp = document.getElementById('log-modal-search-input');
-    if (inp) inp.focus();
-  }, 100);
+    <input id="log-modal-search-input" class="form-input" placeholder="Search films..."
+      oninput="debouncedLogSearch(this.value)" autocomplete="off" style="margin-bottom:10px;" />
+    <div id="log-modal-results" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;scrollbar-width:none;"></div>`;
+  setTimeout(() => { const inp = document.getElementById('log-modal-search-input'); if (inp) inp.focus(); }, 100);
 }
 
 function debouncedLogSearch(query) {
@@ -955,30 +1190,22 @@ function renderLogModalResults(results) {
         <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.title)}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px;">${item.release_date ? item.release_date.split('-')[0] : '—'}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function selectLogMovie(id) {
-  // Show a loading state in the card while we fetch details
   const card = document.getElementById('log-search-card');
   card.innerHTML = `<div style="padding:40px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
-
   try {
     const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}`);
     if (!res.ok) throw new Error();
     const movie = await res.json();
     logFormMovie = movie;
-
     const today = new Date().toISOString().slice(0,10);
     const { data: logs } = await db.from('watched').select('*').eq('tmdb_id', movie.id).lte('watched_on', today).order('watched_on', { ascending: false });
     logFormRewatch = !!(logs && logs.length);
-
     renderLogFormStep();
-  } catch {
-    showToast('Could not load film details', 'error');
-    renderLogSearchStep();
-  }
+  } catch { showToast('Could not load film details', 'error'); renderLogSearchStep(); }
 }
 
 function renderLogFormStep() {
@@ -992,40 +1219,28 @@ function renderLogFormStep() {
       </div>
       <div onclick="closeLogSearchModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
     </div>
-
     <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-start;">
       ${movie.poster_path
         ? `<img src="https://image.tmdb.org/t/p/w154${movie.poster_path}" style="width:52px;height:78px;border-radius:7px;object-fit:cover;flex-shrink:0;" />`
-        : `<div style="width:52px;height:78px;border-radius:7px;background:var(--bg4);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3);">?</div>`}
+        : `<div style="width:52px;height:78px;border-radius:7px;background:var(--bg4);flex-shrink:0;"></div>`}
       <div style="flex:1;min-width:0;">
         <div class="modal-title" style="margin-bottom:4px;font-size:15px;text-align:left;">${escapeHtml(movie.title)}</div>
         <div style="font-size:12px;color:var(--text2);">${movie.release_date ? movie.release_date.split('-')[0] : '—'}</div>
       </div>
     </div>
-
     <div class="md-field-label" style="margin-top:0;">RATING</div>
     <div class="star-row" id="log-modal-star-row">${halfStarRowHtml('setLogFormRating', logFormRating)}</div>
-
     <div class="like-row">
       <span style="font-size:13px;color:var(--text2);">Loved it?</span>
       <span class="heart-icon ${logFormLiked ? 'on' : ''}" id="log-modal-like-toggle" onclick="toggleLogFormLiked()">${heartSVG}</span>
     </div>
-
     <div class="md-field-label">WATCHED ON</div>
     <input type="date" class="form-input" id="log-modal-watched-date" value="${new Date().toISOString().slice(0,10)}" />
-
     <div class="md-field-label">REVIEW (OPTIONAL)</div>
     <textarea class="form-input" id="log-modal-review-text" placeholder="What did you think?"></textarea>
-
-    <label class="checkbox-row" style="margin-top:10px;">
-      <input type="checkbox" id="log-modal-spoilers"> Contains spoilers
-    </label>
-    <label class="checkbox-row">
-      <input type="checkbox" id="log-modal-rewatch" ${logFormRewatch ? 'checked' : ''}> Rewatch
-    </label>
-
-    <button class="btn-primary" style="margin-top:16px;" onclick="submitLogForm()">Log this Watch</button>
-  `;
+    <label class="checkbox-row" style="margin-top:10px;"><input type="checkbox" id="log-modal-spoilers"> Contains spoilers</label>
+    <label class="checkbox-row"><input type="checkbox" id="log-modal-rewatch" ${logFormRewatch ? 'checked' : ''}> Rewatch</label>
+    <button class="btn-primary" style="margin-top:16px;" onclick="submitLogForm()">Log this Watch</button>`;
 }
 
 function setLogFormRating(n) {
@@ -1044,32 +1259,25 @@ async function submitLogForm() {
   if (!logFormMovie) return;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-
   const watchedOn = document.getElementById('log-modal-watched-date').value || new Date().toISOString().slice(0,10);
   const reviewText = document.getElementById('log-modal-review-text').value.trim();
   const spoilers = document.getElementById('log-modal-spoilers').checked;
   const rewatch = document.getElementById('log-modal-rewatch').checked;
   const movie = logFormMovie;
-
   const { data: inserted, error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: movie.id, media_type: 'movie',
     title: movie.title, poster_path: movie.poster_path,
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked
   }).select().single();
-
   if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
-
   const { error: diaryError } = await db.from('diary').insert({
     user_id: user.id, watched_id: inserted.id, tmdb_id: movie.id,
     media_type: 'movie', title: movie.title, poster_path: movie.poster_path,
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked,
     rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers
   });
-  if (diaryError) { showToast('Logged, but diary entry failed: ' + (diaryError.message || ''), 'error'); }
-
-  // Remove from watchlist if it was on there
+  if (diaryError) showToast('Logged, but diary entry failed: ' + (diaryError.message || ''), 'error');
   await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', movie.id);
-
   closeLogSearchModal();
   showToast('Added to your diary');
   loadLibrary(); loadStats();
@@ -1081,63 +1289,40 @@ async function openMovieDetail(id, fromScreen, mode, mediaType) {
   detailMode = mode === 'quick' ? 'quick' : 'log';
   selectedMediaType = mediaType === 'tv' ? 'tv' : 'movie';
   if (selectedMediaType === 'tv') detailMode = 'quick';
-  detailActiveTab = 'cast';
-  castExpanded = false;
-  crewExpanded = false;
   goTo('screen-movie');
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
-
   try {
     if (selectedMediaType === 'tv') {
-      // Append content_ratings to get UK rating
-      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings`);
+      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings,credits`);
       if (!res.ok) throw new Error();
       const show = await res.json();
       selectedMovie = show;
-
       const { data: statusRow } = await db.from('tv_status').select('*').eq('tmdb_id', show.id).maybeSingle();
       formTvStatus = statusRow ? statusRow.status : null;
       formTvRating = statusRow ? (statusRow.rating || 0) : 0;
-
       const stillAiring = show.status && show.status !== 'Ended' && show.status !== 'Canceled';
-      if (
-        formTvStatus === 'watched' && stillAiring && show.last_air_date &&
-        statusRow && statusRow.last_air_date_at_watched &&
-        show.last_air_date > statusRow.last_air_date_at_watched
-      ) {
+      if (formTvStatus === 'watched' && stillAiring && show.last_air_date && statusRow?.last_air_date_at_watched && show.last_air_date > statusRow.last_air_date_at_watched) {
         const { data: { user } } = await db.auth.getUser();
-        if (user) {
-          await upsertTvStatus({
-            user_id: user.id, tmdb_id: show.id, media_type: 'tv',
-            title: show.name, poster_path: show.poster_path,
-            status: 'watching', updated_on: new Date().toISOString(),
-            last_air_date_at_watched: statusRow.last_air_date_at_watched
-          });
-        }
-        formTvStatus = 'watching';
-        formTvRating = 0;
+        if (user) await upsertTvStatus({ user_id: user.id, tmdb_id: show.id, media_type: 'tv', title: show.name, poster_path: show.poster_path, status: 'watching', updated_on: new Date().toISOString(), last_air_date_at_watched: statusRow.last_air_date_at_watched });
+        formTvStatus = 'watching'; formTvRating = 0;
         showToast('New episode out — moved back to Watching');
         loadLibrary(); loadStats();
       }
-
       renderMovieDetail(show);
     } else {
       const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=release_dates,credits`);
       if (!res.ok) throw new Error();
       const movie = await res.json();
       selectedMovie = movie;
-
       const today = new Date().toISOString().slice(0,10);
       const [{ data: logs }, { data: watchlistRow }] = await Promise.all([
         db.from('watched').select('*').eq('tmdb_id', movie.id).lte('watched_on', today).order('watched_on', { ascending: false }),
         db.from('watchlist').select('id').eq('tmdb_id', movie.id).maybeSingle()
       ]);
-
       formRating = 0; formLiked = false;
       formInWatchlist = !!watchlistRow;
       formQuickWatched = !!(logs && logs.length);
       formRewatch = !!(logs && logs.length);
-
       renderMovieDetail(movie);
     }
   } catch {
@@ -1151,11 +1336,13 @@ function getYear(date) { return date ? date.split('-')[0] : '—'; }
 function getBBFC(movie) {
   const uk = movie.release_dates?.results?.find(r => r.iso_3166_1 === 'GB');
   if (!uk || !uk.release_dates?.length) return 'Not rated';
-  const cert = uk.release_dates[0].certification;
-  return cert ? `BBFC ${cert}` : 'Not rated';
+  // Find any cert that isn't empty
+  for (const rd of uk.release_dates) {
+    if (rd.certification) return `BBFC ${rd.certification}`;
+  }
+  return 'Not rated';
 }
 
-/* Get UK (BBFC) TV content rating from content_ratings response — BBFC only, else Not rated */
 function getTvRating(show) {
   const ratings = show.content_ratings?.results || [];
   const uk = ratings.find(r => r.iso_3166_1 === 'GB');
@@ -1181,35 +1368,30 @@ const TV_STATUS_LABELS = { watchlist: 'Watchlist', watching: 'Watching', watched
 
 function tvActivityCardHtml() {
   if (!formTvStatus) {
-    return `
-      <div class="md-card">
-        <div class="pill-toggle" onclick="setTvStatus('watchlist')">
-          <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-          <span>Add to Watchlist</span>
-        </div>
-      </div>`;
+    return `<div class="md-card">
+      <div class="pill-toggle" onclick="setTvStatus('watchlist')">
+        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        <span>Add to Watchlist</span>
+      </div>
+    </div>`;
   }
   const nextMap = { watchlist: 'watching', watching: 'watched' };
   const next = nextMap[formTvStatus];
-
   const ratingSection = formTvStatus === 'watched' ? `
     <div class="md-field-label">YOUR RATING</div>
     <div class="star-row" id="tv-rating-stars">${halfStarRowHtml('setTvRating', formTvRating)}</div>
-    <button class="btn-primary" style="margin-top:14px;font-size:14px;padding:12px;" onclick="saveTvRating()">Save Rating</button>
-  ` : '';
-
-  return `
-    <div class="md-card">
-      <div class="pill-toggle on" style="cursor:default;">
-        <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span>Status: ${TV_STATUS_LABELS[formTvStatus]}</span>
-      </div>
-      <div class="pill-toggle" style="margin-top:10px;" onclick="${next ? `setTvStatus('${next}')` : 'removeTvStatus()'}">
-        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>${next ? `Switch to ${TV_STATUS_LABELS[next]}` : 'Remove from Watched'}</span>
-      </div>
-      ${ratingSection}
-    </div>`;
+    <button class="btn-primary" style="margin-top:14px;font-size:14px;padding:12px;" onclick="saveTvRating()">Save Rating</button>` : '';
+  return `<div class="md-card">
+    <div class="pill-toggle on" style="cursor:default;">
+      <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Status: ${TV_STATUS_LABELS[formTvStatus]}</span>
+    </div>
+    <div class="pill-toggle" style="margin-top:10px;" onclick="${next ? `setTvStatus('${next}')` : 'removeTvStatus()'}">
+      <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>${next ? `Switch to ${TV_STATUS_LABELS[next]}` : 'Remove from Watched'}</span>
+    </div>
+    ${ratingSection}
+  </div>`;
 }
 
 function setTvRating(n) {
@@ -1222,11 +1404,8 @@ async function saveTvRating() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-  const { error } = await db.from('tv_status')
-    .update({ rating: formTvRating || null })
-    .eq('user_id', user.id)
-    .eq('tmdb_id', selectedMovie.id);
-  if (error) { showToast('Could not save rating: ' + (error.message || ''), 'error'); return; }
+  const { error } = await db.from('tv_status').update({ rating: formTvRating || null }).eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
+  if (error) { showToast('Could not save rating', 'error'); return; }
   showToast(formTvRating ? 'Rating saved' : 'Rating cleared');
   loadLibrary(); loadStats();
 }
@@ -1234,8 +1413,7 @@ async function saveTvRating() {
 async function upsertTvStatus(payload) {
   let { error } = await db.from('tv_status').upsert(payload, { onConflict: 'user_id,tmdb_id' });
   if (error && (error.code === '42703' || /last_air_date_at_watched|column/.test(error.message || ''))) {
-    const rest = { ...payload };
-    delete rest.last_air_date_at_watched;
+    const rest = { ...payload }; delete rest.last_air_date_at_watched;
     ({ error } = await db.from('tv_status').upsert(rest, { onConflict: 'user_id,tmdb_id' }));
   }
   return error;
@@ -1245,22 +1423,14 @@ async function setTvStatus(status) {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-  const payload = {
-    user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'tv',
-    title: selectedMovie.name, poster_path: selectedMovie.poster_path,
-    status: status, updated_on: new Date().toISOString()
-  };
+  const payload = { user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'tv', title: selectedMovie.name, poster_path: selectedMovie.poster_path, status, updated_on: new Date().toISOString() };
   if (status === 'watched') payload.last_air_date_at_watched = selectedMovie.last_air_date || null;
-  // Clear rating if moved away from watched
   if (status !== 'watched') payload.rating = null;
-
   const error = await upsertTvStatus(payload);
-  if (error) { showToast('Could not update status: ' + (error.message || ''), 'error'); return; }
-  formTvStatus = status;
-  formTvRating = 0;
+  if (error) { showToast('Could not update status', 'error'); return; }
+  formTvStatus = status; formTvRating = 0;
   showToast(`Marked as ${TV_STATUS_LABELS[status]}`);
-  renderMovieDetail(selectedMovie);
-  loadLibrary(); loadStats();
+  renderMovieDetail(selectedMovie); loadLibrary(); loadStats();
 }
 
 async function removeTvStatus() {
@@ -1269,113 +1439,122 @@ async function removeTvStatus() {
   if (!user) return;
   const { error } = await db.from('tv_status').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
   if (error) { showToast('Could not remove', 'error'); return; }
-  formTvStatus = null;
-  formTvRating = 0;
+  formTvStatus = null; formTvRating = 0;
   showToast('Removed from Watched');
-  renderMovieDetail(selectedMovie);
-  loadLibrary(); loadStats();
+  renderMovieDetail(selectedMovie); loadLibrary(); loadStats();
 }
 
-/* ---- MOVIE "MORE INFO" TABS (Cast / Crew / Details / Genres) ---- */
-function getOriginalReleaseDate(movie) {
-  const originCountry = movie.production_countries?.[0]?.iso_3166_1;
-  if (originCountry && movie.release_dates?.results) {
-    const entry = movie.release_dates.results.find(r => r.iso_3166_1 === originCountry);
-    if (entry && entry.release_dates?.length) {
-      const sorted = [...entry.release_dates]
-        .filter(rd => rd.release_date)
-        .sort((a, b) => new Date(a.release_date) - new Date(b.release_date));
-      if (sorted.length) return sorted[0].release_date.split('T')[0];
+/* ---- DETAIL TABS ---- */
+let activeDetailTab = 'cast';
+
+function buildDetailTabsHtml(item, isTv) {
+  const credits = item.credits || {};
+  const cast = credits.cast || [];
+  const crew = credits.crew || [];
+
+  // Genres
+  const genres = item.genres || [];
+
+  // Details
+  const studios = (item.production_companies || []).map(c => c.name).join(', ') || '—';
+  const countries = (item.production_countries || []).map(c => c.name).join(', ') || '—';
+  const languages = (item.spoken_languages || []).map(l => l.english_name).join(', ') || '—';
+  const releaseDate = isTv
+    ? (item.first_air_date ? new Date(item.first_air_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—')
+    : (item.release_date ? new Date(item.release_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
+
+  const tabIds = ['cast', 'crew', 'details', 'genres'];
+  const tabLabels = ['Cast', 'Crew', 'Details', 'Genres'];
+
+  const tabBar = `<div class="detail-tabs-bar">
+    ${tabIds.map((t, i) => `<div class="detail-tab ${t === activeDetailTab ? 'active' : ''}" onclick="switchDetailTab('${t}')">${tabLabels[i]}</div>`).join('')}
+  </div>`;
+
+  // Cast content
+  const CAST_INITIAL = 6;
+  const castHtml = cast.slice(0, CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('');
+  const castMore = cast.length > CAST_INITIAL
+    ? `<button class="see-more-btn" onclick="expandDetailSection('cast-extra')">See ${cast.length - CAST_INITIAL} more</button>
+       <div id="cast-extra" style="display:none;">${cast.slice(CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('')}</div>`
+    : '';
+  const castContent = cast.length ? (castHtml + castMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No cast listed.</div>';
+
+  // Crew content — show Director first, then unique key roles
+  const KEY_ROLES = ['Director', 'Screenplay', 'Writer', 'Story', 'Director of Photography', 'Original Music Composer', 'Producer', 'Executive Producer'];
+  const keyCrewMap = {};
+  const otherCrew = [];
+  crew.forEach(p => {
+    if (KEY_ROLES.includes(p.job)) {
+      if (!keyCrewMap[p.id + p.job]) { keyCrewMap[p.id + p.job] = p; }
     }
-  }
-  return movie.release_date || null;
+  });
+  const keyCrew = KEY_ROLES.flatMap(role => crew.filter(p => p.job === role)).filter((p, i, arr) => arr.findIndex(q => q.id === p.id && q.job === p.job) === i);
+  const restCrew = crew.filter(p => !KEY_ROLES.includes(p.job)).filter((p, i, arr) => arr.findIndex(q => q.id === p.id && q.job === p.job) === i);
+
+  const CREW_INITIAL = 8;
+  const allKeyFirst = [...keyCrew, ...restCrew];
+  const crewHtml = allKeyFirst.slice(0, CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('');
+  const crewMore = allKeyFirst.length > CREW_INITIAL
+    ? `<button class="see-more-btn" onclick="expandDetailSection('crew-extra')">See ${allKeyFirst.length - CREW_INITIAL} more</button>
+       <div id="crew-extra" style="display:none;">${allKeyFirst.slice(CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('')}</div>`
+    : '';
+  const crewContent = allKeyFirst.length ? (crewHtml + crewMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No crew listed.</div>';
+
+  // Details content
+  const detailsContent = `
+    <div class="info-row"><span class="info-label">Studio</span><span class="info-value">${escapeHtml(studios)}</span></div>
+    <div class="info-row"><span class="info-label">Country</span><span class="info-value">${escapeHtml(countries)}</span></div>
+    <div class="info-row"><span class="info-label">Language</span><span class="info-value">${escapeHtml(languages)}</span></div>
+    <div class="info-row"><span class="info-label">Released</span><span class="info-value">${escapeHtml(releaseDate)}</span></div>`;
+
+  // Genres content
+  const genresContent = genres.length
+    ? `<div class="genre-chips">${genres.map(g => `<div class="genre-chip">${escapeHtml(g.name)}</div>`).join('')}</div>`
+    : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No genres listed.</div>';
+
+  const tabs = {
+    cast: castContent,
+    crew: crewContent,
+    details: detailsContent,
+    genres: genresContent
+  };
+
+  const contents = tabIds.map(t => `
+    <div class="detail-tab-content ${t === activeDetailTab ? 'active' : ''}" id="dtab-${t}">
+      ${tabs[t]}
+    </div>`).join('');
+
+  return tabBar + `<div style="padding:0 20px;">${contents}</div><div style="height:20px;"></div>`;
 }
 
-function formatLongDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+function personRowHtml(profilePath, name, role) {
+  const img = profilePath
+    ? `<img class="person-avatar" src="https://image.tmdb.org/t/p/w92${profilePath}" />`
+    : `<div class="person-avatar-placeholder">${escapeHtml((name || '?')[0].toUpperCase())}</div>`;
+  return `<div class="person-row">${img}<div><div class="person-name">${escapeHtml(name)}</div><div class="person-role">${escapeHtml(role || '')}</div></div></div>`;
 }
 
-const DETAIL_TABS = ['cast', 'crew', 'details', 'genres'];
-
-function movieTabsSectionHtml() {
-  return `
-    <div class="md-section-title" style="padding-top:6px;">MORE INFO</div>
-    <div style="display:flex;gap:8px;padding:0 20px 14px;overflow-x:auto;scrollbar-width:none;" id="detail-tab-bar">
-      ${DETAIL_TABS.map(t => `
-        <div class="filter-chip ${detailActiveTab === t ? 'active' : ''}" onclick="setDetailTab('${t}')" style="text-transform:capitalize;">${t}</div>
-      `).join('')}
-    </div>
-    <div id="detail-tab-content" style="padding:0 20px 8px;"></div>`;
+function switchDetailTab(tab) {
+  activeDetailTab = tab;
+  document.querySelectorAll('.detail-tab').forEach(el => el.classList.toggle('active', el.textContent.toLowerCase() === tab || el.onclick?.toString().includes(`'${tab}'`)));
+  // simpler: just toggle by data
+  document.querySelectorAll('.detail-tab').forEach(el => {
+    const matches = el.getAttribute('onclick')?.includes(`'${tab}'`);
+    el.classList.toggle('active', !!matches);
+  });
+  document.querySelectorAll('.detail-tab-content').forEach(el => {
+    el.classList.toggle('active', el.id === `dtab-${tab}`);
+  });
 }
 
-function setDetailTab(tab) {
-  detailActiveTab = tab;
-  castExpanded = false;
-  crewExpanded = false;
-  const bar = document.getElementById('detail-tab-bar');
-  if (bar) {
-    Array.from(bar.children).forEach((el, i) => el.classList.toggle('active', DETAIL_TABS[i] === tab));
-  }
-  renderDetailTabContent();
+function expandDetailSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'block';
+  // hide the button before it
+  const btn = el.previousElementSibling;
+  if (btn && btn.classList.contains('see-more-btn')) btn.style.display = 'none';
 }
-
-function renderDetailTabContent() {
-  const el = document.getElementById('detail-tab-content');
-  if (!el || !selectedMovie) return;
-  const movie = selectedMovie;
-
-  if (detailActiveTab === 'cast') {
-    const cast = movie.credits?.cast || [];
-    if (!cast.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No cast info available.</div>`; return; }
-    const shown = castExpanded ? cast : cast.slice(0, 6);
-    el.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${shown.map(c => `
-          <div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;">
-            <span style="color:var(--text);font-weight:500;">${escapeHtml(c.name)}</span>
-            <span style="color:var(--text2);text-align:right;">${escapeHtml(c.character || '—')}</span>
-          </div>`).join('')}
-      </div>
-      ${cast.length > 6 ? `<div class="btn-text" style="margin-top:14px;text-align:left;padding-bottom:16px;" onclick="toggleCastExpanded()">${castExpanded ? 'Show less' : `See ${cast.length - 6} more`}</div>` : `<div style="padding-bottom:16px;"></div>`}
-    `;
-  } else if (detailActiveTab === 'crew') {
-    const crew = movie.credits?.crew || [];
-    if (!crew.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No crew info available.</div>`; return; }
-    const shown = crewExpanded ? crew : crew.slice(0, 6);
-    el.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        ${shown.map(c => `
-          <div style="display:flex;justify-content:space-between;gap:14px;font-size:13px;">
-            <span style="color:var(--text);font-weight:500;">${escapeHtml(c.name)}</span>
-            <span style="color:var(--text2);text-align:right;">${escapeHtml(c.job || '—')}</span>
-          </div>`).join('')}
-      </div>
-      ${crew.length > 6 ? `<div class="btn-text" style="margin-top:14px;text-align:left;padding-bottom:16px;" onclick="toggleCrewExpanded()">${crewExpanded ? 'Show less' : `See ${crew.length - 6} more`}</div>` : `<div style="padding-bottom:16px;"></div>`}
-    `;
-  } else if (detailActiveTab === 'details') {
-    const studios = (movie.production_companies || []).map(c => c.name).join(', ') || '—';
-    const countries = (movie.production_countries || []).map(c => c.name).join(', ') || '—';
-    const languages = (movie.spoken_languages || []).map(l => l.english_name || l.name).join(', ') || '—';
-    const origDate = formatLongDate(getOriginalReleaseDate(movie));
-    el.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:14px;padding-bottom:16px;">
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Studio</div><div style="font-size:13px;color:var(--text);">${escapeHtml(studios)}</div></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Country</div><div style="font-size:13px;color:var(--text);">${escapeHtml(countries)}</div></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Language</div><div style="font-size:13px;color:var(--text);">${escapeHtml(languages)}</div></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">Original Release Date</div><div style="font-size:13px;color:var(--text);">${origDate}</div></div>
-      </div>`;
-  } else if (detailActiveTab === 'genres') {
-    const genres = movie.genres || [];
-    if (!genres.length) { el.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:4px 0 16px;">No genre info available.</div>`; return; }
-    el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;padding-bottom:16px;">${genres.map(g => `<span style="padding:6px 14px;border-radius:20px;background:var(--bg3);border:0.5px solid var(--border2);font-size:13px;color:var(--text);">${escapeHtml(g.name)}</span>`).join('')}</div>`;
-  }
-}
-
-function toggleCastExpanded() { castExpanded = true; renderDetailTabContent(); }
-function toggleCrewExpanded() { crewExpanded = true; renderDetailTabContent(); }
 
 function renderMovieDetail(item) {
   const el = document.getElementById('movie-detail');
@@ -1388,11 +1567,8 @@ function renderMovieDetail(item) {
   } else if (item.runtime) {
     metaExtra = `${Math.floor(item.runtime / 60)}h ${item.runtime % 60}m`;
   }
-
-  const certLine = isTv
-    ? `<div class="md-cert">${getTvRating(item)}</div>`
-    : `<div class="md-cert">${getBBFC(item)}</div>`;
-
+  const certLine = isTv ? `<div class="md-cert">${getTvRating(item)}</div>` : `<div class="md-cert">${getBBFC(item)}</div>`;
+  activeDetailTab = 'cast';
   el.innerHTML = `
     <div class="md-hero">
       ${item.poster_path
@@ -1407,10 +1583,7 @@ function renderMovieDetail(item) {
     ${item.overview ? `<div class="md-overview">${escapeHtml(item.overview)}</div>` : ''}
     <div class="md-section-title">YOUR ACTIVITY</div>
     ${isTv ? tvActivityCardHtml() : quickActivityCardHtml()}
-    ${!isTv ? movieTabsSectionHtml() : ''}
-    <div style="height:30px;"></div>`;
-
-  if (!isTv) renderDetailTabContent();
+    ${buildDetailTabsHtml(item, isTv)}`;
 }
 
 function setRating(n) {
@@ -1453,11 +1626,9 @@ async function toggleWatchedQuick() {
   if (!selectedMovie) return;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-
   if (formQuickWatched) {
     showConfirm({
-      title: 'Remove from Watched?',
-      message: 'This removes your watch entry for this title.',
+      title: 'Remove from Watched?', message: 'This removes your watch entry for this title.',
       confirmText: 'Remove', danger: true,
       onConfirm: async () => {
         const { error } = await db.from('watched').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
@@ -1470,97 +1641,110 @@ async function toggleWatchedQuick() {
     });
     return;
   }
-
   let error;
   ({ error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
     title: selectedMovie.title, poster_path: selectedMovie.poster_path,
-    watched_on: new Date().toISOString().slice(0,10),
-    rating: null, liked: false, quick_mark: true
+    watched_on: new Date().toISOString().slice(0,10), rating: null, liked: false, quick_mark: true
   }));
-
   if (error && (error.code === '42703' || /quick_mark|column/.test(error.message || ''))) {
     ({ error } = await db.from('watched').insert({
       user_id: user.id, tmdb_id: selectedMovie.id, media_type: 'movie',
       title: selectedMovie.title, poster_path: selectedMovie.poster_path,
-      watched_on: new Date().toISOString().slice(0,10),
-      rating: null, liked: false
+      watched_on: new Date().toISOString().slice(0,10), rating: null, liked: false
     }));
   }
-
   if (error) { showToast('Could not mark as watched: ' + (error.message || ''), 'error'); return; }
-
-  // Also remove from watchlist when marking as watched
   await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', selectedMovie.id);
-  formInWatchlist = false;
-  formQuickWatched = true;
+  formInWatchlist = false; formQuickWatched = true;
   showToast('Added to Watched');
   loadLibrary(); loadStats();
   openMovieDetail(selectedMovie.id, returnScreen, detailMode);
 }
 
-/* ---- LIBRARY (Home grid) ---- */
+/* ---- LIBRARY ---- */
 async function loadLibrary() {
   const mode = document.getElementById('library-mode').value;
   const grid = document.getElementById('home-grid');
   grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  let items = [];
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+
   if (homeMediaType === 'tv') {
-    const { data, error } = await db.from('tv_status').select('*').eq('status', mode).order('updated_on', { ascending: false });
+    let query = db.from('tv_status').select('*').eq('status', mode).order('updated_on', { ascending: false });
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`; return; }
-    items = data || [];
-    renderHomeGrid(items, 'tv', {}, {}, new Set());
+    libraryItemsCache = data || [];
+    libraryRatingMapCache = {};
+    libraryLikedMapCache = {};
+    libraryReviewedSetCache = new Set();
+    libraryMediaTypeCache = 'tv';
+    (data || []).forEach(item => {
+      if (item.rating) libraryRatingMapCache[item.tmdb_id] = item.rating;
+    });
+    await renderFilteredGrid();
   } else {
     const table = mode === 'watched' ? 'watched' : 'watchlist';
     const orderCol = mode === 'watched' ? 'watched_on' : 'added_on';
-    const { data, error } = await db.from(table).select('*').order(orderCol, { ascending: false });
+    let query = db.from(table).select('*').order(orderCol, { ascending: false });
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load your ${mode}.</div>`; return; }
-    items = data || [];
 
-    if (mode === 'watched') {
-      // Build maps of tmdb_id -> most recent rating / liked
-      const ratingMap = {};
-      const likedMap = {};
-      for (const item of items) {
-        if (!(item.tmdb_id in ratingMap) && item.rating) ratingMap[item.tmdb_id] = item.rating;
-        if (item.liked) likedMap[item.tmdb_id] = true;
-      }
-      // Pull review text from diary to know which titles have ever been reviewed
-      let reviewedSet = new Set();
-      try {
-        const { data: diaryRows } = await db.from('diary').select('tmdb_id, review_text').not('review_text', 'is', null);
-        reviewedSet = new Set((diaryRows || []).filter(d => d.review_text && d.review_text.trim().length).map(d => d.tmdb_id));
-      } catch {}
-      renderHomeGrid(items, 'movie', ratingMap, likedMap, reviewedSet);
-    } else {
-      renderHomeGrid(items, 'movie', {}, {}, new Set());
+    libraryItemsCache = data || [];
+    libraryMediaTypeCache = 'movie';
+
+    const ratingMap = {}, likedMap = {};
+    for (const item of (data || [])) {
+      if (!ratingMap[item.tmdb_id] && item.rating) ratingMap[item.tmdb_id] = item.rating;
+      if (!likedMap[item.tmdb_id] && item.liked) likedMap[item.tmdb_id] = true;
     }
+    libraryRatingMapCache = ratingMap;
+    libraryLikedMapCache = likedMap;
+
+    // Check which tmdb_ids have diary reviews
+    const tmdbIds = [...new Set((data || []).map(i => i.tmdb_id))];
+    let reviewedSet = new Set();
+    if (tmdbIds.length) {
+      let rQuery = db.from('diary').select('tmdb_id').not('review_text', 'is', null).neq('review_text', '').in('tmdb_id', tmdbIds);
+      if (uid) rQuery = rQuery.eq('user_id', uid);
+      const { data: reviewedRows } = await rQuery;
+      reviewedSet = new Set((reviewedRows || []).map(r => r.tmdb_id));
+    }
+    libraryReviewedSetCache = reviewedSet;
+
+    await renderFilteredGrid();
   }
 }
 
-function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMap = {}, reviewedSet = new Set()) {
+function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMap = {}, reviewedSet = new Set(), alreadyUnique = false) {
   const grid = document.getElementById('home-grid');
   if (!items.length) {
     grid.innerHTML = `<div class="empty-grid">Nothing here yet.<br>Tap the search button to add a ${mediaType === 'tv' ? 'TV show' : 'film'}.</div>`;
     return;
   }
-  const seen = new Set();
-  const unique = items.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
   const mode = mediaType === 'tv' ? 'quick' : 'log';
 
+  let unique = items;
+  if (!alreadyUnique) {
+    const seen = new Set();
+    unique = items.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+  }
+
   grid.innerHTML = unique.map(item => {
-    // Rating: for movies use ratingMap (most recent rating by tmdb_id),
-    // for TV use item.rating from tv_status directly
     const rating = mediaType === 'tv' ? (item.rating || 0) : (ratingMap[item.tmdb_id] || 0);
     const liked = mediaType === 'tv' ? false : !!likedMap[item.tmdb_id];
-    const reviewed = mediaType === 'tv' ? false : reviewedSet.has(item.tmdb_id);
+    const reviewed = reviewedSet.has(item.tmdb_id);
 
-    const parts = [];
-    if (rating) parts.push(`<span>${starsCompact(rating)}</span>`);
-    if (liked) parts.push(`<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>`);
-    if (reviewed) parts.push(REVIEW_ICON_SVG);
-    const ratingHtml = parts.length ? `<div class="film-card-rating">${parts.join('')}</div>` : `<div class="film-card-rating"></div>`;
+    const hasAnyMeta = rating || liked || reviewed;
+    const metaHtml = hasAnyMeta ? `
+      <div class="film-card-meta">
+        ${rating ? `<span class="stars-sm">${starsCompact(rating)}</span>` : ''}
+        ${liked ? `<span class="heart-sm">${heartSVG}</span>` : ''}
+        ${reviewed ? `<span class="review-sm"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></span>` : ''}
+      </div>` : `<div class="film-card-meta"></div>`;
 
     return `
     <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-home', '${mode}', '${mediaType}')">
@@ -1569,7 +1753,7 @@ function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMa
           ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
           : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
       </div>
-      ${ratingHtml}
+      ${metaHtml}
     </div>`;
   }).join('');
 }
@@ -1578,21 +1762,19 @@ function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMa
 async function loadDiary() {
   const body = document.getElementById('diary-body');
   body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
-  const { data: entries, error } = await db.from('diary').select('*').order('watched_on', { ascending: false });
-  if (error) {
-    body.innerHTML = `<div class="empty-grid">Couldn't load your diary.<br><small style="font-size:11px;color:var(--text3);">${error.message || ''}</small></div>`;
-    return;
-  }
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  let query = db.from('diary').select('*').order('watched_on', { ascending: false });
+  if (uid) query = query.eq('user_id', uid);
+  const { data: entries, error } = await query;
+  if (error) { body.innerHTML = `<div class="empty-grid">Couldn't load your diary.<br><small>${error.message || ''}</small></div>`; return; }
   diaryEntries = entries || [];
   renderDiary(diaryEntries);
 }
 
 function renderDiary(entries) {
   const body = document.getElementById('diary-body');
-  if (!entries.length) {
-    body.innerHTML = `<div class="empty-grid">Nothing logged yet.<br>Use the + button to log a film to your diary.</div>`;
-    return;
-  }
+  if (!entries.length) { body.innerHTML = `<div class="empty-grid">Nothing logged yet.<br>Use the + button to log a film to your diary.</div>`; return; }
   const groups = [];
   let currentKey = null;
   entries.forEach(entry => {
@@ -1601,7 +1783,6 @@ function renderDiary(entries) {
     if (key !== currentKey) { groups.push({ key, items: [] }); currentKey = key; }
     groups[groups.length - 1].items.push(entry);
   });
-
   body.innerHTML = groups.map(g => `
     <div class="diary-month-header">${g.key}</div>
     ${g.items.map(entry => {
@@ -1609,9 +1790,7 @@ function renderDiary(entries) {
       const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
       return `
         <div class="diary-entry" onclick="openDiaryEntry('${entry.id}')">
-          ${entry.poster_path
-            ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />`
-            : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
+          ${entry.poster_path ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />` : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
           <div class="diary-entry-info">
             <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ` <span class="rewatch-symbol" title="Rewatch">${REWATCH_SYMBOL}</span>` : ''}</div>
             <div class="diary-entry-meta">
@@ -1621,47 +1800,28 @@ function renderDiary(entries) {
             </div>
           </div>
         </div>`;
-    }).join('')}
-  `).join('');
+    }).join('')}`).join('');
 }
 
 function openDiaryEntry(id) {
   const entry = diaryEntries.find(e => e.id === id);
   if (!entry) return;
-
   const posterImg = document.getElementById('diary-modal-poster');
-  if (entry.poster_path) {
-    posterImg.src = `https://image.tmdb.org/t/p/w200${entry.poster_path}`;
-    posterImg.style.display = 'block';
-  } else {
-    posterImg.removeAttribute('src');
-    posterImg.style.display = 'none';
-  }
-
+  if (entry.poster_path) { posterImg.src = `https://image.tmdb.org/t/p/w200${entry.poster_path}`; posterImg.style.display = 'block'; }
+  else { posterImg.removeAttribute('src'); posterImg.style.display = 'none'; }
   document.getElementById('diary-modal-title').textContent = entry.title;
   document.getElementById('diary-modal-date').textContent = new Date(entry.watched_on).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const rewatchEl = document.getElementById('diary-modal-rewatch');
-  rewatchEl.style.display = entry.rewatch ? 'block' : 'none';
+  document.getElementById('diary-modal-rewatch').style.display = entry.rewatch ? 'block' : 'none';
   document.getElementById('diary-modal-stars').innerHTML = entry.rating ? starsDisplay(entry.rating) : '';
   const heartEl = document.getElementById('diary-modal-heart');
   if (entry.liked) { heartEl.innerHTML = heartSVG; heartEl.style.display = 'inline-flex'; }
   else { heartEl.style.display = 'none'; heartEl.innerHTML = ''; }
   document.getElementById('diary-modal-review').textContent = entry.review_text || 'No review written for this watch.';
-
-  const editBtn = document.getElementById('diary-modal-edit-btn');
-  editBtn.onclick = () => {
-    document.getElementById('diary-modal').classList.remove('show');
-    openEditModal(entry);
-  };
-
-  const deleteBtn = document.getElementById('diary-modal-delete-btn');
-  deleteBtn.onclick = () => {
+  document.getElementById('diary-modal-edit-btn').onclick = () => { document.getElementById('diary-modal').classList.remove('show'); openEditModal(entry); };
+  document.getElementById('diary-modal-delete-btn').onclick = () => {
     document.getElementById('diary-modal').classList.remove('show');
     setTimeout(() => {
-      showConfirm({
-        title: 'Remove this entry?',
-        message: 'This log entry will be deleted from your diary.',
-        confirmText: 'Remove', danger: true,
+      showConfirm({ title: 'Remove this entry?', message: 'This log entry will be deleted from your diary.', confirmText: 'Remove', danger: true,
         onConfirm: async () => {
           const { error } = await db.from('diary').delete().eq('id', entry.id);
           if (error) { showToast('Could not remove entry', 'error'); return; }
@@ -1671,28 +1831,19 @@ function openDiaryEntry(id) {
       });
     }, 220);
   };
-
-  const closeBtn = document.getElementById('diary-modal-close-btn');
-  closeBtn.onclick = () => document.getElementById('diary-modal').classList.remove('show');
-
+  document.getElementById('diary-modal-close-btn').onclick = () => document.getElementById('diary-modal').classList.remove('show');
   document.getElementById('diary-modal').classList.add('show');
 }
 
-/* ---- EDIT DIARY ENTRY ---- */
 function openEditModal(entry) {
-  editingEntry = entry;
-  editRating = entry.rating || 0;
-  editLiked = !!entry.liked;
-
+  editingEntry = entry; editRating = entry.rating || 0; editLiked = !!entry.liked;
   document.getElementById('edit-modal-title').textContent = entry.title;
   document.getElementById('edit-watched-date').value = entry.watched_on;
   document.getElementById('edit-review-text').value = entry.review_text || '';
   document.getElementById('edit-spoilers').checked = !!entry.contains_spoilers;
   document.getElementById('edit-rewatch').checked = !!entry.rewatch;
-
   document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
   document.getElementById('edit-like-toggle').classList.toggle('on', editLiked);
-
   document.getElementById('edit-modal').classList.add('show');
 }
 
@@ -1717,33 +1868,23 @@ async function saveEditEntry() {
   const reviewText = document.getElementById('edit-review-text').value.trim();
   const spoilers = document.getElementById('edit-spoilers').checked;
   const rewatch = document.getElementById('edit-rewatch').checked;
-
-  const { error } = await db.from('diary').update({
-    watched_on: watchedOn, rating: editRating || null, liked: editLiked,
-    rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers
-  }).eq('id', editingEntry.id);
-
+  const { error } = await db.from('diary').update({ watched_on: watchedOn, rating: editRating || null, liked: editLiked, rewatch, review_text: reviewText || null, contains_spoilers: spoilers }).eq('id', editingEntry.id);
   if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
-
-  if (editingEntry.watched_id) {
-    await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
-  }
-
+  if (editingEntry.watched_id) await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
   showToast('Entry updated');
   closeEditModal();
   loadDiary(); loadStats();
 }
 
-/* ---- STATS ---- */
+/* ---- STATS (user-scoped) ---- */
 async function loadStats() {
   const { data: { user } } = await db.auth.getUser();
-  if (!user) return;
-
-  const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([
-    db.from('watched').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-    db.from('watchlist').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-    db.from('watched').select('rating').eq('user_id', user.id).not('rating', 'is', null)
-  ]);
+  const uid = user?.id;
+  let wQuery = db.from('watched').select('*', { count: 'exact', head: true });
+  let wlQuery = db.from('watchlist').select('*', { count: 'exact', head: true });
+  let rQuery = db.from('watched').select('rating').not('rating', 'is', null);
+  if (uid) { wQuery = wQuery.eq('user_id', uid); wlQuery = wlQuery.eq('user_id', uid); rQuery = rQuery.eq('user_id', uid); }
+  const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([wQuery, wlQuery, rQuery]);
   document.getElementById('stat-watched').textContent = watchedCount ?? 0;
   document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
   if (ratings && ratings.length) {
