@@ -394,6 +394,9 @@
   .list-card-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
   .person-grid-card { aspect-ratio: 1/1; background: var(--bg3); overflow: hidden; position: relative; border-radius: 50%; flex-shrink: 0; }
   .list-item-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: #fff; cursor: pointer; z-index: 2; }
+  #list-detail-grid .film-card-wrap { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #list-detail-grid .film-card-wrap:active .film-card,
+  #list-detail-grid .film-card-wrap:active .person-grid-card { opacity: 0.6; transition: opacity 0.15s ease; }
 
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
@@ -727,7 +730,13 @@
       </div>
     </div>
     <div style="padding:0 20px 10px;">
-      <div class="md-title" id="list-detail-name" style="font-size:20px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="md-title" id="list-detail-name" style="font-size:20px;"></div>
+        <div id="list-watch-widget" style="display:none;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;" onclick="toggleListWatchDisplay()" title="Tap to toggle">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--purple-light)" stroke-width="2" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="list-watch-text" style="font-size:13px;color:var(--purple-light);font-weight:600;"></span>
+        </div>
+      </div>
       <div class="md-meta" id="list-detail-desc"></div>
     </div>
     <div class="screen-body">
@@ -814,6 +823,10 @@ let currentListItems = [];
 let listItemSearchTimeout = null;
 let listItemSearchMediaType = 'movie';
 let lastListItemSearchResults = [];
+let listWatchStats = { watched: 0, total: 0 };
+let listViewMode = 'percent';
+let longPressTimer = null;
+let longPressTriggered = false;
 
 /* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -2049,12 +2062,12 @@ function renderNewListStep2() {
       </div>
       <div onclick="closeNewListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
     </div>
-    <div class="md-field-label" style="margin-top:0;">${newListType === 'people' ? 'PEOPLE LIST NAME' : 'TITLES LIST NAME'}</div>
+    <div class="md-field-label" style="margin-top:0;">LIST NAME</div>
     <input class="form-input" id="new-list-name" placeholder="${newListType === 'people' ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" />
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
     <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
     <label class="checkbox-row" style="margin-top:10px;">
-      <input type="checkbox" id="new-list-public" checked> Public List
+      <input type="checkbox" id="new-list-public" checked> Public list
     </label>
     <button class="btn-primary" style="margin-top:16px;" onclick="createList()">Create List</button>`;
   setTimeout(() => { const inp = document.getElementById('new-list-name'); if (inp) inp.focus(); }, 100);
@@ -2089,6 +2102,7 @@ async function createList() {
 async function openListDetail(id, prefetched) {
   currentListId = id;
   currentListType = listTypeCache[id] || 'titles';
+  listViewMode = 'percent';
   goTo('screen-list-detail');
   const grid = document.getElementById('list-detail-grid');
   grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
@@ -2117,6 +2131,55 @@ async function loadListItems() {
     listTypeCache[currentListId] = currentListType;
   }
   renderListDetailGrid();
+  await computeListWatchStats();
+  renderListWatchWidget();
+}
+
+async function computeListWatchStats() {
+  if (currentListType === 'people' || !currentListItems.length) { listWatchStats = { watched: 0, total: 0 }; return; }
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  const movieIds = [...new Set(currentListItems.filter(i => i.media_type === 'movie').map(i => i.tmdb_id))];
+  const tvIds = [...new Set(currentListItems.filter(i => i.media_type === 'tv').map(i => i.tmdb_id))];
+  const watchedMovieSet = new Set();
+  const watchedTvSet = new Set();
+  const queries = [];
+  if (movieIds.length) {
+    let q = db.from('watched').select('tmdb_id').in('tmdb_id', movieIds);
+    if (uid) q = q.eq('user_id', uid);
+    queries.push(q.then(({ data }) => { (data || []).forEach(r => watchedMovieSet.add(r.tmdb_id)); }));
+  }
+  if (tvIds.length) {
+    let q = db.from('tv_status').select('tmdb_id').eq('status', 'watched').in('tmdb_id', tvIds);
+    if (uid) q = q.eq('user_id', uid);
+    queries.push(q.then(({ data }) => { (data || []).forEach(r => watchedTvSet.add(r.tmdb_id)); }));
+  }
+  await Promise.all(queries);
+  const total = currentListItems.length;
+  const watched = currentListItems.filter(i =>
+    (i.media_type === 'movie' && watchedMovieSet.has(i.tmdb_id)) ||
+    (i.media_type === 'tv' && watchedTvSet.has(i.tmdb_id))
+  ).length;
+  listWatchStats = { watched, total };
+}
+
+function toggleListWatchDisplay() {
+  listViewMode = listViewMode === 'percent' ? 'count' : 'percent';
+  renderListWatchWidget();
+}
+
+function renderListWatchWidget() {
+  const widget = document.getElementById('list-watch-widget');
+  const text = document.getElementById('list-watch-text');
+  if (!widget || !text) return;
+  if (currentListType === 'people' || !listWatchStats.total) { widget.style.display = 'none'; return; }
+  widget.style.display = 'flex';
+  if (listViewMode === 'percent') {
+    const pct = Math.round((listWatchStats.watched / listWatchStats.total) * 100);
+    text.textContent = `${pct}%`;
+  } else {
+    text.textContent = `${listWatchStats.watched} of ${listWatchStats.total}`;
+  }
 }
 
 function renderListDetailGrid() {
@@ -2127,26 +2190,56 @@ function renderListDetailGrid() {
   }
   if (currentListType === 'people') {
     grid.innerHTML = currentListItems.map(item => `
-      <div class="film-card-wrap">
+      <div class="film-card-wrap"
+        onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
+        ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+        oncontextmenu="return false;">
         <div class="person-grid-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
             : `<div class="poster-label" style="padding:0;">${escapeHtml((item.title || '?')[0])}</div>`}
-          <div class="list-item-remove" onclick="event.stopPropagation();confirmRemoveListItem('${item.id}')">×</div>
         </div>
         <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.title)}</span></div>
       </div>`).join('');
   } else {
     grid.innerHTML = currentListItems.map(item => `
-      <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-list-detail', 'quick', '${item.media_type}')">
+      <div class="film-card-wrap"
+        onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
+        ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
+        oncontextmenu="return false;"
+        onclick="handleListItemTap(event, ${item.tmdb_id}, '${item.media_type}')">
         <div class="film-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
             : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
-          <div class="list-item-remove" onclick="event.stopPropagation();confirmRemoveListItem('${item.id}')">×</div>
         </div>
       </div>`).join('');
   }
+}
+
+/* -- Long-press to delete list items -- */
+function startLongPress(itemId) {
+  longPressTriggered = false;
+  clearTimeout(longPressTimer);
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true;
+    if (navigator.vibrate) navigator.vibrate(12);
+    confirmRemoveListItem(itemId);
+  }, 550);
+}
+
+function cancelLongPress() {
+  clearTimeout(longPressTimer);
+}
+
+function handleListItemTap(e, tmdbId, mediaType) {
+  if (longPressTriggered) {
+    e.preventDefault();
+    e.stopPropagation();
+    longPressTriggered = false;
+    return;
+  }
+  openMovieDetail(tmdbId, 'screen-list-detail', 'quick', mediaType);
 }
 
 function confirmRemoveListItem(itemId) {
