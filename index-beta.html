@@ -426,6 +426,18 @@
     </div>
   </div>
 
+  <!-- SORT PICKER SHEET -->
+  <div class="sheet-overlay" id="sort-sheet-overlay" onclick="closeSortSheet(event)">
+    <div class="service-sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">Sort By</div>
+        <div class="sheet-close" onclick="closeSortSheet()">×</div>
+      </div>
+      <div class="sheet-body" id="sort-sheet-body"></div>
+    </div>
+  </div>
+
   <!-- CONFIRM MODAL -->
   <div class="modal-overlay" id="confirm-modal">
     <div class="modal-card">
@@ -645,8 +657,9 @@
         <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
         <span id="service-chip-label">SERVICE</span>
       </div>
-      <div class="filter-chip" id="recent-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
-      <div class="filter-chip" id="sort-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
+      <div class="filter-chip" id="sort-filter-chip" onclick="openSortSheet()" title="Sort">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </div>
       <div class="filter-chip" id="new-list-chip" style="display:none;" onclick="openNewListModal()">
         <svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         NEW LIST
@@ -812,6 +825,19 @@ let selectedServiceIds = new Set(); // pending (in sheet)
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
+// Sort state
+let currentSort = 'date_added';     // date_added | release_newest | release_oldest | rating_highest | rating_lowest | length_shortest | length_longest
+let detailsCache = {};              // key: "movie-123" or "tv-123" → { releaseDate, runtime }
+const SORT_OPTIONS = [
+  { id: 'date_added',      label: 'Date Added' },
+  { id: 'release_newest',  label: 'Release Date — Newest First' },
+  { id: 'release_oldest',  label: 'Release Date — Earliest First' },
+  { id: 'rating_highest',  label: 'Your Rating — Highest First' },
+  { id: 'rating_lowest',   label: 'Your Rating — Lowest First' },
+  { id: 'length_shortest', label: 'Length — Shortest First' },
+  { id: 'length_longest',  label: 'Length — Longest First' },
+];
+
 // Lists state
 let listsCache = [];
 let listTypeCache = {};       // list_id -> 'titles' | 'people'
@@ -928,50 +954,128 @@ function updateServiceChip() {
 }
 
 async function renderFilteredGrid() {
-  if (appliedServiceIds.size === 0) {
-    // No filter — show full cache
-    renderHomeGrid(libraryItemsCache, libraryMediaTypeCache, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache);
-    return;
-  }
-
   const grid = document.getElementById('home-grid');
-  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
-
-  // Fetch providers for all items (use cache when available)
   const type = libraryMediaTypeCache;
   const endpoint = type === 'tv' ? 'tv' : 'movie';
 
   const seen = new Set();
-  const unique = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+  let items = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
 
-  await Promise.all(unique.map(async item => {
-    const cacheKey = `${endpoint}-${item.tmdb_id}`;
-    if (providerCache[cacheKey] !== undefined) return;
-    try {
-      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
-      if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
-      const data = await res.json();
-      const gb = data.results?.GB;
-      const providers = new Set();
-      const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
-      addList(gb?.flatrate);
-      addList(gb?.free);
-      providerCache[cacheKey] = providers;
-    } catch { providerCache[cacheKey] = new Set(); }
-  }));
+  if (appliedServiceIds.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
 
-  const filtered = unique.filter(item => {
-    const cacheKey = `${endpoint}-${item.tmdb_id}`;
-    const providers = providerCache[cacheKey] || new Set();
-    return [...appliedServiceIds].some(sid => providers.has(sid));
-  });
+    // Fetch providers for all items (use cache when available)
+    await Promise.all(items.map(async item => {
+      const cacheKey = `${endpoint}-${item.tmdb_id}`;
+      if (providerCache[cacheKey] !== undefined) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+        const data = await res.json();
+        const gb = data.results?.GB;
+        const providers = new Set();
+        const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
+        addList(gb?.flatrate);
+        addList(gb?.free);
+        providerCache[cacheKey] = providers;
+      } catch { providerCache[cacheKey] = new Set(); }
+    }));
 
-  if (!filtered.length) {
-    grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
-    return;
+    items = items.filter(item => {
+      const cacheKey = `${endpoint}-${item.tmdb_id}`;
+      const providers = providerCache[cacheKey] || new Set();
+      return [...appliedServiceIds].some(sid => providers.has(sid));
+    });
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
+      return;
+    }
   }
 
-  renderHomeGrid(filtered, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
+  if (currentSort !== 'date_added') {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    items = await sortItemsBy(items, type, currentSort);
+  }
+
+  renderHomeGrid(items, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
+}
+
+/* ---- SORTING ---- */
+async function sortItemsBy(items, mediaType, sortId) {
+  if (sortId === 'rating_highest' || sortId === 'rating_lowest') {
+    const getRating = item => mediaType === 'tv' ? (item.rating || 0) : (libraryRatingMapCache[item.tmdb_id] || 0);
+    return [...items].sort((a, b) => sortId === 'rating_highest' ? getRating(b) - getRating(a) : getRating(a) - getRating(b));
+  }
+
+  if (sortId === 'release_newest' || sortId === 'release_oldest' || sortId === 'length_shortest' || sortId === 'length_longest') {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    await Promise.all(items.map(async item => {
+      const cacheKey = `${endpoint}-${item.tmdb_id}`;
+      if (detailsCache[cacheKey]) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { detailsCache[cacheKey] = {}; return; }
+        const data = await res.json();
+        detailsCache[cacheKey] = {
+          releaseDate: mediaType === 'tv' ? (data.first_air_date || '') : (data.release_date || ''),
+          runtime: mediaType === 'tv' ? ((data.episode_run_time && data.episode_run_time.length) ? data.episode_run_time[0] : 0) : (data.runtime || 0)
+        };
+      } catch { detailsCache[cacheKey] = {}; }
+    }));
+
+    const getDetails = item => detailsCache[`${endpoint}-${item.tmdb_id}`] || {};
+
+    if (sortId === 'release_newest' || sortId === 'release_oldest') {
+      return [...items].sort((a, b) => {
+        const da = getDetails(a).releaseDate || '';
+        const db = getDetails(b).releaseDate || '';
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return sortId === 'release_newest' ? db.localeCompare(da) : da.localeCompare(db);
+      });
+    }
+
+    return [...items].sort((a, b) => {
+      const ra = getDetails(a).runtime || 0;
+      const rb = getDetails(b).runtime || 0;
+      return sortId === 'length_shortest' ? ra - rb : rb - ra;
+    });
+  }
+
+  return items;
+}
+
+/* ---- SORT SHEET ---- */
+function openSortSheet() {
+  renderSortSheet();
+  document.getElementById('sort-sheet-overlay').classList.add('show');
+}
+
+function closeSortSheet(e) {
+  if (e && e.target !== document.getElementById('sort-sheet-overlay')) return;
+  document.getElementById('sort-sheet-overlay').classList.remove('show');
+}
+
+function renderSortSheet() {
+  const body = document.getElementById('sort-sheet-body');
+  const current = SORT_OPTIONS.find(o => o.id === currentSort);
+  body.innerHTML = `
+    <div style="font-size:12px;color:var(--text2);padding:2px 0 12px;">Currently sorted by <strong style="color:var(--text);">${escapeHtml(current ? current.label : 'Date Added')}</strong></div>
+    ${SORT_OPTIONS.map(opt => `
+      <div class="service-row" onclick="selectSortOption('${opt.id}')">
+        <div class="service-name" style="${opt.id === currentSort ? 'color:var(--purple-light);font-weight:600;' : ''}">${escapeHtml(opt.label)}</div>
+        <div class="service-check ${opt.id === currentSort ? 'checked' : ''}">
+          ${opt.id === currentSort ? checkSVG : ''}
+        </div>
+      </div>`).join('')}`;
+}
+
+async function selectSortOption(id) {
+  currentSort = id;
+  document.getElementById('sort-sheet-overlay').classList.remove('show');
+  await renderFilteredGrid();
 }
 
 /* ---- NAV ---- */
@@ -1039,7 +1143,6 @@ function setHomeMediaType(type) {
   document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
   document.getElementById('library-mode').style.display = isLists ? 'none' : '';
   document.getElementById('service-filter-chip').style.display = isLists ? 'none' : 'flex';
-  document.getElementById('recent-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
 
