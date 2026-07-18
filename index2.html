@@ -385,6 +385,16 @@
   .sheet-btn.secondary { background: var(--bg4); color: var(--text2); }
   .sheet-btn.primary { background: var(--purple); color: #fff; }
 
+  /* LISTS */
+  #lists-container { display: none; padding: 4px 20px 20px; }
+  .list-card { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 14px; padding: 15px 16px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .list-card:active { border-color: var(--border2); }
+  .list-card-name { font-size: 15px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; }
+  .list-card-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .list-card-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
+  .person-grid-card { aspect-ratio: 1/1; background: var(--bg3); overflow: hidden; position: relative; border-radius: 50%; flex-shrink: 0; }
+  .list-item-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: #fff; cursor: pointer; z-index: 2; }
+
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
 </head>
@@ -485,35 +495,14 @@
     <div class="log-search-card" id="log-search-card"></div>
   </div>
 
-  <!-- CREATE LIST MODAL -->
-  <div class="modal-overlay" id="create-list-modal">
-    <div class="edit-modal-card" style="text-align:left;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div class="modal-title" style="margin-bottom:0;">New List</div>
-        <div onclick="closeCreateListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
-      </div>
-      <div class="form-group">
-        <div class="form-label">List name</div>
-        <input class="form-input" id="create-list-name" placeholder="e.g. Best of Tarantino" autocomplete="off" />
-      </div>
-      <div class="md-field-label">WHAT'S THIS LIST OF?</div>
-      <div style="display:flex;gap:10px;">
-        <div class="pill-toggle on" id="create-list-type-titles" style="flex:1;justify-content:center;" onclick="setCreateListType('titles')">
-          <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-          <span>Titles</span>
-        </div>
-        <div class="pill-toggle" id="create-list-type-people" style="flex:1;justify-content:center;" onclick="setCreateListType('people')">
-          <svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>People</span>
-        </div>
-      </div>
-      <button class="btn-primary" style="margin-top:18px;" onclick="submitCreateList()">Create List</button>
-    </div>
+  <!-- NEW LIST MODAL -->
+  <div class="modal-overlay" id="new-list-modal">
+    <div class="edit-modal-card" id="new-list-card"></div>
   </div>
 
-  <!-- ADD LIST ITEM MODAL -->
-  <div class="modal-overlay" id="add-list-item-modal">
-    <div class="log-search-card" id="add-list-item-card"></div>
+  <!-- ADD ITEM TO LIST MODAL -->
+  <div class="modal-overlay" id="list-item-search-modal">
+    <div class="log-search-card" id="list-item-search-card"></div>
   </div>
 
   <!-- LOADING -->
@@ -644,7 +633,7 @@
       <div class="tab" id="home-tab-tv" onclick="setHomeMediaType('tv')">TV Shows</div>
       <div class="tab" id="home-tab-lists" onclick="setHomeMediaType('lists')">Lists</div>
     </div>
-    <div class="filter-bar" id="filter-bar">
+    <div class="filter-bar">
       <select id="library-mode" class="filter-chip" onchange="onLibraryModeChange()">
         <option value="watched">Watched</option>
         <option value="watchlist">Watchlist</option>
@@ -653,11 +642,16 @@
         <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
         <span id="service-chip-label">SERVICE</span>
       </div>
-      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
-      <div class="filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
+      <div class="filter-chip" id="recent-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
+      <div class="filter-chip" id="sort-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
+      <div class="filter-chip" id="new-list-chip" style="display:none;" onclick="openNewListModal()">
+        <svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        NEW LIST
+      </div>
     </div>
     <div class="screen-body">
       <div class="film-grid" id="home-grid"></div>
+      <div id="lists-container"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
@@ -720,19 +714,21 @@
   <!-- LIST DETAIL -->
   <div class="screen" id="screen-list-detail">
     <div class="home-header">
-      <div onclick="backToLists()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+      <div onclick="goTo('screen-home')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
         <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
       <div class="header-icons">
-        <div onclick="openAddListItemModal()" style="cursor:pointer;">
-          <svg viewBox="0 0 24 24" stroke-width="2" style="stroke:var(--text2);fill:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div onclick="openAddListItemModal()" title="Add item" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="2" width="22" height="22" style="stroke:var(--text2);fill:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </div>
-        <svg viewBox="0 0 24 24" stroke-width="1.8" onclick="confirmDeleteList()" style="cursor:pointer;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <div onclick="confirmDeleteList()" title="Delete list" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="2" width="20" height="20" style="stroke:var(--text2);fill:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </div>
       </div>
     </div>
     <div style="padding:0 20px 10px;">
-      <div class="md-title" id="list-detail-title" style="font-size:22px;"></div>
-      <div style="font-size:13px;color:var(--text2);margin-top:4px;" id="list-detail-subtitle"></div>
+      <div class="md-title" id="list-detail-name" style="font-size:20px;"></div>
+      <div class="md-meta" id="list-detail-desc"></div>
     </div>
     <div class="screen-body">
       <div class="film-grid" id="list-detail-grid"></div>
@@ -765,49 +761,7 @@ const STREAMING_SERVICES = [
   { id: 283, name: 'Crunchyroll',     bg: '#F47521', label: 'C' },
   { id: 188, name: 'YouTube Premium', bg: '#FF0000', label: 'YT' },
   { id: 386, name: 'Peacock',         bg: '#000078', label: 'P' },
-  { matchName: 'YouTube',   name: 'YouTube (Free)', bg: '#FF0000', label: 'YT' },
-  { matchName: 'Channel 4', name: 'Channel 4',       bg: '#65459E', label: '4' },
-  { matchName: 'ITVX',      name: 'ITVX',            bg: '#DA1B2B', label: 'X' },
 ];
-
-/* ---- PROVIDER LOGO DIRECTORY (resolved at runtime from TMDB) ---- */
-let providerDirectoryLoaded = false;
-let providerDirectoryLoading = null;
-
-async function loadProviderDirectory() {
-  if (providerDirectoryLoaded) return;
-  if (providerDirectoryLoading) return providerDirectoryLoading;
-  providerDirectoryLoading = (async () => {
-    try {
-      const [movieRes, tvRes] = await Promise.all([
-        fetch(`${TMDB_BASE}/watch/providers/movie?api_key=${TMDB_API_KEY}&watch_region=GB`),
-        fetch(`${TMDB_BASE}/watch/providers/tv?api_key=${TMDB_API_KEY}&watch_region=GB`)
-      ]);
-      const [movieData, tvData] = await Promise.all([
-        movieRes.ok ? movieRes.json() : { results: [] },
-        tvRes.ok ? tvRes.json() : { results: [] }
-      ]);
-      const all = [...(movieData.results || []), ...(tvData.results || [])];
-      const byId = {};
-      const byName = {};
-      all.forEach(p => {
-        if (!byId[p.provider_id]) byId[p.provider_id] = p.logo_path;
-        const key = (p.provider_name || '').toLowerCase();
-        if (key && !byName[key]) byName[key] = { id: p.provider_id, logo: p.logo_path };
-      });
-      STREAMING_SERVICES.forEach(s => {
-        if (s.id && byId[s.id]) {
-          s.logo = byId[s.id];
-        } else if (s.matchName) {
-          const match = byName[s.matchName.toLowerCase()];
-          if (match) { s.id = match.id; s.logo = match.logo; }
-        }
-      });
-      providerDirectoryLoaded = true;
-    } catch { /* fall back to letter badges */ }
-  })();
-  return providerDirectoryLoading;
-}
 
 /* ---- STATE ---- */
 let selectedMovie = null;
@@ -849,6 +803,18 @@ let selectedServiceIds = new Set(); // pending (in sheet)
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
+// Lists state
+let listsCache = [];
+let listTypeCache = {};       // list_id -> 'titles' | 'people'
+let newListType = null;
+let currentListId = null;
+let currentListName = '';
+let currentListType = 'titles';
+let currentListItems = [];
+let listItemSearchTimeout = null;
+let listItemSearchMediaType = 'movie';
+let lastListItemSearchResults = [];
+
 /* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 const checkSVG = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -884,15 +850,11 @@ function showConfirm({ title, message, confirmText = 'Confirm', danger = true, o
 }
 
 /* ---- SERVICE SHEET ---- */
-async function openServiceSheet() {
+function openServiceSheet() {
   // Clone applied → pending
   selectedServiceIds = new Set(appliedServiceIds);
-  document.getElementById('service-sheet-overlay').classList.add('show');
-  if (!providerDirectoryLoaded) {
-    document.getElementById('service-sheet-body').innerHTML = `<div style="display:flex;justify-content:center;padding:24px;"><span class="spinner dark"></span></div>`;
-    await loadProviderDirectory();
-  }
   renderServiceSheet();
+  document.getElementById('service-sheet-overlay').classList.add('show');
 }
 
 function closeServiceSheet(e) {
@@ -902,13 +864,9 @@ function closeServiceSheet(e) {
 
 function renderServiceSheet() {
   const body = document.getElementById('service-sheet-body');
-  body.innerHTML = STREAMING_SERVICES.filter(s => s.id).map(s => `
+  body.innerHTML = STREAMING_SERVICES.map(s => `
     <div class="service-row" onclick="toggleServiceId(${s.id})">
-      <div class="service-logo" style="background:${s.logo ? '#000' : s.bg};overflow:hidden;">
-        ${s.logo
-          ? `<img src="https://image.tmdb.org/t/p/w92${s.logo}" style="width:100%;height:100%;object-fit:cover;" />`
-          : escapeHtml(s.label)}
-      </div>
+      <div class="service-logo" style="background:${s.bg};">${escapeHtml(s.label)}</div>
       <div class="service-name">${escapeHtml(s.name)}</div>
       <div class="service-check ${selectedServiceIds.has(s.id) ? 'checked' : ''}" id="svc-check-${s.id}">
         ${selectedServiceIds.has(s.id) ? checkSVG : ''}
@@ -1014,7 +972,7 @@ function goTo(id) {
 
 function goHome() {
   goTo('screen-home');
-  loadLibrary();
+  if (homeMediaType === 'lists') { setHomeMediaType('movie'); } else { loadLibrary(); }
   loadStats();
 }
 
@@ -1058,9 +1016,22 @@ function openDiary() {
 }
 
 function setHomeMediaType(type) {
-  homeMediaType = type === 'tv' ? 'tv' : 'movie';
+  homeMediaType = type === 'tv' ? 'tv' : (type === 'lists' ? 'lists' : 'movie');
   document.getElementById('home-tab-films').classList.toggle('active', homeMediaType === 'movie');
   document.getElementById('home-tab-tv').classList.toggle('active', homeMediaType === 'tv');
+  document.getElementById('home-tab-lists').classList.toggle('active', homeMediaType === 'lists');
+
+  const isLists = homeMediaType === 'lists';
+  document.getElementById('home-grid').style.display = isLists ? 'none' : 'grid';
+  document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
+  document.getElementById('library-mode').style.display = isLists ? 'none' : '';
+  document.getElementById('service-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('recent-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
+
+  if (isLists) { loadLists(); return; }
+
   appliedServiceIds.clear();
   updateServiceChip();
   renderLibraryModeOptions();
@@ -1090,7 +1061,6 @@ function onLibraryModeChange() {
 
 /* ---- AUTH ---- */
 async function init() {
-  loadProviderDirectory();
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) enterApp(session.user);
   else goTo('screen-onboard');
@@ -1997,6 +1967,317 @@ async function loadStats() {
   } else {
     document.getElementById('stat-avg').textContent = '—';
   }
+}
+
+/* ---- LISTS ---- */
+async function loadLists() {
+  const container = document.getElementById('lists-container');
+  container.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) { container.innerHTML = `<div class="empty-grid">Sign in to see your lists.</div>`; return; }
+
+  const { data, error } = await db.from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+  if (error) { container.innerHTML = `<div class="empty-grid">Couldn't load your lists.</div>`; return; }
+  listsCache = data || [];
+
+  if (!listsCache.length) {
+    container.innerHTML = `<div class="empty-grid">No lists yet.<br>Tap "New List" above to create one.</div>`;
+    return;
+  }
+
+  const ids = listsCache.map(l => l.id);
+  const { data: items } = await db.from('list_items').select('list_id, media_type').in('list_id', ids);
+  const countMap = {}, typeMap = {};
+  (items || []).forEach(it => {
+    countMap[it.list_id] = (countMap[it.list_id] || 0) + 1;
+    if (!typeMap[it.list_id]) typeMap[it.list_id] = it.media_type === 'person' ? 'people' : 'titles';
+  });
+
+  container.innerHTML = listsCache.map(l => {
+    const count = countMap[l.id] || 0;
+    const type = l.list_type || listTypeCache[l.id] || typeMap[l.id] || 'titles';
+    listTypeCache[l.id] = type;
+    return `
+      <div class="list-card" onclick="openListDetail('${l.id}')">
+        <div class="list-card-name">${escapeHtml(l.name)}</div>
+        <div class="list-card-meta">${type === 'people' ? 'People' : 'Titles'} · ${count} item${count === 1 ? '' : 's'}${l.is_public === false ? ' · Private' : ''}</div>
+        ${l.description ? `<div class="list-card-desc">${escapeHtml(l.description)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+/* -- New List modal -- */
+function openNewListModal() {
+  newListType = null;
+  renderNewListStep1();
+  document.getElementById('new-list-modal').classList.add('show');
+}
+function closeNewListModal() {
+  document.getElementById('new-list-modal').classList.remove('show');
+}
+
+function renderNewListStep1() {
+  const card = document.getElementById('new-list-card');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">New List</div>
+      <div onclick="closeNewListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">What kind of list do you want to make?</div>
+    <div class="pill-toggle" style="justify-content:flex-start;" onclick="chooseNewListType('titles')">
+      <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      <span>Titles — Films &amp; TV Shows</span>
+    </div>
+    <div class="pill-toggle" style="justify-content:flex-start;margin-top:10px;" onclick="chooseNewListType('people')">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>People — Cast &amp; Crew</span>
+    </div>`;
+}
+
+function chooseNewListType(type) {
+  newListType = type;
+  renderNewListStep2();
+}
+
+function renderNewListStep2() {
+  const card = document.getElementById('new-list-card');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="renderNewListStep1()">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="16" height="16" style="stroke:var(--text3);fill:none;flex-shrink:0;"><polyline points="15 18 9 12 15 6"/></svg>
+        <span style="font-size:13px;color:var(--text3);">Back</span>
+      </div>
+      <div onclick="closeNewListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+    </div>
+    <div class="md-field-label" style="margin-top:0;">${newListType === 'people' ? 'PEOPLE LIST NAME' : 'TITLES LIST NAME'}</div>
+    <input class="form-input" id="new-list-name" placeholder="${newListType === 'people' ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" />
+    <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
+    <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
+    <label class="checkbox-row" style="margin-top:10px;">
+      <input type="checkbox" id="new-list-public" checked> Public list
+    </label>
+    <button class="btn-primary" style="margin-top:16px;" onclick="createList()">Create List</button>`;
+  setTimeout(() => { const inp = document.getElementById('new-list-name'); if (inp) inp.focus(); }, 100);
+}
+
+async function createList() {
+  const nameInput = document.getElementById('new-list-name');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('Please give your list a name', 'error'); return; }
+  const description = document.getElementById('new-list-desc').value.trim();
+  const isPublic = document.getElementById('new-list-public').checked;
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType };
+  let { data, error } = await db.from('lists').insert(payload).select().single();
+  if (error && (error.code === '42703' || /list_type|column/i.test(error.message || ''))) {
+    const rest = { ...payload }; delete rest.list_type;
+    ({ data, error } = await db.from('lists').insert(rest).select().single());
+  }
+  if (error) { showToast('Could not create list: ' + (error.message || ''), 'error'); return; }
+
+  listTypeCache[data.id] = newListType;
+  closeNewListModal();
+  showToast('List created');
+  loadLists();
+  await openListDetail(data.id, data);
+  setTimeout(() => openAddListItemModal(), 260);
+}
+
+/* -- List Detail -- */
+async function openListDetail(id, prefetched) {
+  currentListId = id;
+  currentListType = listTypeCache[id] || 'titles';
+  goTo('screen-list-detail');
+  const grid = document.getElementById('list-detail-grid');
+  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+  let list = prefetched;
+  if (!list) {
+    const { data, error } = await db.from('lists').select('*').eq('id', id).single();
+    if (error) { showToast('Could not load list', 'error'); goTo('screen-home'); return; }
+    list = data;
+  }
+  currentListName = list.name;
+  document.getElementById('list-detail-name').textContent = list.name;
+  document.getElementById('list-detail-desc').textContent = list.description || '';
+  if (list.list_type) { currentListType = list.list_type; listTypeCache[id] = list.list_type; }
+
+  await loadListItems();
+}
+
+async function loadListItems() {
+  const grid = document.getElementById('list-detail-grid');
+  const { data, error } = await db.from('list_items').select('*').eq('list_id', currentListId).order('position', { ascending: true });
+  if (error) { grid.innerHTML = `<div class="empty-grid">Couldn't load items.</div>`; return; }
+  currentListItems = data || [];
+  if (currentListItems.length) {
+    currentListType = currentListItems[0].media_type === 'person' ? 'people' : 'titles';
+    listTypeCache[currentListId] = currentListType;
+  }
+  renderListDetailGrid();
+}
+
+function renderListDetailGrid() {
+  const grid = document.getElementById('list-detail-grid');
+  if (!currentListItems.length) {
+    grid.innerHTML = `<div class="empty-grid">No items yet.<br>Tap the + button above to add ${currentListType === 'people' ? 'cast &amp; crew' : 'films or shows'}.</div>`;
+    return;
+  }
+  if (currentListType === 'people') {
+    grid.innerHTML = currentListItems.map(item => `
+      <div class="film-card-wrap">
+        <div class="person-grid-card">
+          ${item.poster_path
+            ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div class="poster-label" style="padding:0;">${escapeHtml((item.title || '?')[0])}</div>`}
+          <div class="list-item-remove" onclick="event.stopPropagation();confirmRemoveListItem('${item.id}')">×</div>
+        </div>
+        <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.title)}</span></div>
+      </div>`).join('');
+  } else {
+    grid.innerHTML = currentListItems.map(item => `
+      <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-list-detail', 'quick', '${item.media_type}')">
+        <div class="film-card">
+          ${item.poster_path
+            ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+          <div class="list-item-remove" onclick="event.stopPropagation();confirmRemoveListItem('${item.id}')">×</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function confirmRemoveListItem(itemId) {
+  showConfirm({ title: 'Remove item?', message: 'This will remove it from the list.', confirmText: 'Remove', danger: true,
+    onConfirm: async () => {
+      const { error } = await db.from('list_items').delete().eq('id', itemId);
+      if (error) { showToast('Could not remove item', 'error'); return; }
+      showToast('Removed from list');
+      loadListItems();
+    }
+  });
+}
+
+function confirmDeleteList() {
+  if (!currentListId) return;
+  showConfirm({ title: 'Delete this list?', message: 'This permanently deletes the list and all its items.', confirmText: 'Delete', danger: true,
+    onConfirm: async () => {
+      const { error } = await db.from('lists').delete().eq('id', currentListId);
+      if (error) { showToast('Could not delete list', 'error'); return; }
+      delete listTypeCache[currentListId];
+      showToast('List deleted');
+      goTo('screen-home');
+      loadLists();
+    }
+  });
+}
+
+/* -- Add Item to List modal -- */
+function openAddListItemModal() {
+  if (!currentListId) return;
+  listItemSearchMediaType = 'movie';
+  lastListItemSearchResults = [];
+  renderListItemSearchStep();
+  document.getElementById('list-item-search-modal').classList.add('show');
+}
+function closeAddListItemModal() {
+  document.getElementById('list-item-search-modal').classList.remove('show');
+}
+
+function renderListItemSearchStep() {
+  const card = document.getElementById('list-item-search-card');
+  const isPeople = currentListType === 'people';
+  const tabsHtml = !isPeople ? `
+    <div class="tabs" style="padding:0;border-bottom:0.5px solid var(--border);margin-bottom:10px;">
+      <div class="tab ${listItemSearchMediaType === 'movie' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListItemSearchType('movie')">Movies</div>
+      <div class="tab ${listItemSearchMediaType === 'tv' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListItemSearchType('tv')">TV Shows</div>
+    </div>` : '';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="modal-title" style="margin-bottom:0;font-size:15px;">Add to "${escapeHtml(currentListName || 'List')}"</div>
+      <div onclick="closeAddListItemModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+    </div>
+    ${tabsHtml}
+    <input id="list-item-search-input" class="form-input" placeholder="${isPeople ? 'Search actors, directors...' : 'Search films or shows...'}"
+      oninput="debouncedListItemSearch(this.value)" autocomplete="off" style="margin-bottom:10px;" />
+    <div id="list-item-search-results" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;scrollbar-width:none;"></div>
+    <button class="btn-secondary" style="margin-top:14px;" onclick="closeAddListItemModal()">Done</button>`;
+  setTimeout(() => { const inp = document.getElementById('list-item-search-input'); if (inp) inp.focus(); }, 100);
+}
+
+function setListItemSearchType(type) {
+  listItemSearchMediaType = type;
+  const input = document.getElementById('list-item-search-input');
+  const q = input ? input.value : '';
+  renderListItemSearchStep();
+  const newInput = document.getElementById('list-item-search-input');
+  if (newInput && q) { newInput.value = q; debouncedListItemSearch(q); }
+}
+
+function debouncedListItemSearch(query) {
+  clearTimeout(listItemSearchTimeout);
+  listItemSearchTimeout = setTimeout(async () => {
+    const q = query.trim();
+    const results = document.getElementById('list-item-search-results');
+    if (q.length < 2) { results.innerHTML = ''; lastListItemSearchResults = []; return; }
+    const isPeople = currentListType === 'people';
+    const endpoint = isPeople ? 'person' : listItemSearchMediaType;
+    try {
+      const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&include_adult=false`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      lastListItemSearchResults = data.results || [];
+      renderListItemSearchResults(lastListItemSearchResults);
+    } catch { showToast('Search failed — try again', 'error'); }
+  }, 300);
+}
+
+function renderListItemSearchResults(results) {
+  const wrap = document.getElementById('list-item-search-results');
+  const isPeople = currentListType === 'people';
+  if (!results.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">No results found.</div>`; return; }
+  wrap.innerHTML = results.slice(0, 10).map(item => {
+    const name = isPeople ? item.name : (item.title || item.name);
+    const imgPath = isPeople ? item.profile_path : item.poster_path;
+    const sub = isPeople ? (item.known_for_department || '') : ((item.release_date || item.first_air_date) ? (item.release_date || item.first_air_date).split('-')[0] : '—');
+    const mediaType = isPeople ? 'person' : listItemSearchMediaType;
+    const alreadyAdded = currentListItems.some(li => li.tmdb_id === item.id && li.media_type === mediaType);
+    const safeName = escapeHtml(name).replace(/'/g, "\\'");
+    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${imgPath ? `'${imgPath}'` : 'null'})"`;
+    return `
+      <div ${onClickAttr}
+        style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--bg4);cursor:${alreadyAdded ? 'default' : 'pointer'};border:0.5px solid var(--border);opacity:${alreadyAdded ? '0.5' : '1'};">
+        ${imgPath
+          ? `<img src="https://image.tmdb.org/t/p/w92${imgPath}" style="width:32px;height:${isPeople ? '32px' : '48px'};border-radius:${isPeople ? '50%' : '5px'};object-fit:cover;flex-shrink:0;" />`
+          : `<div style="width:32px;height:${isPeople ? '32px' : '48px'};border-radius:${isPeople ? '50%' : '5px'};background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;color:var(--text3);">?</span></div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${escapeHtml(sub)}</div>
+        </div>
+        ${alreadyAdded ? `<span style="font-size:11px;color:var(--text3);flex-shrink:0;">Added</span>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function addItemToList(tmdbId, title, posterPath) {
+  if (!currentListId) return;
+  const isPeople = currentListType === 'people';
+  const mediaType = isPeople ? 'person' : listItemSearchMediaType;
+  const payload = {
+    list_id: currentListId, tmdb_id: tmdbId, media_type: mediaType,
+    title, poster_path: posterPath || null, position: currentListItems.length
+  };
+  const { error } = await db.from('list_items').insert(payload);
+  if (error && (error.code === '23514' || /list_items_media_type_check/i.test(error.message || ''))) {
+    showToast('Your list_items table needs "person" added to its media_type check constraint', 'error', 4200);
+    return;
+  }
+  if (error) { showToast('Could not add item: ' + (error.message || ''), 'error'); return; }
+  showToast('Added to list');
+  await loadListItems();
+  renderListItemSearchResults(lastListItemSearchResults);
 }
 
 /* ---- BOOT ---- */
