@@ -397,6 +397,14 @@
   #list-detail-grid .film-card-wrap { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   #list-detail-grid .film-card-wrap:active .film-card,
   #list-detail-grid .film-card-wrap:active .person-grid-card { opacity: 0.6; transition: opacity 0.15s ease; }
+  #list-detail-grid .film-card-wrap.dragging-item { opacity: 0.55; transform: scale(1.05); z-index: 5; transition: opacity 0.15s ease, transform 0.15s ease; }
+  #list-detail-grid .film-card-wrap.dragging-item .film-card,
+  #list-detail-grid .film-card-wrap.dragging-item .person-grid-card { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+
+  /* LIST EDITOR ENTRIES */
+  .list-editor-entry-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--bg4); }
+  .list-editor-entry-remove { color: var(--text3); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+  .list-editor-search-result { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--bg4); cursor: pointer; }
 
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
@@ -426,15 +434,18 @@
     </div>
   </div>
 
-  <!-- SORT PICKER SHEET -->
-  <div class="sheet-overlay" id="sort-sheet-overlay" onclick="closeSortSheet(event)">
+  <!-- ADD TO LIST SHEET -->
+  <div class="sheet-overlay" id="addtolist-sheet-overlay" onclick="closeAddToListSheet(event)">
     <div class="service-sheet" onclick="event.stopPropagation()">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <div class="sheet-title">Sort By</div>
-        <div class="sheet-close" onclick="closeSortSheet()">×</div>
+        <div class="sheet-title">Add to List</div>
+        <div class="sheet-close" onclick="closeAddToListSheet()">×</div>
       </div>
-      <div class="sheet-body" id="sort-sheet-body"></div>
+      <div class="sheet-body" id="addtolist-sheet-body"></div>
+      <div class="sheet-footer" style="padding-bottom:6px;">
+        <button class="sheet-btn primary" style="width:100%;" onclick="startNewListFromDetail()">+ New List</button>
+      </div>
     </div>
   </div>
 
@@ -513,11 +524,6 @@
   <!-- NEW LIST MODAL -->
   <div class="modal-overlay" id="new-list-modal">
     <div class="edit-modal-card" id="new-list-card"></div>
-  </div>
-
-  <!-- ADD ITEM TO LIST MODAL -->
-  <div class="modal-overlay" id="list-item-search-modal">
-    <div class="log-search-card" id="list-item-search-card"></div>
   </div>
 
   <!-- LOADING -->
@@ -657,9 +663,8 @@
         <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
         <span id="service-chip-label">SERVICE</span>
       </div>
-      <div class="filter-chip" id="sort-filter-chip" onclick="openSortSheet()" title="Sort">
-        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-      </div>
+      <div class="filter-chip" id="recent-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
+      <div class="filter-chip" id="sort-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
       <div class="filter-chip" id="new-list-chip" style="display:none;" onclick="openNewListModal()">
         <svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         NEW LIST
@@ -734,11 +739,8 @@
         <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
       <div class="header-icons">
-        <div onclick="openAddListItemModal()" title="Add item" style="cursor:pointer;">
-          <svg viewBox="0 0 24 24" stroke-width="2" width="22" height="22" style="stroke:var(--text2);fill:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </div>
-        <div onclick="confirmDeleteList()" title="Delete list" style="cursor:pointer;">
-          <svg viewBox="0 0 24 24" stroke-width="2" width="20" height="20" style="stroke:var(--text2);fill:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <div onclick="openListEditor()" title="Edit list" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="2" width="20" height="20" style="stroke:var(--text2);fill:none;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         </div>
       </div>
     </div>
@@ -825,34 +827,39 @@ let selectedServiceIds = new Set(); // pending (in sheet)
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
-// Sort state
-let currentSort = 'date_added';     // date_added | release_newest | release_oldest | rating_highest | rating_lowest | length_shortest | length_longest
-let detailsCache = {};              // key: "movie-123" or "tv-123" → { releaseDate, runtime }
-const SORT_OPTIONS = [
-  { id: 'date_added',      label: 'Date Added' },
-  { id: 'release_newest',  label: 'Release Date — Newest First' },
-  { id: 'release_oldest',  label: 'Release Date — Earliest First' },
-  { id: 'rating_highest',  label: 'Your Rating — Highest First' },
-  { id: 'rating_lowest',   label: 'Your Rating — Lowest First' },
-  { id: 'length_shortest', label: 'Length — Shortest First' },
-  { id: 'length_longest',  label: 'Length — Longest First' },
-];
-
 // Lists state
 let listsCache = [];
 let listTypeCache = {};       // list_id -> 'titles' | 'people'
-let newListType = null;
 let currentListId = null;
 let currentListName = '';
 let currentListType = 'titles';
 let currentListItems = [];
-let listItemSearchTimeout = null;
-let listItemSearchMediaType = 'movie';
-let lastListItemSearchResults = [];
 let listWatchStats = { watched: 0, total: 0 };
 let listViewMode = 'percent';
-let longPressTimer = null;
-let longPressTriggered = false;
+
+// Unified list editor (create + edit) state
+let listEditorMode = 'create';   // 'create' | 'edit'
+let listEditorId = null;
+let listEditorType = 'titles';
+let listEditorName = '';
+let listEditorDesc = '';
+let listEditorPublic = true;
+let listEditorItems = [];
+let listEditorSearchTimeout = null;
+let listEditorSearchMediaType = 'movie';
+let pendingListItem = null; // title staged from "Add to List -> New List"
+
+// Add-to-list sheet state
+let addToListTarget = null;
+let addToListListsCache = [];
+let addToListMembership = {};
+
+// Drag-to-reorder state
+let dragItemId = null;
+let dragTimer = null;
+let dragActive = false;
+let dragTapCancelled = false;
+let dragStartX = 0, dragStartY = 0;
 
 /* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -954,128 +961,50 @@ function updateServiceChip() {
 }
 
 async function renderFilteredGrid() {
+  if (appliedServiceIds.size === 0) {
+    // No filter — show full cache
+    renderHomeGrid(libraryItemsCache, libraryMediaTypeCache, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache);
+    return;
+  }
+
   const grid = document.getElementById('home-grid');
+  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+  // Fetch providers for all items (use cache when available)
   const type = libraryMediaTypeCache;
   const endpoint = type === 'tv' ? 'tv' : 'movie';
 
   const seen = new Set();
-  let items = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+  const unique = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
 
-  if (appliedServiceIds.size > 0) {
-    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  await Promise.all(unique.map(async item => {
+    const cacheKey = `${endpoint}-${item.tmdb_id}`;
+    if (providerCache[cacheKey] !== undefined) return;
+    try {
+      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
+      if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+      const data = await res.json();
+      const gb = data.results?.GB;
+      const providers = new Set();
+      const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
+      addList(gb?.flatrate);
+      addList(gb?.free);
+      providerCache[cacheKey] = providers;
+    } catch { providerCache[cacheKey] = new Set(); }
+  }));
 
-    // Fetch providers for all items (use cache when available)
-    await Promise.all(items.map(async item => {
-      const cacheKey = `${endpoint}-${item.tmdb_id}`;
-      if (providerCache[cacheKey] !== undefined) return;
-      try {
-        const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
-        if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
-        const data = await res.json();
-        const gb = data.results?.GB;
-        const providers = new Set();
-        const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
-        addList(gb?.flatrate);
-        addList(gb?.free);
-        providerCache[cacheKey] = providers;
-      } catch { providerCache[cacheKey] = new Set(); }
-    }));
+  const filtered = unique.filter(item => {
+    const cacheKey = `${endpoint}-${item.tmdb_id}`;
+    const providers = providerCache[cacheKey] || new Set();
+    return [...appliedServiceIds].some(sid => providers.has(sid));
+  });
 
-    items = items.filter(item => {
-      const cacheKey = `${endpoint}-${item.tmdb_id}`;
-      const providers = providerCache[cacheKey] || new Set();
-      return [...appliedServiceIds].some(sid => providers.has(sid));
-    });
-
-    if (!items.length) {
-      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
-      return;
-    }
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
+    return;
   }
 
-  if (currentSort !== 'date_added') {
-    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
-    items = await sortItemsBy(items, type, currentSort);
-  }
-
-  renderHomeGrid(items, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
-}
-
-/* ---- SORTING ---- */
-async function sortItemsBy(items, mediaType, sortId) {
-  if (sortId === 'rating_highest' || sortId === 'rating_lowest') {
-    const getRating = item => mediaType === 'tv' ? (item.rating || 0) : (libraryRatingMapCache[item.tmdb_id] || 0);
-    return [...items].sort((a, b) => sortId === 'rating_highest' ? getRating(b) - getRating(a) : getRating(a) - getRating(b));
-  }
-
-  if (sortId === 'release_newest' || sortId === 'release_oldest' || sortId === 'length_shortest' || sortId === 'length_longest') {
-    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-    await Promise.all(items.map(async item => {
-      const cacheKey = `${endpoint}-${item.tmdb_id}`;
-      if (detailsCache[cacheKey]) return;
-      try {
-        const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
-        if (!res.ok) { detailsCache[cacheKey] = {}; return; }
-        const data = await res.json();
-        detailsCache[cacheKey] = {
-          releaseDate: mediaType === 'tv' ? (data.first_air_date || '') : (data.release_date || ''),
-          runtime: mediaType === 'tv' ? ((data.episode_run_time && data.episode_run_time.length) ? data.episode_run_time[0] : 0) : (data.runtime || 0)
-        };
-      } catch { detailsCache[cacheKey] = {}; }
-    }));
-
-    const getDetails = item => detailsCache[`${endpoint}-${item.tmdb_id}`] || {};
-
-    if (sortId === 'release_newest' || sortId === 'release_oldest') {
-      return [...items].sort((a, b) => {
-        const da = getDetails(a).releaseDate || '';
-        const db = getDetails(b).releaseDate || '';
-        if (!da && !db) return 0;
-        if (!da) return 1;
-        if (!db) return -1;
-        return sortId === 'release_newest' ? db.localeCompare(da) : da.localeCompare(db);
-      });
-    }
-
-    return [...items].sort((a, b) => {
-      const ra = getDetails(a).runtime || 0;
-      const rb = getDetails(b).runtime || 0;
-      return sortId === 'length_shortest' ? ra - rb : rb - ra;
-    });
-  }
-
-  return items;
-}
-
-/* ---- SORT SHEET ---- */
-function openSortSheet() {
-  renderSortSheet();
-  document.getElementById('sort-sheet-overlay').classList.add('show');
-}
-
-function closeSortSheet(e) {
-  if (e && e.target !== document.getElementById('sort-sheet-overlay')) return;
-  document.getElementById('sort-sheet-overlay').classList.remove('show');
-}
-
-function renderSortSheet() {
-  const body = document.getElementById('sort-sheet-body');
-  const current = SORT_OPTIONS.find(o => o.id === currentSort);
-  body.innerHTML = `
-    <div style="font-size:12px;color:var(--text2);padding:2px 0 12px;">Currently sorted by <strong style="color:var(--text);">${escapeHtml(current ? current.label : 'Date Added')}</strong></div>
-    ${SORT_OPTIONS.map(opt => `
-      <div class="service-row" onclick="selectSortOption('${opt.id}')">
-        <div class="service-name" style="${opt.id === currentSort ? 'color:var(--purple-light);font-weight:600;' : ''}">${escapeHtml(opt.label)}</div>
-        <div class="service-check ${opt.id === currentSort ? 'checked' : ''}">
-          ${opt.id === currentSort ? checkSVG : ''}
-        </div>
-      </div>`).join('')}`;
-}
-
-async function selectSortOption(id) {
-  currentSort = id;
-  document.getElementById('sort-sheet-overlay').classList.remove('show');
-  await renderFilteredGrid();
+  renderHomeGrid(filtered, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
 }
 
 /* ---- NAV ---- */
@@ -1143,6 +1072,7 @@ function setHomeMediaType(type) {
   document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
   document.getElementById('library-mode').style.display = isLists ? 'none' : '';
   document.getElementById('service-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('recent-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
 
@@ -1551,6 +1481,10 @@ function quickActivityCardHtml() {
         <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
         <span id="quick-watched-toggle-text">${formQuickWatched ? 'Watched' : 'Mark as Watched'}</span>
       </div>
+      <div class="pill-toggle" style="margin-top:10px;" onclick="openAddToListSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add to List</span>
+      </div>
     </div>`;
 }
 
@@ -1562,6 +1496,10 @@ function tvActivityCardHtml() {
       <div class="pill-toggle" onclick="setTvStatus('watchlist')">
         <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
         <span>Add to Watchlist</span>
+      </div>
+      <div class="pill-toggle" style="margin-top:10px;" onclick="openAddToListSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add to List</span>
       </div>
     </div>`;
   }
@@ -1579,6 +1517,10 @@ function tvActivityCardHtml() {
     <div class="pill-toggle" style="margin-top:10px;" onclick="${next ? `setTvStatus('${next}')` : 'removeTvStatus()'}">
       <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
       <span>${next ? `Switch to ${TV_STATUS_LABELS[next]}` : 'Remove from Watched'}</span>
+    </div>
+    <div class="pill-toggle" style="margin-top:10px;" onclick="openAddToListSheet()">
+      <svg viewBox="0 0 24 24" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Add to List</span>
     </div>
     ${ratingSection}
   </div>`;
@@ -2122,14 +2064,33 @@ async function loadLists() {
   }).join('');
 }
 
-/* -- New List modal -- */
+/* ---- UNIFIED LIST EDITOR (create + edit) ---- */
 function openNewListModal() {
-  newListType = null;
-  renderNewListStep1();
+  listEditorMode = 'create';
+  listEditorId = null;
+  listEditorType = null;
+  listEditorItems = [];
+  listEditorName = '';
+  listEditorDesc = '';
+  listEditorPublic = true;
+  listEditorSearchMediaType = 'movie';
+  if (pendingListItem) {
+    listEditorType = 'titles';
+    listEditorItems = [{ tmdb_id: pendingListItem.tmdbId, media_type: pendingListItem.mediaType, title: pendingListItem.title, poster_path: pendingListItem.posterPath || null }];
+    pendingListItem = null;
+    renderListEditorStep2();
+  } else {
+    renderNewListStep1();
+  }
   document.getElementById('new-list-modal').classList.add('show');
 }
+
 function closeNewListModal() {
   document.getElementById('new-list-modal').classList.remove('show');
+  if (listEditorMode === 'edit' && currentListId) {
+    loadListItems();
+    loadLists();
+  }
 }
 
 function renderNewListStep1() {
@@ -2151,54 +2112,198 @@ function renderNewListStep1() {
 }
 
 function chooseNewListType(type) {
-  newListType = type;
-  renderNewListStep2();
+  listEditorType = type;
+  renderListEditorStep2();
 }
 
-function renderNewListStep2() {
+/* One combined menu: name, description, public toggle, and add/remove entries. */
+function renderListEditorStep2() {
   const card = document.getElementById('new-list-card');
+  const isEdit = listEditorMode === 'edit';
+  const isPeople = listEditorType === 'people';
+  const tabsHtml = !isPeople ? `
+    <div class="tabs" style="padding:0;border-bottom:0.5px solid var(--border);margin-bottom:10px;">
+      <div class="tab ${listEditorSearchMediaType === 'movie' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListEditorSearchType('movie')">Movies</div>
+      <div class="tab ${listEditorSearchMediaType === 'tv' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListEditorSearchType('tv')">TV Shows</div>
+    </div>` : '';
   card.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="renderNewListStep1()">
+      ${!isEdit ? `<div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="renderNewListStep1()">
         <svg viewBox="0 0 24 24" stroke-width="2" width="16" height="16" style="stroke:var(--text3);fill:none;flex-shrink:0;"><polyline points="15 18 9 12 15 6"/></svg>
         <span style="font-size:13px;color:var(--text3);">Back</span>
-      </div>
+      </div>` : `<div class="modal-title" style="margin-bottom:0;">Edit List</div>`}
       <div onclick="closeNewListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
     </div>
     <div class="md-field-label" style="margin-top:0;">LIST NAME</div>
-    <input class="form-input" id="new-list-name" placeholder="${newListType === 'people' ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" />
+    <input class="form-input" id="new-list-name" placeholder="${isPeople ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" value="${escapeHtml(listEditorName || '')}" oninput="listEditorName=this.value" />
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
-    <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
+    <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?" oninput="listEditorDesc=this.value">${escapeHtml(listEditorDesc || '')}</textarea>
     <label class="checkbox-row" style="margin-top:10px;">
-      <input type="checkbox" id="new-list-public" checked> Public list
+      <input type="checkbox" id="new-list-public" ${listEditorPublic !== false ? 'checked' : ''} onchange="listEditorPublic=this.checked"> Public List
     </label>
-    <button class="btn-primary" style="margin-top:16px;" onclick="createList()">Create List</button>`;
+    <div class="md-field-label">ENTRIES</div>
+    ${tabsHtml}
+    <input id="list-editor-search-input" class="form-input" placeholder="${isPeople ? 'Search actors, directors...' : 'Search films or shows...'}"
+      oninput="debouncedListEditorSearch(this.value)" autocomplete="off" style="margin-bottom:10px;" />
+    <div id="list-editor-search-results" style="display:flex;flex-direction:column;gap:8px;max-height:170px;overflow-y:auto;scrollbar-width:none;margin-bottom:12px;"></div>
+    <div id="list-editor-entries" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <button class="btn-primary" style="margin-top:16px;" onclick="${isEdit ? 'saveListEditorChanges()' : 'createListFromEditor()'}">${isEdit ? 'Save Changes' : 'Create List'}</button>
+    ${isEdit ? `<button class="modal-btn danger" style="width:100%;margin-top:10px;" onclick="deleteListFromEditor()">Delete List</button>` : ''}`;
+  renderListEditorEntries();
   setTimeout(() => { const inp = document.getElementById('new-list-name'); if (inp) inp.focus(); }, 100);
 }
 
-async function createList() {
-  const nameInput = document.getElementById('new-list-name');
-  const name = nameInput.value.trim();
+function setListEditorSearchType(type) {
+  listEditorSearchMediaType = type;
+  renderListEditorStep2();
+}
+
+function renderListEditorEntries() {
+  const wrap = document.getElementById('list-editor-entries');
+  if (!wrap) return;
+  if (!listEditorItems.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:6px 0;">No entries yet — search above to add some.</div>`; return; }
+  const isPeople = listEditorType === 'people';
+  wrap.innerHTML = listEditorItems.map((item, idx) => `
+    <div class="list-editor-entry-row">
+      ${item.poster_path
+        ? `<img src="https://image.tmdb.org/t/p/w92${item.poster_path}" style="width:26px;height:${isPeople ? '26px' : '38px'};border-radius:${isPeople ? '50%' : '4px'};object-fit:cover;flex-shrink:0;" />`
+        : `<div style="width:26px;height:${isPeople ? '26px' : '38px'};border-radius:${isPeople ? '50%' : '4px'};background:var(--bg3);flex-shrink:0;"></div>`}
+      <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.title)}</div>
+      <div class="list-editor-entry-remove" onclick="removeListEditorItem(${idx})">×</div>
+    </div>`).join('');
+}
+
+async function removeListEditorItem(idx) {
+  const item = listEditorItems[idx];
+  if (!item) return;
+  if (listEditorMode === 'edit' && item.id) {
+    const { error } = await db.from('list_items').delete().eq('id', item.id);
+    if (error) { showToast('Could not remove item', 'error'); return; }
+  }
+  listEditorItems.splice(idx, 1);
+  renderListEditorEntries();
+}
+
+function debouncedListEditorSearch(query) {
+  clearTimeout(listEditorSearchTimeout);
+  listEditorSearchTimeout = setTimeout(async () => {
+    const q = query.trim();
+    const results = document.getElementById('list-editor-search-results');
+    if (!results) return;
+    if (q.length < 2) { results.innerHTML = ''; return; }
+    const isPeople = listEditorType === 'people';
+    const endpoint = isPeople ? 'person' : listEditorSearchMediaType;
+    try {
+      const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&include_adult=false`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      renderListEditorSearchResults(data.results || []);
+    } catch { showToast('Search failed — try again', 'error'); }
+  }, 300);
+}
+
+function renderListEditorSearchResults(results) {
+  const wrap = document.getElementById('list-editor-search-results');
+  if (!wrap) return;
+  const isPeople = listEditorType === 'people';
+  if (!results.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px;">No results found.</div>`; return; }
+  wrap.innerHTML = results.slice(0, 8).map(item => {
+    const name = isPeople ? item.name : (item.title || item.name);
+    const imgPath = isPeople ? item.profile_path : item.poster_path;
+    const mediaType = isPeople ? 'person' : listEditorSearchMediaType;
+    const alreadyAdded = listEditorItems.some(li => li.tmdb_id === item.id && li.media_type === mediaType);
+    const safe = JSON.stringify(name || '').replace(/"/g, '&quot;');
+    return `
+      <div class="list-editor-search-result" style="cursor:${alreadyAdded ? 'default' : 'pointer'};opacity:${alreadyAdded ? '0.5' : '1'};"
+        ${alreadyAdded ? '' : `onclick="addListEditorItem(${item.id}, '${mediaType}', ${safe}, ${imgPath ? `'${imgPath}'` : 'null'})"`}>
+        ${imgPath ? `<img src="https://image.tmdb.org/t/p/w92${imgPath}" style="width:26px;height:${isPeople ? '26px' : '38px'};border-radius:${isPeople ? '50%' : '4px'};object-fit:cover;flex-shrink:0;" />`
+          : `<div style="width:26px;height:${isPeople ? '26px' : '38px'};background:var(--bg3);border-radius:${isPeople ? '50%' : '4px'};flex-shrink:0;"></div>`}
+        <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</div>
+        ${alreadyAdded ? `<span style="font-size:10px;color:var(--text3);flex-shrink:0;">Added</span>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function addListEditorItem(tmdbId, mediaType, title, posterPath) {
+  const item = { tmdb_id: tmdbId, media_type: mediaType, title, poster_path: posterPath || null };
+  if (listEditorMode === 'edit' && listEditorId) {
+    const payload = { list_id: listEditorId, tmdb_id: tmdbId, media_type: mediaType, title, poster_path: posterPath || null, position: listEditorItems.length };
+    const { data, error } = await db.from('list_items').insert(payload).select().single();
+    if (error && (error.code === '23514' || /list_items_media_type_check/i.test(error.message || ''))) {
+      showToast('Your list_items table needs "person" added to its media_type check constraint', 'error', 4200);
+      return;
+    }
+    if (error) { showToast('Could not add item: ' + (error.message || ''), 'error'); return; }
+    item.id = data.id;
+  }
+  listEditorItems.push(item);
+  const input = document.getElementById('list-editor-search-input');
+  if (input) input.value = '';
+  const results = document.getElementById('list-editor-search-results');
+  if (results) results.innerHTML = '';
+  renderListEditorEntries();
+}
+
+async function createListFromEditor() {
+  const name = (listEditorName || '').trim();
   if (!name) { showToast('Please give your list a name', 'error'); return; }
-  const description = document.getElementById('new-list-desc').value.trim();
-  const isPublic = document.getElementById('new-list-public').checked;
+  const description = (listEditorDesc || '').trim();
+  const isPublic = listEditorPublic !== false;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
 
-  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType };
+  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: listEditorType };
   let { data, error } = await db.from('lists').insert(payload).select().single();
   if (error && (error.code === '42703' || /list_type|column/i.test(error.message || ''))) {
     const rest = { ...payload }; delete rest.list_type;
     ({ data, error } = await db.from('lists').insert(rest).select().single());
   }
   if (error) { showToast('Could not create list: ' + (error.message || ''), 'error'); return; }
+  listTypeCache[data.id] = listEditorType;
 
-  listTypeCache[data.id] = newListType;
-  closeNewListModal();
+  if (listEditorItems.length) {
+    const rows = listEditorItems.map((it, i) => ({ list_id: data.id, tmdb_id: it.tmdb_id, media_type: it.media_type, title: it.title, poster_path: it.poster_path, position: i }));
+    const { error: itemsError } = await db.from('list_items').insert(rows);
+    if (itemsError) showToast('List created, but some items failed to add', 'error');
+  }
+
+  document.getElementById('new-list-modal').classList.remove('show');
   showToast('List created');
   loadLists();
-  await openListDetail(data.id, data);
-  setTimeout(() => openAddListItemModal(), 260);
+  openListDetail(data.id, data);
+}
+
+async function saveListEditorChanges() {
+  if (!listEditorId) return;
+  const name = (listEditorName || '').trim();
+  if (!name) { showToast('Please give your list a name', 'error'); return; }
+  const description = (listEditorDesc || '').trim();
+  const isPublic = listEditorPublic !== false;
+  const { error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic }).eq('id', listEditorId);
+  if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
+  currentListName = name;
+  closeNewListModal();
+  showToast('List updated');
+}
+
+function deleteListFromEditor() {
+  document.getElementById('new-list-modal').classList.remove('show');
+  setTimeout(() => confirmDeleteList(), 200);
+}
+
+async function openListEditor() {
+  if (!currentListId) return;
+  listEditorMode = 'edit';
+  listEditorId = currentListId;
+  listEditorType = currentListType;
+  listEditorName = currentListName;
+  listEditorSearchMediaType = 'movie';
+  const { data: list } = await db.from('lists').select('*').eq('id', currentListId).single();
+  listEditorDesc = list?.description || '';
+  listEditorPublic = list?.is_public !== false;
+  listEditorItems = currentListItems.map(it => ({ id: it.id, tmdb_id: it.tmdb_id, media_type: it.media_type, title: it.title, poster_path: it.poster_path }));
+  renderListEditorStep2();
+  document.getElementById('new-list-modal').classList.add('show');
 }
 
 /* -- List Detail -- */
@@ -2285,18 +2390,16 @@ function renderListWatchWidget() {
   }
 }
 
+/* -- Grid rendering + drag-to-reorder -- */
 function renderListDetailGrid() {
   const grid = document.getElementById('list-detail-grid');
   if (!currentListItems.length) {
-    grid.innerHTML = `<div class="empty-grid">No items yet.<br>Tap the + button above to add ${currentListType === 'people' ? 'cast &amp; crew' : 'films or shows'}.</div>`;
+    grid.innerHTML = `<div class="empty-grid">No items yet.<br>Tap Edit above to add ${currentListType === 'people' ? 'cast &amp; crew' : 'films or shows'}.</div>`;
     return;
   }
   if (currentListType === 'people') {
     grid.innerHTML = currentListItems.map(item => `
-      <div class="film-card-wrap"
-        onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
-        ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
-        oncontextmenu="return false;">
+      <div class="film-card-wrap" data-item-id="${item.id}">
         <div class="person-grid-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -2306,11 +2409,7 @@ function renderListDetailGrid() {
       </div>`).join('');
   } else {
     grid.innerHTML = currentListItems.map(item => `
-      <div class="film-card-wrap"
-        onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
-        ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
-        oncontextmenu="return false;"
-        onclick="handleListItemTap(event, ${item.tmdb_id}, '${item.media_type}')">
+      <div class="film-card-wrap" data-item-id="${item.id}">
         <div class="film-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -2318,42 +2417,98 @@ function renderListDetailGrid() {
         </div>
       </div>`).join('');
   }
+  initListDragHandlers();
 }
 
-/* -- Long-press to delete list items -- */
-function startLongPress(itemId) {
-  longPressTriggered = false;
-  clearTimeout(longPressTimer);
-  longPressTimer = setTimeout(() => {
-    longPressTriggered = true;
-    if (navigator.vibrate) navigator.vibrate(12);
-    confirmRemoveListItem(itemId);
-  }, 550);
+function openMovieOrPersonFromList(item) {
+  if (item.media_type === 'person') { showToast('Person profiles aren\'t viewable yet'); return; }
+  openMovieDetail(item.tmdb_id, 'screen-list-detail', 'quick', item.media_type);
 }
 
-function cancelLongPress() {
-  clearTimeout(longPressTimer);
-}
-
-function handleListItemTap(e, tmdbId, mediaType) {
-  if (longPressTriggered) {
-    e.preventDefault();
-    e.stopPropagation();
-    longPressTriggered = false;
-    return;
-  }
-  openMovieDetail(tmdbId, 'screen-list-detail', 'quick', mediaType);
-}
-
-function confirmRemoveListItem(itemId) {
-  showConfirm({ title: 'Remove item?', message: 'This will remove it from the list.', confirmText: 'Remove', danger: true,
-    onConfirm: async () => {
-      const { error } = await db.from('list_items').delete().eq('id', itemId);
-      if (error) { showToast('Could not remove item', 'error'); return; }
-      showToast('Removed from list');
-      loadListItems();
-    }
+function initListDragHandlers() {
+  const grid = document.getElementById('list-detail-grid');
+  if (!grid) return;
+  grid.querySelectorAll('.film-card-wrap[data-item-id]').forEach(el => {
+    el.addEventListener('touchstart', onListDragPointerStart, { passive: true });
+    el.addEventListener('mousedown', onListDragPointerStart);
   });
+}
+
+function onListDragPointerStart(e) {
+  const wrap = e.currentTarget;
+  const point = e.touches ? e.touches[0] : e;
+  dragStartX = point.clientX; dragStartY = point.clientY;
+  dragTapCancelled = false;
+  dragActive = false;
+  clearTimeout(dragTimer);
+
+  dragTimer = setTimeout(() => {
+    dragActive = true;
+    dragItemId = wrap.dataset.itemId;
+    wrap.classList.add('dragging-item');
+    if (navigator.vibrate) navigator.vibrate(12);
+  }, 400);
+
+  const moveEv = e.touches ? 'touchmove' : 'mousemove';
+  const upEv = e.touches ? 'touchend' : 'mouseup';
+
+  function onMove(ev) {
+    const p = ev.touches ? ev.touches[0] : ev;
+    if (!dragActive) {
+      if (Math.abs(p.clientX - dragStartX) > 10 || Math.abs(p.clientY - dragStartY) > 10) {
+        clearTimeout(dragTimer);
+        dragTapCancelled = true;
+      }
+      return;
+    }
+    if (ev.cancelable) ev.preventDefault();
+    handleListDragMove(p.clientX, p.clientY);
+  }
+
+  function onUp() {
+    clearTimeout(dragTimer);
+    document.removeEventListener(moveEv, onMove);
+    document.removeEventListener(upEv, onUp);
+    if (dragActive) {
+      finishListDrag();
+    } else if (!dragTapCancelled) {
+      const item = currentListItems.find(i => String(i.id) === wrap.dataset.itemId);
+      if (item) openMovieOrPersonFromList(item);
+    }
+    dragActive = false;
+  }
+
+  document.addEventListener(moveEv, onMove, { passive: false });
+  document.addEventListener(upEv, onUp);
+}
+
+function handleListDragMove(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const wrap = el && el.closest ? el.closest('.film-card-wrap[data-item-id]') : null;
+  if (!wrap) return;
+  const overId = wrap.dataset.itemId;
+  if (overId === dragItemId) return;
+  const fromIdx = currentListItems.findIndex(i => String(i.id) === dragItemId);
+  const toIdx = currentListItems.findIndex(i => String(i.id) === overId);
+  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+  const [moved] = currentListItems.splice(fromIdx, 1);
+  currentListItems.splice(toIdx, 0, moved);
+  renderListDetailGrid();
+  const grid = document.getElementById('list-detail-grid');
+  const newEl = grid.querySelector(`.film-card-wrap[data-item-id="${dragItemId}"]`);
+  if (newEl) newEl.classList.add('dragging-item');
+}
+
+async function finishListDrag() {
+  const grid = document.getElementById('list-detail-grid');
+  const el = grid.querySelector(`.film-card-wrap[data-item-id="${dragItemId}"]`);
+  if (el) el.classList.remove('dragging-item');
+  const idToSave = dragItemId;
+  dragItemId = null;
+  const updates = currentListItems.map((item, idx) => ({ id: item.id, position: idx }));
+  try {
+    await Promise.all(updates.map(u => db.from('list_items').update({ position: u.position }).eq('id', u.id)));
+  } catch (e) { showToast('Could not save new order', 'error'); }
 }
 
 function confirmDeleteList() {
@@ -2370,110 +2525,82 @@ function confirmDeleteList() {
   });
 }
 
-/* -- Add Item to List modal -- */
-function openAddListItemModal() {
-  if (!currentListId) return;
-  listItemSearchMediaType = 'movie';
-  lastListItemSearchResults = [];
-  renderListItemSearchStep();
-  document.getElementById('list-item-search-modal').classList.add('show');
-}
-function closeAddListItemModal() {
-  document.getElementById('list-item-search-modal').classList.remove('show');
-}
-
-function renderListItemSearchStep() {
-  const card = document.getElementById('list-item-search-card');
-  const isPeople = currentListType === 'people';
-  const tabsHtml = !isPeople ? `
-    <div class="tabs" style="padding:0;border-bottom:0.5px solid var(--border);margin-bottom:10px;">
-      <div class="tab ${listItemSearchMediaType === 'movie' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListItemSearchType('movie')">Movies</div>
-      <div class="tab ${listItemSearchMediaType === 'tv' ? 'active' : ''}" style="padding:8px 14px;font-size:13px;" onclick="setListItemSearchType('tv')">TV Shows</div>
-    </div>` : '';
-  card.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div class="modal-title" style="margin-bottom:0;font-size:15px;">Add to "${escapeHtml(currentListName || 'List')}"</div>
-      <div onclick="closeAddListItemModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
-    </div>
-    ${tabsHtml}
-    <input id="list-item-search-input" class="form-input" placeholder="${isPeople ? 'Search actors, directors...' : 'Search films or shows...'}"
-      oninput="debouncedListItemSearch(this.value)" autocomplete="off" style="margin-bottom:10px;" />
-    <div id="list-item-search-results" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;scrollbar-width:none;"></div>
-    <button class="btn-secondary" style="margin-top:14px;" onclick="closeAddListItemModal()">Done</button>`;
-  setTimeout(() => { const inp = document.getElementById('list-item-search-input'); if (inp) inp.focus(); }, 100);
-}
-
-function setListItemSearchType(type) {
-  listItemSearchMediaType = type;
-  const input = document.getElementById('list-item-search-input');
-  const q = input ? input.value : '';
-  renderListItemSearchStep();
-  const newInput = document.getElementById('list-item-search-input');
-  if (newInput && q) { newInput.value = q; debouncedListItemSearch(q); }
-}
-
-function debouncedListItemSearch(query) {
-  clearTimeout(listItemSearchTimeout);
-  listItemSearchTimeout = setTimeout(async () => {
-    const q = query.trim();
-    const results = document.getElementById('list-item-search-results');
-    if (q.length < 2) { results.innerHTML = ''; lastListItemSearchResults = []; return; }
-    const isPeople = currentListType === 'people';
-    const endpoint = isPeople ? 'person' : listItemSearchMediaType;
-    try {
-      const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}&include_adult=false`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      lastListItemSearchResults = data.results || [];
-      renderListItemSearchResults(lastListItemSearchResults);
-    } catch { showToast('Search failed — try again', 'error'); }
-  }, 300);
-}
-
-function renderListItemSearchResults(results) {
-  const wrap = document.getElementById('list-item-search-results');
-  const isPeople = currentListType === 'people';
-  if (!results.length) { wrap.innerHTML = `<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">No results found.</div>`; return; }
-  wrap.innerHTML = results.slice(0, 10).map(item => {
-    const name = isPeople ? item.name : (item.title || item.name);
-    const imgPath = isPeople ? item.profile_path : item.poster_path;
-    const sub = isPeople ? (item.known_for_department || '') : ((item.release_date || item.first_air_date) ? (item.release_date || item.first_air_date).split('-')[0] : '—');
-    const mediaType = isPeople ? 'person' : listItemSearchMediaType;
-    const alreadyAdded = currentListItems.some(li => li.tmdb_id === item.id && li.media_type === mediaType);
-    const safeName = escapeHtml(name).replace(/'/g, "\\'");
-    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${imgPath ? `'${imgPath}'` : 'null'})"`;
-    return `
-      <div ${onClickAttr}
-        style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--bg4);cursor:${alreadyAdded ? 'default' : 'pointer'};border:0.5px solid var(--border);opacity:${alreadyAdded ? '0.5' : '1'};">
-        ${imgPath
-          ? `<img src="https://image.tmdb.org/t/p/w92${imgPath}" style="width:32px;height:${isPeople ? '32px' : '48px'};border-radius:${isPeople ? '50%' : '5px'};object-fit:cover;flex-shrink:0;" />`
-          : `<div style="width:32px;height:${isPeople ? '32px' : '48px'};border-radius:${isPeople ? '50%' : '5px'};background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:8px;color:var(--text3);">?</span></div>`}
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name)}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${escapeHtml(sub)}</div>
-        </div>
-        ${alreadyAdded ? `<span style="font-size:11px;color:var(--text3);flex-shrink:0;">Added</span>` : ''}
-      </div>`;
-  }).join('');
-}
-
-async function addItemToList(tmdbId, title, posterPath) {
-  if (!currentListId) return;
-  const isPeople = currentListType === 'people';
-  const mediaType = isPeople ? 'person' : listItemSearchMediaType;
-  const payload = {
-    list_id: currentListId, tmdb_id: tmdbId, media_type: mediaType,
-    title, poster_path: posterPath || null, position: currentListItems.length
+/* ---- ADD TO LIST SHEET (from movie/tv detail) ---- */
+async function openAddToListSheet() {
+  if (!selectedMovie) return;
+  addToListTarget = {
+    tmdbId: selectedMovie.id,
+    mediaType: selectedMediaType,
+    title: selectedMediaType === 'tv' ? selectedMovie.name : selectedMovie.title,
+    posterPath: selectedMovie.poster_path
   };
-  const { error } = await db.from('list_items').insert(payload);
-  if (error && (error.code === '23514' || /list_items_media_type_check/i.test(error.message || ''))) {
-    showToast('Your list_items table needs "person" added to its media_type check constraint', 'error', 4200);
+  const body = document.getElementById('addtolist-sheet-body');
+  body.innerHTML = `<div style="padding:24px 0;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  document.getElementById('addtolist-sheet-overlay').classList.add('show');
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) { body.innerHTML = `<div style="padding:20px 0;color:var(--text2);font-size:13px;">Sign in to use lists.</div>`; return; }
+
+  const { data: lists } = await db.from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+  addToListListsCache = (lists || []).filter(l => (l.list_type || listTypeCache[l.id] || 'titles') === 'titles');
+
+  if (!addToListListsCache.length) {
+    body.innerHTML = `<div style="padding:20px 0;color:var(--text2);font-size:13px;">You don't have any title lists yet. Tap "New List" below to create one.</div>`;
     return;
   }
-  if (error) { showToast('Could not add item: ' + (error.message || ''), 'error'); return; }
-  showToast('Added to list');
-  await loadListItems();
-  renderListItemSearchResults(lastListItemSearchResults);
+
+  const ids = addToListListsCache.map(l => l.id);
+  const { data: memberRows } = await db.from('list_items').select('list_id')
+    .in('list_id', ids).eq('tmdb_id', addToListTarget.tmdbId).eq('media_type', addToListTarget.mediaType);
+  const memberSet = new Set((memberRows || []).map(r => r.list_id));
+  addToListMembership = {};
+  addToListListsCache.forEach(l => addToListMembership[l.id] = memberSet.has(l.id));
+  renderAddToListSheet();
+}
+
+function renderAddToListSheet() {
+  const body = document.getElementById('addtolist-sheet-body');
+  body.innerHTML = addToListListsCache.map(l => `
+    <div class="service-row" onclick="toggleAddToList('${l.id}')">
+      <div class="service-logo" style="background:var(--purple);">${escapeHtml((l.name || '?')[0].toUpperCase())}</div>
+      <div class="service-name">${escapeHtml(l.name)}</div>
+      <div class="service-check ${addToListMembership[l.id] ? 'checked' : ''}" id="addlist-check-${l.id}">
+        ${addToListMembership[l.id] ? checkSVG : ''}
+      </div>
+    </div>`).join('');
+}
+
+async function toggleAddToList(listId) {
+  if (!addToListTarget) return;
+  const nowOn = !addToListMembership[listId];
+  addToListMembership[listId] = nowOn;
+  const el = document.getElementById(`addlist-check-${listId}`);
+  if (el) { el.className = 'service-check' + (nowOn ? ' checked' : ''); el.innerHTML = nowOn ? checkSVG : ''; }
+
+  if (nowOn) {
+    const { count } = await db.from('list_items').select('*', { count: 'exact', head: true }).eq('list_id', listId);
+    const { error } = await db.from('list_items').insert({
+      list_id: listId, tmdb_id: addToListTarget.tmdbId, media_type: addToListTarget.mediaType,
+      title: addToListTarget.title, poster_path: addToListTarget.posterPath || null, position: count || 0
+    });
+    if (error) { showToast('Could not add to list', 'error'); addToListMembership[listId] = false; renderAddToListSheet(); return; }
+    showToast('Added to list');
+  } else {
+    const { error } = await db.from('list_items').delete().eq('list_id', listId).eq('tmdb_id', addToListTarget.tmdbId).eq('media_type', addToListTarget.mediaType);
+    if (error) { showToast('Could not remove from list', 'error'); addToListMembership[listId] = true; renderAddToListSheet(); return; }
+    showToast('Removed from list');
+  }
+  if (currentListId === listId) loadListItems();
+}
+
+function closeAddToListSheet(e) {
+  if (e && e.target !== document.getElementById('addtolist-sheet-overlay')) return;
+  document.getElementById('addtolist-sheet-overlay').classList.remove('show');
+}
+
+function startNewListFromDetail() {
+  closeAddToListSheet();
+  setTimeout(() => { pendingListItem = addToListTarget; openNewListModal(); }, 200);
 }
 
 /* ---- BOOT ---- */
