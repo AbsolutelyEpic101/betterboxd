@@ -392,6 +392,11 @@
   .list-card-name { font-size: 15px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; }
   .list-card-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
   .list-card-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
+  .list-card-preview { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .list-card-preview-thumb { width: 34px; height: 51px; border-radius: 6px; object-fit: cover; background: var(--bg4); flex-shrink: 0; }
+  .list-card-preview-thumb.round { width: 34px; height: 34px; border-radius: 50%; }
+  .list-card-preview-fallback { display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); }
+  .list-card-preview-more { font-size: 11px; font-weight: 600; color: var(--text3); background: var(--bg4); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .person-grid-card { aspect-ratio: 1/1; background: var(--bg3); overflow: hidden; position: relative; border-radius: 50%; flex-shrink: 0; }
   .list-item-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: #fff; cursor: pointer; z-index: 2; }
   #list-detail-grid .film-card-wrap { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -1178,6 +1183,22 @@ function renderSearchResults(results = [], type = 'movie') {
 
 function escapeHtml(str = '') {
   return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// Safely embed a raw string as a single-quoted JS string literal inside an
+// inline onclick="..." (double-quoted) HTML attribute. HTML entity-decoding
+// happens BEFORE the attribute's JS is parsed, so entities like &#39; are the
+// wrong tool here — they decode back to a literal ' and break the string.
+// Instead we JS-escape backslashes/quotes first, then HTML-escape only the
+// characters that matter for a double-quoted attribute (& and ").
+function jsAttrString(str = '') {
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
 }
 
 /* ---- HALF-STAR RATING ---- */
@@ -1999,21 +2020,35 @@ async function loadLists() {
   }
 
   const ids = listsCache.map(l => l.id);
-  const { data: items } = await db.from('list_items').select('list_id, media_type').in('list_id', ids);
-  const countMap = {}, typeMap = {};
+  const { data: items } = await db.from('list_items').select('list_id, media_type, title, poster_path, position').in('list_id', ids).order('position', { ascending: true });
+  const countMap = {}, typeMap = {}, previewMap = {};
+  const PREVIEW_MAX = 5;
   (items || []).forEach(it => {
     countMap[it.list_id] = (countMap[it.list_id] || 0) + 1;
     if (!typeMap[it.list_id]) typeMap[it.list_id] = it.media_type === 'person' ? 'people' : 'titles';
+    if (!previewMap[it.list_id]) previewMap[it.list_id] = [];
+    if (previewMap[it.list_id].length < PREVIEW_MAX) previewMap[it.list_id].push(it);
   });
 
   container.innerHTML = listsCache.map(l => {
     const count = countMap[l.id] || 0;
     const type = l.list_type || listTypeCache[l.id] || typeMap[l.id] || 'titles';
     listTypeCache[l.id] = type;
+    const preview = previewMap[l.id] || [];
+    const isPeoplePreview = type === 'people';
+    const previewHtml = preview.length ? `
+      <div class="list-card-preview">
+        ${preview.map(it => it.poster_path
+          ? `<img class="list-card-preview-thumb ${isPeoplePreview ? 'round' : ''}" src="https://image.tmdb.org/t/p/w92${it.poster_path}" />`
+          : `<div class="list-card-preview-thumb list-card-preview-fallback ${isPeoplePreview ? 'round' : ''}">${escapeHtml((it.title || '?')[0])}</div>`
+        ).join('')}
+        ${count > preview.length ? `<div class="list-card-preview-more">+${count - preview.length}</div>` : ''}
+      </div>` : '';
     return `
       <div class="list-card" onclick="openListDetail('${l.id}')">
         <div class="list-card-name">${escapeHtml(l.name)}</div>
         <div class="list-card-meta">${type === 'people' ? 'People' : 'Titles'} · ${count} item${count === 1 ? '' : 's'}${l.is_public === false ? ' · Private' : ''}</div>
+        ${previewHtml}
         ${l.description ? `<div class="list-card-desc">${escapeHtml(l.description)}</div>` : ''}
       </div>`;
   }).join('');
@@ -2067,7 +2102,7 @@ function renderNewListStep2() {
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
     <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
     <label class="checkbox-row" style="margin-top:10px;">
-      <input type="checkbox" id="new-list-public" checked> Public list
+      <input type="checkbox" id="new-list-public" checked> Public List
     </label>
     <button class="btn-primary" style="margin-top:16px;" onclick="createList()">Create List</button>`;
   setTimeout(() => { const inp = document.getElementById('new-list-name'); if (inp) inp.focus(); }, 100);
@@ -2337,8 +2372,9 @@ function renderListItemSearchResults(results) {
     const sub = isPeople ? (item.known_for_department || '') : ((item.release_date || item.first_air_date) ? (item.release_date || item.first_air_date).split('-')[0] : '—');
     const mediaType = isPeople ? 'person' : listItemSearchMediaType;
     const alreadyAdded = currentListItems.some(li => li.tmdb_id === item.id && li.media_type === mediaType);
-    const safeName = escapeHtml(name).replace(/'/g, "\\'");
-    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${imgPath ? `'${imgPath}'` : 'null'})"`;
+    const safeName = jsAttrString(name);
+    const safeImgPath = imgPath ? jsAttrString(imgPath) : null;
+    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${safeImgPath !== null ? `'${safeImgPath}'` : 'null'})"`;
     return `
       <div ${onClickAttr}
         style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--bg4);cursor:${alreadyAdded ? 'default' : 'pointer'};border:0.5px solid var(--border);opacity:${alreadyAdded ? '0.5' : '1'};">
@@ -2364,7 +2400,7 @@ async function addItemToList(tmdbId, title, posterPath) {
   };
   const { error } = await db.from('list_items').insert(payload);
   if (error && (error.code === '23514' || /list_items_media_type_check/i.test(error.message || ''))) {
-    showToast('Your list_items table needs "person" added to its media_type check constraint', 'error', 4200);
+    showToast(`Your list_items table needs "${mediaType}" added to its media_type check constraint`, 'error', 4200);
     return;
   }
   if (error) { showToast('Could not add item: ' + (error.message || ''), 'error'); return; }
