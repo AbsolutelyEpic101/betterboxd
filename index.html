@@ -677,7 +677,7 @@
         <span id="service-chip-label">SERVICE</span>
       </div>
       <div class="filter-chip" id="sort-filter-chip" onclick="openSortSheet()">
-        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>
+        <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
         <span id="sort-chip-label">SORT</span>
       </div>
       <div class="filter-chip" id="new-list-chip" style="display:none;" onclick="openNewListModal()">
@@ -822,6 +822,10 @@
         <div id="default-tv-tab-options"></div>
         <div class="settings-section-title">Default Movies Tab</div>
         <div id="default-movie-tab-options"></div>
+        <div class="settings-section-title">Default Movies Sort</div>
+        <div id="default-sort-movie-options"></div>
+        <div class="settings-section-title">Default TV Show Sort</div>
+        <div id="default-sort-tv-options"></div>
       </div>
     </div>
   </div>
@@ -894,24 +898,60 @@ let selectedServiceIds = new Set(); // pending (in sheet)
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
-// Sort state
-let currentSort = null;             // e.g. 'title_az', 'release_newest', 'added_oldest', 'rating_highest'
+// Sort state — kept separate per media type so switching tabs doesn't carry a sort over
+let sortStateByType = { movie: getDefaultSort('movie'), tv: getDefaultSort('tv') };
+function getCurrentSort() { return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null; }
+function setCurrentSort(val) { sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val; }
 let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
 const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
 const SORT_SECTIONS = [
   { title: 'Release Date', options: [
-    { value: 'release_newest', label: 'Newest First' },
-    { value: 'release_oldest', label: 'Earliest First' }
+    { value: 'release_newest', label: 'Newest Release' },
+    { value: 'release_oldest', label: 'Earliest Release' }
   ]},
   { title: 'When Added', options: [
-    { value: 'added_newest', label: 'Newest First' },
-    { value: 'added_oldest', label: 'Earliest First' }
+    { value: 'added_newest', label: 'Recently Added' },
+    { value: 'added_oldest', label: 'Earliest Added' }
   ]},
   { title: 'Your Rating', options: [
-    { value: 'rating_highest', label: 'Highest First' },
-    { value: 'rating_lowest', label: 'Lowest First' }
+    { value: 'rating_highest', label: 'Highest Rated' },
+    { value: 'rating_lowest', label: 'Lowest Rated' }
   ]}
 ];
+function getDefaultSort(type) {
+  const v = localStorage.getItem(`bb_default_sort_${type === 'tv' ? 'tv' : 'movie'}`);
+  return (v && v !== 'none') ? v : null;
+}
+
+function setDefaultSort(type, val) {
+  localStorage.setItem(`bb_default_sort_${type === 'tv' ? 'tv' : 'movie'}`, val);
+}
+
+function chooseDefaultSort(type, val) {
+  setDefaultSort(type, val);
+  sortStateByType[type === 'tv' ? 'tv' : 'movie'] = val === 'none' ? null : val;
+  renderDefaultSortOptions(type);
+  showToast(`Default ${type === 'tv' ? 'TV Show' : 'Movies'} sort updated`);
+  if (homeMediaType === type) { updateSortChip(); renderFilteredGrid(); }
+}
+
+function renderDefaultSortOptions(type) {
+  const wrap = document.getElementById(`default-sort-${type === 'tv' ? 'tv' : 'movie'}-options`);
+  if (!wrap) return;
+  const key = type === 'tv' ? 'tv' : 'movie';
+  const current = localStorage.getItem(`bb_default_sort_${key}`) || 'none';
+  const flatOptions = [
+    { value: 'none', label: 'None (Recently Added)' },
+    SORT_TITLE_OPTION,
+    ...SORT_SECTIONS.flatMap(s => s.options)
+  ];
+  wrap.innerHTML = flatOptions.map(opt => `
+    <div class="settings-option-row ${opt.value === current ? 'selected' : ''}" onclick="chooseDefaultSort('${key}','${opt.value}')">
+      <span>${opt.label}</span>
+      <div class="settings-option-check ${opt.value === current ? 'checked' : ''}">${opt.value === current ? checkSVG : ''}</div>
+    </div>`).join('');
+}
+
 const SORT_LABELS = {
   title_az: 'Title A–Z',
   release_newest: 'Newest Release',
@@ -1009,6 +1049,8 @@ function goToGeneralSettings() {
   goTo('screen-general-settings');
   renderDefaultTvTabOptions();
   renderDefaultMovieTabOptions();
+  renderDefaultSortOptions('movie');
+  renderDefaultSortOptions('tv');
 }
 
 /* ---- PROFILE ---- */
@@ -1166,7 +1208,7 @@ async function renderFilteredGrid() {
     }
   }
 
-  if (currentSort) {
+  if (getCurrentSort()) {
     grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
     items = await applySort(items, type);
   }
@@ -1186,7 +1228,7 @@ function closeSortSheet(e) {
 }
 
 function sortOptionRowHtml(value, label) {
-  const selected = currentSort === value;
+  const selected = getCurrentSort() === value;
   return `
     <div class="settings-option-row ${selected ? 'selected' : ''}" onclick="chooseSortOption('${value}')">
       <span>${label}</span>
@@ -1205,7 +1247,7 @@ function renderSortSheetBody() {
 }
 
 async function chooseSortOption(value) {
-  currentSort = currentSort === value ? null : value; // tap again to clear back to default
+  setCurrentSort(getCurrentSort() === value ? null : value); // tap again to clear back to default
   updateSortChip();
   renderSortSheetBody();
   document.getElementById('sort-sheet-overlay').classList.remove('show');
@@ -1216,12 +1258,13 @@ function updateSortChip() {
   const chip = document.getElementById('sort-filter-chip');
   const label = document.getElementById('sort-chip-label');
   if (!chip || !label) return;
-  if (currentSort) {
+  const sort = getCurrentSort();
+  if (sort) {
     chip.classList.add('active');
-    label.textContent = SORT_LABELS[currentSort] || 'SORT';
+    label.textContent = SORT_LABELS[sort] || 'SORT';
   } else {
     chip.classList.remove('active');
-    label.textContent = 'RECENT';
+    label.textContent = 'SORT';
   }
 }
 
@@ -1255,9 +1298,10 @@ async function fetchReleaseDatesFor(items, type) {
 }
 
 async function applySort(items, type) {
-  if (!currentSort) return items;
+  const sort = getCurrentSort();
+  if (!sort) return items;
   const arr = [...items];
-  switch (currentSort) {
+  switch (sort) {
     case 'title_az':
       arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       break;
@@ -1288,7 +1332,7 @@ async function applySort(items, type) {
         if (!da && !db) return 0;
         if (!da) return 1;
         if (!db) return -1;
-        return currentSort === 'release_newest' ? new Date(db) - new Date(da) : new Date(da) - new Date(db);
+        return sort === 'release_newest' ? new Date(db) - new Date(da) : new Date(da) - new Date(db);
       });
       break;
     }
@@ -1368,6 +1412,7 @@ function setHomeMediaType(type) {
 
   appliedServiceIds.clear();
   updateServiceChip();
+  updateSortChip();
   renderLibraryModeOptions();
   loadLibrary();
 }
