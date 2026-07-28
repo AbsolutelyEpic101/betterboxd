@@ -822,10 +822,6 @@
         <div id="default-tv-tab-options"></div>
         <div class="settings-section-title">Default Movies Tab</div>
         <div id="default-movie-tab-options"></div>
-        <div class="settings-section-title">Default Movies Sort</div>
-        <div id="default-sort-movie-options"></div>
-        <div class="settings-section-title">Default TV Show Sort</div>
-        <div id="default-sort-tv-options"></div>
       </div>
     </div>
   </div>
@@ -899,57 +895,34 @@ let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
 // Sort state — kept separate per media type so switching tabs doesn't carry a sort over
-let sortStateByType = { movie: getDefaultSort('movie'), tv: getDefaultSort('tv') };
+let sortStateByType = { movie: getLastSort('movie'), tv: getLastSort('tv') };
 function getCurrentSort() { return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null; }
 function setCurrentSort(val) { sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val; }
 let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
 const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
 const SORT_SECTIONS = [
   { title: 'Release Date', options: [
-    { value: 'release_newest', label: 'Newest Release' },
-    { value: 'release_oldest', label: 'Earliest Release' }
+    { value: 'release_newest', label: 'Newest First' },
+    { value: 'release_oldest', label: 'Earliest First' }
   ]},
   { title: 'When Added', options: [
-    { value: 'added_newest', label: 'Recently Added' },
-    { value: 'added_oldest', label: 'Earliest Added' }
+    { value: 'added_newest', label: 'Newest First' },
+    { value: 'added_oldest', label: 'Earliest First' }
   ]},
   { title: 'Your Rating', options: [
-    { value: 'rating_highest', label: 'Highest Rated' },
-    { value: 'rating_lowest', label: 'Lowest Rated' }
+    { value: 'rating_highest', label: 'Highest First' },
+    { value: 'rating_lowest', label: 'Lowest First' }
   ]}
 ];
-function getDefaultSort(type) {
-  const v = localStorage.getItem(`bb_default_sort_${type === 'tv' ? 'tv' : 'movie'}`);
+function getLastSort(type) {
+  const key = type === 'tv' ? 'tv' : 'movie';
+  const v = localStorage.getItem(`bb_last_sort_${key}`);
   return (v && v !== 'none') ? v : null;
 }
 
-function setDefaultSort(type, val) {
-  localStorage.setItem(`bb_default_sort_${type === 'tv' ? 'tv' : 'movie'}`, val);
-}
-
-function chooseDefaultSort(type, val) {
-  setDefaultSort(type, val);
-  sortStateByType[type === 'tv' ? 'tv' : 'movie'] = val === 'none' ? null : val;
-  renderDefaultSortOptions(type);
-  showToast(`Default ${type === 'tv' ? 'TV Show' : 'Movies'} sort updated`);
-  if (homeMediaType === type) { updateSortChip(); renderFilteredGrid(); }
-}
-
-function renderDefaultSortOptions(type) {
-  const wrap = document.getElementById(`default-sort-${type === 'tv' ? 'tv' : 'movie'}-options`);
-  if (!wrap) return;
+function rememberLastSort(type, val) {
   const key = type === 'tv' ? 'tv' : 'movie';
-  const current = localStorage.getItem(`bb_default_sort_${key}`) || 'none';
-  const flatOptions = [
-    { value: 'none', label: 'None (Recently Added)' },
-    SORT_TITLE_OPTION,
-    ...SORT_SECTIONS.flatMap(s => s.options)
-  ];
-  wrap.innerHTML = flatOptions.map(opt => `
-    <div class="settings-option-row ${opt.value === current ? 'selected' : ''}" onclick="chooseDefaultSort('${key}','${opt.value}')">
-      <span>${opt.label}</span>
-      <div class="settings-option-check ${opt.value === current ? 'checked' : ''}">${opt.value === current ? checkSVG : ''}</div>
-    </div>`).join('');
+  localStorage.setItem(`bb_last_sort_${key}`, val || 'none');
 }
 
 const SORT_LABELS = {
@@ -1049,8 +1022,6 @@ function goToGeneralSettings() {
   goTo('screen-general-settings');
   renderDefaultTvTabOptions();
   renderDefaultMovieTabOptions();
-  renderDefaultSortOptions('movie');
-  renderDefaultSortOptions('tv');
 }
 
 /* ---- PROFILE ---- */
@@ -1247,7 +1218,9 @@ function renderSortSheetBody() {
 }
 
 async function chooseSortOption(value) {
-  setCurrentSort(getCurrentSort() === value ? null : value); // tap again to clear back to default
+  const newVal = getCurrentSort() === value ? null : value; // tap again to clear back to default
+  setCurrentSort(newVal);
+  rememberLastSort(homeMediaType === 'tv' ? 'tv' : 'movie', newVal);
   updateSortChip();
   renderSortSheetBody();
   document.getElementById('sort-sheet-overlay').classList.remove('show');
@@ -1264,7 +1237,7 @@ function updateSortChip() {
     label.textContent = SORT_LABELS[sort] || 'SORT';
   } else {
     chip.classList.remove('active');
-    label.textContent = 'SORT';
+    label.textContent = 'RECENT';
   }
 }
 
