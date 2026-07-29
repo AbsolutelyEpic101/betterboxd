@@ -894,10 +894,13 @@ let selectedServiceIds = new Set(); // pending (in sheet)
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
 
-// Sort state — kept separate per media type so switching tabs doesn't carry a sort over
-let sortStateByType = { movie: getLastSort('movie'), tv: getLastSort('tv') };
+// Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
+// This is intentionally in-memory only (not persisted to localStorage): it resets
+// to "no sort" whenever the user switches tabs or navigates to a different screen.
+let sortStateByType = { movie: null, tv: null };
 function getCurrentSort() { return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null; }
 function setCurrentSort(val) { sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val; }
+function resetAllSorts() { sortStateByType = { movie: null, tv: null }; updateSortChip(); }
 let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
 const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
 const SORT_SECTIONS = [
@@ -914,16 +917,6 @@ const SORT_SECTIONS = [
     { value: 'rating_lowest', label: 'Lowest First' }
   ]}
 ];
-function getLastSort(type) {
-  const key = type === 'tv' ? 'tv' : 'movie';
-  const v = localStorage.getItem(`bb_last_sort_${key}`);
-  return (v && v !== 'none') ? v : null;
-}
-
-function rememberLastSort(type, val) {
-  const key = type === 'tv' ? 'tv' : 'movie';
-  localStorage.setItem(`bb_last_sort_${key}`, val || 'none');
-}
 
 const SORT_LABELS = {
   title_az: 'Title A–Z',
@@ -1220,7 +1213,6 @@ function renderSortSheetBody() {
 async function chooseSortOption(value) {
   const newVal = getCurrentSort() === value ? null : value; // tap again to clear back to default
   setCurrentSort(newVal);
-  rememberLastSort(homeMediaType === 'tv' ? 'tv' : 'movie', newVal);
   updateSortChip();
   renderSortSheetBody();
   document.getElementById('sort-sheet-overlay').classList.remove('show');
@@ -1315,11 +1307,16 @@ async function applySort(items, type) {
 
 /* ---- NAV ---- */
 function goTo(id) {
+  const current = document.querySelector('.screen.active');
+  const leavingHome = current && current.id === 'screen-home' && id !== 'screen-home';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
   el.classList.add('active');
   const body = el.querySelector('.screen-body');
   if (body) body.scrollTop = 0;
+  // Sorting is only ever meant to be temporary — leaving Home for any other
+  // screen/page clears it so it doesn't silently carry over.
+  if (leavingHome) resetAllSorts();
 }
 
 function goHome() {
@@ -1381,11 +1378,11 @@ function setHomeMediaType(type) {
   document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
 
-  if (isLists) { loadLists(); return; }
+  if (isLists) { resetAllSorts(); loadLists(); return; }
 
   appliedServiceIds.clear();
   updateServiceChip();
-  updateSortChip();
+  resetAllSorts();
   renderLibraryModeOptions();
   loadLibrary();
 }
