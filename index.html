@@ -506,6 +506,11 @@
     <div class="edit-modal-card" id="new-list-card"></div>
   </div>
 
+  <!-- EDIT LIST MODAL -->
+  <div class="modal-overlay" id="edit-list-modal">
+    <div class="edit-modal-card" id="edit-list-card"></div>
+  </div>
+
   <!-- ADD ITEM TO LIST MODAL -->
   <div class="modal-overlay" id="list-item-search-modal">
     <div class="log-search-card" id="list-item-search-card"></div>
@@ -728,6 +733,9 @@
       <div class="header-icons">
         <div onclick="openAddListItemModal()" title="Add item" style="cursor:pointer;">
           <svg viewBox="0 0 24 24" stroke-width="2" width="22" height="22" style="stroke:var(--text2);fill:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div onclick="openEditListModal()" title="Edit list" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="2" width="19" height="19" style="stroke:var(--text2);fill:none;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="M15 5l4 4"/></svg>
         </div>
         <div onclick="confirmDeleteList()" title="Delete list" style="cursor:pointer;">
           <svg viewBox="0 0 24 24" stroke-width="2" width="20" height="20" style="stroke:var(--text2);fill:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -2844,6 +2852,59 @@ function confirmDeleteList() {
       loadLists();
     }
   });
+}
+
+/* -- Edit List modal -- */
+async function openEditListModal() {
+  if (!currentListId) return;
+  const card = document.getElementById('edit-list-card');
+  card.innerHTML = `<div style="padding:40px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  document.getElementById('edit-list-modal').classList.add('show');
+  const { data: list, error } = await db.from('lists').select('*').eq('id', currentListId).single();
+  if (error || !list) {
+    showToast('Could not load list', 'error');
+    document.getElementById('edit-list-modal').classList.remove('show');
+    return;
+  }
+  renderEditListForm(list);
+}
+
+function renderEditListForm(list) {
+  const card = document.getElementById('edit-list-card');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">Edit List</div>
+      <div onclick="closeEditListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+    </div>
+    <div class="md-field-label" style="margin-top:0;">LIST NAME</div>
+    <input class="form-input" id="edit-list-name" value="${escapeHtml(list.name || '')}" />
+    <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
+    <textarea class="form-input" id="edit-list-desc">${escapeHtml(list.description || '')}</textarea>
+    <label class="checkbox-row" style="margin-top:10px;">
+      <input type="checkbox" id="edit-list-public" ${list.is_public !== false ? 'checked' : ''}> Public List
+    </label>
+    <button class="btn-primary" style="margin-top:16px;" onclick="saveEditListModal()">Save Changes</button>`;
+  setTimeout(() => { const inp = document.getElementById('edit-list-name'); if (inp) inp.focus(); }, 100);
+}
+
+function closeEditListModal() {
+  document.getElementById('edit-list-modal').classList.remove('show');
+}
+
+async function saveEditListModal() {
+  const nameInput = document.getElementById('edit-list-name');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('Please give your list a name', 'error'); return; }
+  const description = document.getElementById('edit-list-desc').value.trim();
+  const isPublic = document.getElementById('edit-list-public').checked;
+  const { error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic }).eq('id', currentListId);
+  if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
+  currentListName = name;
+  document.getElementById('list-detail-name').textContent = name;
+  document.getElementById('list-detail-desc').textContent = description || '';
+  closeEditListModal();
+  showToast('List updated');
+  loadLists();
 }
 
 /* -- Add Item to List modal -- */
