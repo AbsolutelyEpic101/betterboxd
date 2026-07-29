@@ -174,7 +174,8 @@
   .header-icons svg { width: 22px; height: 22px; stroke: var(--text2); fill: none; cursor: pointer; }
   .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
 
-  .tabs { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .tabs { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab { padding: 10px 18px; font-size: 14px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
   .tab.active { color: var(--text); border-bottom-color: var(--text); }
 
@@ -486,6 +487,8 @@
       <input type="date" class="form-input" id="edit-watched-date" />
       <div class="md-field-label">REVIEW (OPTIONAL)</div>
       <textarea class="form-input" id="edit-review-text" placeholder="What did you think?"></textarea>
+      <div class="md-field-label">TAGS</div>
+      <input type="text" class="form-input" id="edit-tags" placeholder="comma, separated, tags" />
       <label class="checkbox-row" style="margin-top:10px;">
         <input type="checkbox" id="edit-spoilers"> Contains spoilers
       </label>
@@ -643,6 +646,7 @@
       <div class="tab active" id="home-tab-films" onclick="setHomeMediaType('movie')">Films</div>
       <div class="tab" id="home-tab-tv" onclick="setHomeMediaType('tv')">TV Shows</div>
       <div class="tab" id="home-tab-lists" onclick="setHomeMediaType('lists')">Lists</div>
+      <div class="tab" id="home-tab-tags" onclick="setHomeMediaType('tags')">Tags</div>
     </div>
     <div class="filter-bar">
       <select id="library-mode" class="filter-chip" onchange="onLibraryModeChange()">
@@ -665,6 +669,7 @@
     <div class="screen-body">
       <div class="film-grid" id="home-grid"></div>
       <div id="lists-container"></div>
+      <div id="tags-container" style="display:none;"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
@@ -744,6 +749,21 @@
     </div>
     <div class="screen-body">
       <div class="film-grid" id="list-detail-grid"></div>
+    </div>
+  </div>
+
+  <!-- TAG DETAIL -->
+  <div class="screen" id="screen-tag-detail">
+    <div class="home-header">
+      <div onclick="goTo('screen-home')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:0 20px 14px;">
+      <div class="md-title" id="tag-detail-title" style="font-size:20px;"></div>
+    </div>
+    <div class="screen-body">
+      <div id="tag-detail-body"></div>
     </div>
   </div>
 
@@ -951,6 +971,25 @@ let listWatchStats = { watched: 0, total: 0 };
 let listViewMode = 'percent';
 let longPressTimer = null;
 let longPressTriggered = false;
+
+// Tags state
+let tagsDomain = 'films';          // 'films' | 'lists' — which kind of tags the Tags tab is browsing
+let tagsListCache = [];            // [{name, count}] sorted by count desc
+let tagDetailName = null;
+let tagDetailDomain = 'films';
+let tagDetailViewMode = 'films';   // 'films' | 'diary' — only relevant when tagDetailDomain === 'films'
+let tagDetailFilms = [];           // unique films for the current film-tag
+let tagDetailDiaryEntries = [];    // all diary entries for the current film-tag
+let tagDetailLists = [];           // lists for the current list-tag
+// These let diary-entry-modal actions (edit/delete) refresh whichever screen opened them
+// (the normal Diary screen, or a tag detail screen) instead of always refreshing the diary.
+let diaryModalRefreshFn = () => { loadDiary(); loadStats(); };
+let editModalRefreshFn = () => { loadDiary(); loadStats(); };
+
+function parseTagsInput(str = '') {
+  return [...new Set(String(str).split(',').map(t => t.trim().toLowerCase()).filter(Boolean))];
+}
+function tagsToInputValue(arr) { return (arr || []).join(', '); }
 
 // Stats screen state
 let statsPeriod = 'all'; // 'all' or a specific year (number)
@@ -1735,19 +1774,23 @@ function openDiary() {
 }
 
 function setHomeMediaType(type) {
-  homeMediaType = type === 'tv' ? 'tv' : (type === 'lists' ? 'lists' : 'movie');
+  homeMediaType = type === 'tv' ? 'tv' : (type === 'lists' ? 'lists' : (type === 'tags' ? 'tags' : 'movie'));
   document.getElementById('home-tab-films').classList.toggle('active', homeMediaType === 'movie');
   document.getElementById('home-tab-tv').classList.toggle('active', homeMediaType === 'tv');
   document.getElementById('home-tab-lists').classList.toggle('active', homeMediaType === 'lists');
+  document.getElementById('home-tab-tags').classList.toggle('active', homeMediaType === 'tags');
 
   const isLists = homeMediaType === 'lists';
-  document.getElementById('home-grid').style.display = isLists ? 'none' : 'grid';
+  const isTags = homeMediaType === 'tags';
+  document.getElementById('home-grid').style.display = (isLists || isTags) ? 'none' : 'grid';
   document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
-  document.getElementById('library-mode').style.display = isLists ? 'none' : '';
-  document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
-  document.getElementById('year-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('tags-container').style.display = isTags ? 'block' : 'none';
+  document.getElementById('library-mode').style.display = (isLists || isTags) ? 'none' : '';
+  document.getElementById('sort-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
+  document.getElementById('year-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
 
+  if (isTags) { resetTemporaryFilters(); loadTags(); return; }
   if (isLists) { resetTemporaryFilters(); loadLists(); return; }
 
   resetTemporaryFilters();
@@ -2046,6 +2089,8 @@ function renderLogFormStep() {
     <input type="date" class="form-input" id="log-modal-watched-date" value="${new Date().toISOString().slice(0,10)}" />
     <div class="md-field-label">REVIEW (OPTIONAL)</div>
     <textarea class="form-input" id="log-modal-review-text" placeholder="What did you think?"></textarea>
+    <div class="md-field-label">TAGS</div>
+    <input type="text" class="form-input" id="log-modal-tags" placeholder="comma, separated, tags" />
     <label class="checkbox-row" style="margin-top:10px;"><input type="checkbox" id="log-modal-spoilers"> Contains spoilers</label>
     <label class="checkbox-row"><input type="checkbox" id="log-modal-rewatch" ${logFormRewatch ? 'checked' : ''}> Rewatch</label>
     <button class="btn-primary" style="margin-top:16px;" onclick="submitLogForm()">Log this Watch</button>`;
@@ -2071,6 +2116,7 @@ async function submitLogForm() {
   const reviewText = document.getElementById('log-modal-review-text').value.trim();
   const spoilers = document.getElementById('log-modal-spoilers').checked;
   const rewatch = document.getElementById('log-modal-rewatch').checked;
+  const tags = parseTagsInput(document.getElementById('log-modal-tags').value);
   const movie = logFormMovie;
   const { data: inserted, error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: movie.id, media_type: 'movie',
@@ -2078,12 +2124,17 @@ async function submitLogForm() {
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked
   }).select().single();
   if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
-  const { error: diaryError } = await db.from('diary').insert({
+  const diaryPayload = {
     user_id: user.id, watched_id: inserted.id, tmdb_id: movie.id,
     media_type: 'movie', title: movie.title, poster_path: movie.poster_path,
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked,
-    rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers
-  });
+    rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers, tags
+  };
+  let { error: diaryError } = await db.from('diary').insert(diaryPayload);
+  if (diaryError && (diaryError.code === '42703' || /tags|column/i.test(diaryError.message || ''))) {
+    const rest = { ...diaryPayload }; delete rest.tags;
+    ({ error: diaryError } = await db.from('diary').insert(rest));
+  }
   if (diaryError) showToast('Logged, but diary entry failed: ' + (diaryError.message || ''), 'error');
   await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', movie.id);
   closeLogSearchModal();
@@ -2611,8 +2662,13 @@ function renderDiary(entries) {
     }).join('')}`).join('');
 }
 
-function openDiaryEntry(id) {
-  const entry = diaryEntries.find(e => e.id === id);
+function openDiaryEntry(id, sourceArr) {
+  if (!sourceArr) {
+    diaryModalRefreshFn = () => { loadDiary(); loadStats(); };
+    editModalRefreshFn = () => { loadDiary(); loadStats(); };
+  }
+  const arr = sourceArr || diaryEntries;
+  const entry = arr.find(e => e.id === id);
   if (!entry) return;
   const posterImg = document.getElementById('diary-modal-poster');
   if (entry.poster_path) { posterImg.src = `https://image.tmdb.org/t/p/w200${entry.poster_path}`; posterImg.style.display = 'block'; }
@@ -2634,7 +2690,8 @@ function openDiaryEntry(id) {
           const { error } = await db.from('diary').delete().eq('id', entry.id);
           if (error) { showToast('Could not remove entry', 'error'); return; }
           showToast('Entry removed');
-          loadDiary(); loadStats();
+          diaryModalRefreshFn();
+          loadStats();
         }
       });
     }, 220);
@@ -2648,6 +2705,7 @@ function openEditModal(entry) {
   document.getElementById('edit-modal-title').textContent = entry.title;
   document.getElementById('edit-watched-date').value = entry.watched_on;
   document.getElementById('edit-review-text').value = entry.review_text || '';
+  document.getElementById('edit-tags').value = tagsToInputValue(entry.tags);
   document.getElementById('edit-spoilers').checked = !!entry.contains_spoilers;
   document.getElementById('edit-rewatch').checked = !!entry.rewatch;
   document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
@@ -2676,12 +2734,19 @@ async function saveEditEntry() {
   const reviewText = document.getElementById('edit-review-text').value.trim();
   const spoilers = document.getElementById('edit-spoilers').checked;
   const rewatch = document.getElementById('edit-rewatch').checked;
-  const { error } = await db.from('diary').update({ watched_on: watchedOn, rating: editRating || null, liked: editLiked, rewatch, review_text: reviewText || null, contains_spoilers: spoilers }).eq('id', editingEntry.id);
+  const tags = parseTagsInput(document.getElementById('edit-tags').value);
+  const payload = { watched_on: watchedOn, rating: editRating || null, liked: editLiked, rewatch, review_text: reviewText || null, contains_spoilers: spoilers, tags };
+  let { error } = await db.from('diary').update(payload).eq('id', editingEntry.id);
+  if (error && (error.code === '42703' || /tags|column/i.test(error.message || ''))) {
+    const rest = { ...payload }; delete rest.tags;
+    ({ error } = await db.from('diary').update(rest).eq('id', editingEntry.id));
+  }
   if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
   if (editingEntry.watched_id) await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
   showToast('Entry updated');
   closeEditModal();
-  loadDiary(); loadStats();
+  editModalRefreshFn();
+  loadStats();
 }
 
 /* ---- STATS (user-scoped) ---- */
@@ -2941,6 +3006,168 @@ async function renderStatsBody() {
   });
 }
 
+/* ---- TAGS ---- */
+function tagsDomainToggleHtml() {
+  return `<div style="display:flex;gap:8px;padding:4px 20px 14px;">
+    <div class="filter-chip ${tagsDomain === 'films' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('films')">FILMS</div>
+    <div class="filter-chip ${tagsDomain === 'lists' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('lists')">LISTS</div>
+  </div>`;
+}
+
+function setTagsDomain(domain) {
+  if (tagsDomain === domain) return;
+  tagsDomain = domain;
+  loadTags();
+}
+
+async function loadTags() {
+  const container = document.getElementById('tags-container');
+  container.innerHTML = tagsDomainToggleHtml() + `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+
+  const table = tagsDomain === 'lists' ? 'lists' : 'diary';
+  let q = db.from(table).select('tags');
+  if (uid) q = q.eq('user_id', uid);
+  const { data, error } = await q;
+  if (error) {
+    container.innerHTML = tagsDomainToggleHtml() + `<div class="empty-grid">Couldn't load tags.</div>`;
+    return;
+  }
+  const counts = {};
+  (data || []).forEach(row => (row.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+  tagsListCache = Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  renderTagsList();
+}
+
+function renderTagsList() {
+  const container = document.getElementById('tags-container');
+  const toggle = tagsDomainToggleHtml();
+  if (!tagsListCache.length) {
+    container.innerHTML = toggle + `<div class="empty-grid">No tags yet.<br>Add tags when logging a film or creating a list.</div>`;
+    return;
+  }
+  container.innerHTML = toggle + `<div style="padding:0 20px 20px;">` + tagsListCache.map(t => `
+    <div class="settings-row" onclick="openTagDetail('${jsAttrString(t.name)}')">
+      <div class="settings-row-label"><span>${escapeHtml(t.name)}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:13px;color:var(--text2);">${t.count}</span>
+        <svg class="chev" viewBox="0 0 24 24" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+async function openTagDetail(name) {
+  tagDetailName = name;
+  tagDetailDomain = tagsDomain;
+  tagDetailViewMode = 'films';
+  document.getElementById('tag-detail-title').textContent = name;
+  goTo('screen-tag-detail');
+  await loadTagDetailData();
+}
+
+async function loadTagDetailData() {
+  const body = document.getElementById('tag-detail-body');
+  body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+
+  if (tagDetailDomain === 'lists') {
+    let q = db.from('lists').select('*').contains('tags', [tagDetailName]).order('created_at', { ascending: false });
+    if (uid) q = q.eq('user_id', uid);
+    const { data, error } = await q;
+    if (error) { body.innerHTML = `<div class="empty-grid">Couldn't load lists.</div>`; return; }
+    tagDetailLists = data || [];
+    renderTagDetailListsView();
+  } else {
+    let q = db.from('diary').select('*').contains('tags', [tagDetailName]).order('watched_on', { ascending: false });
+    if (uid) q = q.eq('user_id', uid);
+    const { data, error } = await q;
+    if (error) { body.innerHTML = `<div class="empty-grid">Couldn't load entries.</div>`; return; }
+    tagDetailDiaryEntries = data || [];
+    const seen = new Set();
+    tagDetailFilms = [];
+    tagDetailDiaryEntries.forEach(e => {
+      if (!seen.has(e.tmdb_id)) { seen.add(e.tmdb_id); tagDetailFilms.push({ tmdb_id: e.tmdb_id, title: e.title, poster_path: e.poster_path }); }
+    });
+    if (tagDetailViewMode === 'diary') renderTagDetailDiaryView(); else renderTagDetailFilmsView();
+  }
+}
+
+function tagDetailToggleHtml() {
+  return `<div style="display:flex;gap:8px;padding:0 20px 14px;">
+    <div class="filter-chip ${tagDetailViewMode === 'films' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagDetailViewMode('films')">FILMS</div>
+    <div class="filter-chip ${tagDetailViewMode === 'diary' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagDetailViewMode('diary')">DIARY</div>
+  </div>`;
+}
+
+function setTagDetailViewMode(mode) {
+  tagDetailViewMode = mode;
+  if (mode === 'diary') renderTagDetailDiaryView(); else renderTagDetailFilmsView();
+}
+
+function renderTagDetailFilmsView() {
+  const body = document.getElementById('tag-detail-body');
+  const toggle = tagDetailToggleHtml();
+  if (!tagDetailFilms.length) {
+    body.innerHTML = toggle + `<div class="empty-grid">No films tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  body.innerHTML = toggle + `<div class="film-grid">` + tagDetailFilms.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-tag-detail', 'log', 'movie')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function renderTagDetailDiaryView() {
+  const body = document.getElementById('tag-detail-body');
+  const toggle = tagDetailToggleHtml();
+  if (!tagDetailDiaryEntries.length) {
+    body.innerHTML = toggle + `<div class="empty-grid">No diary entries tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  body.innerHTML = toggle + tagDetailDiaryEntries.map(entry => {
+    const d = new Date(entry.watched_on);
+    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div class="diary-entry" style="margin-left:20px;margin-right:20px;" onclick="openTagDiaryEntry('${entry.id}')">
+        ${entry.poster_path ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />` : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
+        <div class="diary-entry-info">
+          <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ` <span class="rewatch-symbol" title="Rewatch">${REWATCH_SYMBOL}</span>` : ''}</div>
+          <div class="diary-entry-meta">
+            <span class="diary-entry-date">${dateStr}</span>
+            ${entry.rating ? `<span class="diary-entry-stars">${starsDisplay(entry.rating)}</span>` : ''}
+            ${entry.liked ? `<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('') + `<div style="height:6px;"></div>`;
+}
+
+function openTagDiaryEntry(id) {
+  diaryModalRefreshFn = () => { loadTagDetailData(); };
+  editModalRefreshFn = () => { loadTagDetailData(); };
+  openDiaryEntry(id, tagDetailDiaryEntries);
+}
+
+function renderTagDetailListsView() {
+  const body = document.getElementById('tag-detail-body');
+  if (!tagDetailLists.length) {
+    body.innerHTML = `<div class="empty-grid">No lists tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  body.innerHTML = `<div style="padding:0 20px 20px;">` + tagDetailLists.map(l => `
+    <div class="list-card" onclick="openListDetail('${l.id}')">
+      <div class="list-card-name">${escapeHtml(l.name)}</div>
+      <div class="list-card-meta">${(l.list_type || listTypeCache[l.id] || 'titles') === 'people' ? 'People' : 'Titles'}${l.is_public === false ? ' · Private' : ''}</div>
+      ${l.description ? `<div class="list-card-desc">${escapeHtml(l.description)}</div>` : ''}
+    </div>`).join('') + `</div>`;
+}
+
 /* ---- LISTS ---- */
 async function loadLists() {
   const container = document.getElementById('lists-container');
@@ -3039,6 +3266,8 @@ function renderNewListStep2() {
     <input class="form-input" id="new-list-name" placeholder="${newListType === 'people' ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" />
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
     <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
+    <div class="md-field-label">TAGS (OPTIONAL)</div>
+    <input class="form-input" id="new-list-tags" placeholder="comma, separated, tags" />
     <label class="checkbox-row" style="margin-top:10px;">
       <input type="checkbox" id="new-list-public" checked> Public List
     </label>
@@ -3051,15 +3280,19 @@ async function createList() {
   const name = nameInput.value.trim();
   if (!name) { showToast('Please give your list a name', 'error'); return; }
   const description = document.getElementById('new-list-desc').value.trim();
+  const tags = parseTagsInput(document.getElementById('new-list-tags').value);
   const isPublic = document.getElementById('new-list-public').checked;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
 
-  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType };
+  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType, tags };
   let { data, error } = await db.from('lists').insert(payload).select().single();
-  if (error && (error.code === '42703' || /list_type|column/i.test(error.message || ''))) {
-    const rest = { ...payload }; delete rest.list_type;
-    ({ data, error } = await db.from('lists').insert(rest).select().single());
+  for (let i = 0; i < 2 && error && (error.code === '42703' || /column/i.test(error.message || '')); i++) {
+    if ('tags' in payload && /tags/i.test(error.message || '')) delete payload.tags;
+    else if ('list_type' in payload && /list_type/i.test(error.message || '')) delete payload.list_type;
+    else if ('tags' in payload) delete payload.tags;
+    else if ('list_type' in payload) delete payload.list_type;
+    ({ data, error } = await db.from('lists').insert(payload).select().single());
   }
   if (error) { showToast('Could not create list: ' + (error.message || ''), 'error'); return; }
 
@@ -3266,6 +3499,8 @@ function renderEditListForm(list) {
     <input class="form-input" id="edit-list-name" value="${escapeHtml(list.name || '')}" />
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
     <textarea class="form-input" id="edit-list-desc">${escapeHtml(list.description || '')}</textarea>
+    <div class="md-field-label">TAGS (OPTIONAL)</div>
+    <input class="form-input" id="edit-list-tags" value="${escapeHtml(tagsToInputValue(list.tags))}" placeholder="comma, separated, tags" />
     <label class="checkbox-row" style="margin-top:10px;">
       <input type="checkbox" id="edit-list-public" ${list.is_public !== false ? 'checked' : ''}> Public List
     </label>
@@ -3282,8 +3517,12 @@ async function saveEditListModal() {
   const name = nameInput.value.trim();
   if (!name) { showToast('Please give your list a name', 'error'); return; }
   const description = document.getElementById('edit-list-desc').value.trim();
+  const tags = parseTagsInput(document.getElementById('edit-list-tags').value);
   const isPublic = document.getElementById('edit-list-public').checked;
-  const { error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic }).eq('id', currentListId);
+  let { error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic, tags }).eq('id', currentListId);
+  if (error && (error.code === '42703' || /tags|column/i.test(error.message || ''))) {
+    ({ error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic }).eq('id', currentListId));
+  }
   if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
   currentListName = name;
   document.getElementById('list-detail-name').textContent = name;
