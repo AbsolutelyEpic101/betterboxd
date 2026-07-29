@@ -678,19 +678,9 @@
   <!-- STATS -->
   <div class="screen" id="screen-stats">
     <div class="home-header"><div class="logo-sm">Stats</div></div>
-    <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;">
-      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--text);color:var(--bg);cursor:pointer;">ALL TIME</div>
-      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);cursor:pointer;">THIS YEAR</div>
-    </div>
+    <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;" id="stats-period-bar"></div>
     <div class="screen-body">
-      <div style="padding:0 20px 20px;">
-        <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watched">—</div></div>
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watchlist">—</div></div>
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-avg">—</div></div>
-        </div>
-      </div>
+      <div id="stats-body" style="padding:0 20px 30px;"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
@@ -961,6 +951,11 @@ let listWatchStats = { watched: 0, total: 0 };
 let listViewMode = 'percent';
 let longPressTimer = null;
 let longPressTriggered = false;
+
+// Stats screen state
+let statsPeriod = 'all'; // 'all' or a specific year (number)
+let statsYearsList = [];  // years (desc) the user has diary entries for, computed once
+let movieCreditsCache = {}; // key "movie-123" -> { cast:[{id,name,profile_path}], directors:[{id,name,profile_path}] }
 
 /* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -2690,22 +2685,245 @@ async function saveEditEntry() {
 }
 
 /* ---- STATS (user-scoped) ---- */
+const STATS_PIE_COLORS = ['#7c5cbf', '#9b7fe0', '#4caf75', '#e0584a', '#e0b34a', '#4ac2e0', '#e04ac0', '#8a8a8a'];
+
 async function loadStats() {
+  await renderStatsPeriodBar();
+  await renderStatsBody();
+}
+
+async function renderStatsPeriodBar() {
+  const bar = document.getElementById('stats-period-bar');
+  if (!bar) return;
+  if (!statsYearsList.length) {
+    const { data: { user } } = await db.auth.getUser();
+    const uid = user?.id;
+    let q = db.from('diary').select('watched_on');
+    if (uid) q = q.eq('user_id', uid);
+    const { data } = await q;
+    const years = new Set((data || []).map(d => new Date(d.watched_on).getFullYear()));
+    statsYearsList = [...years].sort((a, b) => b - a);
+  }
+  const currentYear = new Date().getFullYear();
+  const otherYears = statsYearsList.filter(y => y !== currentYear);
+  const chipHtml = (label, value) => {
+    const active = statsPeriod === value;
+    const arg = typeof value === 'number' ? value : `'${value}'`;
+    return `<div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;${active ? 'background:var(--text);color:var(--bg);' : 'background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);'}" onclick="selectStatsPeriod(${arg})">${escapeHtml(label)}</div>`;
+  };
+  bar.innerHTML = chipHtml('ALL TIME', 'all') + chipHtml('THIS YEAR', currentYear) + otherYears.map(y => chipHtml(String(y), y)).join('');
+}
+
+function selectStatsPeriod(value) {
+  if (statsPeriod === value) return;
+  statsPeriod = value;
+  renderStatsPeriodBar();
+  renderStatsBody();
+}
+
+async function ensureMovieGenreList() {
+  if (movieGenres) return;
+  try {
+    const res = await fetch(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_API_KEY}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    movieGenres = data.genres || [];
+  } catch { movieGenres = movieGenres || []; }
+}
+
+function genreNameByMovieId(id) {
+  const g = (movieGenres || []).find(g => g.id === id);
+  return g ? g.name : String(id);
+}
+
+// Fetches movie detail + credits (cast/director) together, and caches genre
+// ids into the shared genreItemCache so the genre filter reuses this too.
+async function fetchMovieStatsData(ids) {
+  const todo = ids.filter(id => genreItemCache[`movie-${id}`] === undefined || movieCreditsCache[`movie-${id}`] === undefined);
+  await Promise.all(todo.map(async id => {
+    const key = `movie-${id}`;
+    try {
+      const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`);
+      if (!res.ok) { genreItemCache[key] = []; movieCreditsCache[key] = { cast: [], directors: [] }; return; }
+      const data = await res.json();
+      genreItemCache[key] = (data.genres || []).map(g => g.id);
+      const cast = (data.credits?.cast || []).slice(0, 10).map(p => ({ id: p.id, name: p.name, profile_path: p.profile_path }));
+      const directors = (data.credits?.crew || []).filter(p => p.job === 'Director').map(p => ({ id: p.id, name: p.name, profile_path: p.profile_path }));
+      movieCreditsCache[key] = { cast, directors };
+    } catch { genreItemCache[key] = []; movieCreditsCache[key] = { cast: [], directors: [] }; }
+  }));
+}
+
+function buildGenrePie(genreCounts) {
+  const total = Object.values(genreCounts).reduce((a, b) => a + b, 0);
+  if (!total) return null;
+  const entries = Object.entries(genreCounts).map(([id, count]) => ({ id: Number(id), name: genreNameByMovieId(Number(id)), count }));
+  entries.sort((a, b) => b.count - a.count);
+  const top = entries.slice(0, 6);
+  const rest = entries.slice(6);
+  const restTotal = rest.reduce((s, e) => s + e.count, 0);
+  if (restTotal > 0) top.push({ id: 'other', name: 'Other', count: restTotal });
+  let cumulative = 0;
+  const legend = top.map((e, i) => {
+    const pct = (e.count / total) * 100;
+    const start = cumulative;
+    cumulative += pct;
+    return { ...e, pct, color: STATS_PIE_COLORS[i % STATS_PIE_COLORS.length], start, end: cumulative };
+  });
+  const gradient = legend.map(l => `${l.color} ${l.start}% ${l.end}%`).join(', ');
+  return { gradient, legend };
+}
+
+function statsPersonCardHtml(person, label, totalFilms) {
+  if (!person) {
+    return `<div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</div>
+      <div style="color:var(--text3);font-size:12px;padding:12px 0;">Not enough data yet</div>
+    </div>`;
+  }
+  const pct = totalFilms ? Math.round((person.count / totalFilms) * 100) : 0;
+  const img = person.profile_path
+    ? `<img src="https://image.tmdb.org/t/p/w185${person.profile_path}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" />`
+    : `<div class="person-avatar-placeholder" style="width:64px;height:64px;font-size:20px;margin:0 auto;">${escapeHtml((person.name || '?')[0].toUpperCase())}</div>`;
+  return `
+    <div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;min-width:0;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</div>
+      ${img}
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(person.name)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">${person.count} film${person.count === 1 ? '' : 's'} (${pct}%)</div>
+    </div>`;
+}
+
+function renderStatsHtml({ watchedCount, watchlistCount, avgRating, genreCounts, rewatchList, topActor, topDirector, totalFilms }) {
+  const overviewHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;">
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);">${watchedCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);">${watchlistCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);">${avgRating}</div></div>
+    </div>`;
+
+  const pie = buildGenrePie(genreCounts);
+  const genreHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Top Genres</div>
+    ${pie ? `
+      <div style="background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:20px;margin-bottom:28px;display:flex;flex-direction:column;align-items:center;">
+        <div style="width:140px;height:140px;border-radius:50%;background:conic-gradient(${pie.gradient});flex-shrink:0;"></div>
+        <div style="margin-top:16px;width:100%;display:flex;flex-direction:column;gap:7px;">
+          ${pie.legend.map(l => `
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:${l.color};flex-shrink:0;"></span>
+              <span style="flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.name)}</span>
+              <span style="color:var(--text2);">${Math.round(l.pct)}%</span>
+            </div>`).join('')}
+        </div>
+      </div>` : `<div style="color:var(--text3);font-size:13px;padding:0 0 28px;">No genre data for this period yet.</div>`}`;
+
+  const rewatchHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Most Rewatched</div>
+    ${rewatchList.length ? `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+        ${rewatchList.map(f => `
+          <div class="film-card-wrap" onclick="openMovieDetail(${f.tmdbId}, 'screen-stats', 'log', 'movie')">
+            <div class="film-card">
+              ${f.poster_path
+                ? `<img src="https://image.tmdb.org/t/p/w342${f.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+                : `<div class="poster-label">${escapeHtml(f.title)}</div>`}
+              <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.72);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;">×${f.total}</div>
+            </div>
+          </div>`).join('')}
+      </div>` : `<div style="color:var(--text3);font-size:13px;padding:0 0 28px;">No rewatches logged for this period yet.</div>`}`;
+
+  const peopleHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Most Watched People</div>
+    <div style="display:flex;gap:10px;">
+      ${statsPersonCardHtml(topActor, 'Actor', totalFilms)}
+      ${statsPersonCardHtml(topDirector, 'Director', totalFilms)}
+    </div>`;
+
+  return overviewHtml + genreHtml + rewatchHtml + peopleHtml;
+}
+
+async function renderStatsBody() {
+  const body = document.getElementById('stats-body');
+  if (!body) return;
+  body.innerHTML = `<div style="padding:60px 0;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+
   const { data: { user } } = await db.auth.getUser();
   const uid = user?.id;
-  let wQuery = db.from('watched').select('*', { count: 'exact', head: true });
+  const period = statsPeriod;
+
+  // Watched rows for the period (unique films, ratings)
+  let wQuery = db.from('watched').select('tmdb_id, rating, watched_on');
+  if (uid) wQuery = wQuery.eq('user_id', uid);
+  if (period !== 'all') wQuery = wQuery.gte('watched_on', `${period}-01-01`).lte('watched_on', `${period}-12-31`);
+  const { data: watchedRows } = await wQuery;
+  const uniqueWatchedIds = [...new Set((watchedRows || []).map(r => r.tmdb_id))];
+
+  // Watchlist is always all-time, regardless of the selected period
   let wlQuery = db.from('watchlist').select('*', { count: 'exact', head: true });
-  let rQuery = db.from('watched').select('rating').not('rating', 'is', null);
-  if (uid) { wQuery = wQuery.eq('user_id', uid); wlQuery = wlQuery.eq('user_id', uid); rQuery = rQuery.eq('user_id', uid); }
-  const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([wQuery, wlQuery, rQuery]);
-  document.getElementById('stat-watched').textContent = watchedCount ?? 0;
-  document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
-  if (ratings && ratings.length) {
-    const avg = ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length;
-    document.getElementById('stat-avg').textContent = avg.toFixed(2);
-  } else {
-    document.getElementById('stat-avg').textContent = '—';
+  if (uid) wlQuery = wlQuery.eq('user_id', uid);
+  const { count: watchlistCount } = await wlQuery;
+
+  // Average rating for the period
+  const ratings = (watchedRows || []).filter(r => r.rating).map(r => Number(r.rating));
+  const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : '—';
+
+  // Diary rows for the period, grouped by film, to work out rewatch counts
+  let dQuery = db.from('diary').select('tmdb_id, title, poster_path, watched_on, rewatch');
+  if (uid) dQuery = dQuery.eq('user_id', uid);
+  if (period !== 'all') dQuery = dQuery.gte('watched_on', `${period}-01-01`).lte('watched_on', `${period}-12-31`);
+  const { data: diaryRows } = await dQuery;
+
+  const byFilm = {};
+  (diaryRows || []).forEach(e => {
+    if (!byFilm[e.tmdb_id]) byFilm[e.tmdb_id] = { title: e.title, poster_path: e.poster_path, entries: [] };
+    byFilm[e.tmdb_id].entries.push(e);
+  });
+  const rewatchList = Object.entries(byFilm).map(([tmdbId, info]) => {
+    const entries = info.entries;
+    const hasFirstWatch = entries.some(e => !e.rewatch);
+    // If every logged entry for this film is flagged as a rewatch, there's no
+    // recorded "first watch" — assume one untracked watch before joining betterboxd.
+    let total = entries.length + (hasFirstWatch ? 0 : 1);
+    return { tmdbId: Number(tmdbId), title: info.title, poster_path: info.poster_path, total };
+  }).filter(f => f.total > 1).sort((a, b) => b.total - a.total).slice(0, 10);
+
+  // Genre / cast / crew data for every unique film watched in the period
+  await ensureMovieGenreList();
+  await fetchMovieStatsData(uniqueWatchedIds);
+
+  const genreCounts = {};
+  const actorCounts = {};
+  const directorCounts = {};
+  uniqueWatchedIds.forEach(id => {
+    const key = `movie-${id}`;
+    (genreItemCache[key] || []).forEach(gid => { genreCounts[gid] = (genreCounts[gid] || 0) + 1; });
+    const meta = movieCreditsCache[key] || { cast: [], directors: [] };
+    meta.cast.forEach(p => {
+      if (!actorCounts[p.id]) actorCounts[p.id] = { name: p.name, profile_path: p.profile_path, count: 0 };
+      actorCounts[p.id].count++;
+    });
+    meta.directors.forEach(p => {
+      if (!directorCounts[p.id]) directorCounts[p.id] = { name: p.name, profile_path: p.profile_path, count: 0 };
+      directorCounts[p.id].count++;
+    });
+  });
+  const topActor = Object.values(actorCounts).sort((a, b) => b.count - a.count)[0] || null;
+  const topDirector = Object.values(directorCounts).sort((a, b) => b.count - a.count)[0] || null;
+
+  if (!uniqueWatchedIds.length) {
+    body.innerHTML = renderStatsHtml({
+      watchedCount: 0, watchlistCount: watchlistCount ?? 0, avgRating, genreCounts: {},
+      rewatchList: [], topActor: null, topDirector: null, totalFilms: 0
+    });
+    return;
   }
+
+  body.innerHTML = renderStatsHtml({
+    watchedCount: uniqueWatchedIds.length, watchlistCount: watchlistCount ?? 0, avgRating,
+    genreCounts, rewatchList, topActor, topDirector, totalFilms: uniqueWatchedIds.length
+  });
 }
 
 /* ---- LISTS ---- */
