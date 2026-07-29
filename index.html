@@ -355,35 +355,6 @@
   .sheet-close { font-size: 20px; color: var(--text3); cursor: pointer; padding: 0 4px; line-height: 1; }
   .sheet-body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 4px 20px 0; }
   .sheet-body::-webkit-scrollbar { display: none; }
-  .service-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 0.5px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-  .service-row:last-child { border-bottom: none; }
-  .service-logo {
-    width: 36px; height: 36px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff;
-    flex-shrink: 0; letter-spacing: -0.3px;
-  }
-  .service-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
-  .service-check {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 1.5px solid var(--border2);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: all 0.15s;
-  }
-  .service-check.checked { background: var(--purple); border-color: var(--purple); }
-  .service-check svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2.5; }
-  .sheet-footer { padding: 14px 20px 0; display: flex; gap: 10px; flex-shrink: 0; }
-  .sheet-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; }
-  .sheet-btn.secondary { background: var(--bg4); color: var(--text2); }
-  .sheet-btn.primary { background: var(--purple); color: #fff; }
 
   /* LISTS */
   #lists-container { display: none; padding: 4px 20px 20px; }
@@ -428,22 +399,6 @@
 
   <!-- TOASTS -->
   <div class="toast-stack" id="toast-stack"></div>
-
-  <!-- SERVICE PICKER SHEET -->
-  <div class="sheet-overlay" id="service-sheet-overlay" onclick="closeServiceSheet(event)">
-    <div class="service-sheet" onclick="event.stopPropagation()">
-      <div class="sheet-handle"></div>
-      <div class="sheet-header">
-        <div class="sheet-title">Streaming Services</div>
-        <div class="sheet-close" onclick="closeServiceSheet()">×</div>
-      </div>
-      <div class="sheet-body" id="service-sheet-body"></div>
-      <div class="sheet-footer">
-        <button class="sheet-btn secondary" onclick="clearServiceFilter()">Clear</button>
-        <button class="sheet-btn primary" onclick="applyServiceFilter()">Apply Filter</button>
-      </div>
-    </div>
-  </div>
 
   <!-- SORT SHEET -->
   <div class="sheet-overlay" id="sort-sheet-overlay" onclick="closeSortSheet(event)">
@@ -689,10 +644,6 @@
         <option value="watched">Watched</option>
         <option value="watchlist">Watchlist</option>
       </select>
-      <div class="filter-chip" id="service-filter-chip" onclick="openServiceSheet()">
-        <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-        <span id="service-chip-label">SERVICE</span>
-      </div>
       <div class="filter-chip" id="sort-filter-chip" onclick="openSortSheet()">
         <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
         <span id="sort-chip-label">SORT</span>
@@ -861,18 +812,18 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 /* ---- STREAMING SERVICES (TMDB provider IDs, UK focused) ---- */
 const STREAMING_SERVICES = [
-  { id: 8,   name: 'Netflix',         bg: '#E50914', label: 'N' },
-  { id: 9,   name: 'Prime Video',     bg: '#00A8E0', label: 'P' },
-  { id: 337, name: 'Disney+',         bg: '#113CCF', label: 'D+' },
-  { id: 350, name: 'Apple TV+',       bg: '#1c1c1e', label: '▶' },
-  { id: 531, name: 'Paramount+',      bg: '#0064FF', label: 'P+' },
-  { id: 29,  name: 'NOW',             bg: '#00C274', label: 'N' },
-  { id: 11,  name: 'MUBI',            bg: '#738FFF', label: 'M' },
-  { id: 151, name: 'BritBox',         bg: '#C8102E', label: 'B' },
-  { id: 99,  name: 'Shudder',         bg: '#181818', label: 'S' },
-  { id: 283, name: 'Crunchyroll',     bg: '#F47521', label: 'C' },
-  { id: 188, name: 'YouTube Premium', bg: '#FF0000', label: 'YT' },
-  { id: 386, name: 'Peacock',         bg: '#000078', label: 'P' },
+  { id: 8,   name: 'Netflix' },
+  { id: 9,   name: 'Prime Video' },
+  { id: 337, name: 'Disney+' },
+  { id: 350, name: 'Apple TV+' },
+  { id: 531, name: 'Paramount+' },
+  { id: 29,  name: 'NOW' },
+  { id: 11,  name: 'MUBI' },
+  { id: 151, name: 'BritBox' },
+  { id: 99,  name: 'Shudder' },
+  { id: 283, name: 'Crunchyroll' },
+  { id: 188, name: 'YouTube Premium' },
+  { id: 386, name: 'Peacock' },
 ];
 
 /* ---- STATE ---- */
@@ -910,10 +861,11 @@ let libraryLikedMapCache = {};
 let libraryReviewedSetCache = new Set();
 let libraryMediaTypeCache = 'movie';
 
-// Service filter state
-let selectedServiceIds = new Set(); // pending (in sheet)
+// Service filter state — now lives inside the Filter menu (see filterSheetStep 'services')
+let pendingServiceIds = new Set(); // working copy while the sheet is open
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
+function resetServiceFilter() { appliedServiceIds.clear(); updateFilterChip(); }
 
 // Year filter state — also temporary/in-memory only, same as sort: resets when
 // switching tabs or leaving the Home screen.
@@ -936,7 +888,7 @@ let pendingCertFilter = new Set(); // working copy while the sheet is open
 let certCache = {};                // key: "movie-123" or "tv-123" → cert code string or null
 function resetCertFilter() { appliedCertFilter = new Set(); updateFilterChip(); }
 
-function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); }
+function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); }
 
 // Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
 // This is intentionally in-memory only (not persisted to localStorage): it resets
@@ -1111,68 +1063,29 @@ function showConfirm({ title, message, confirmText = 'Confirm', danger = true, o
 }
 
 /* ---- SERVICE SHEET ---- */
-function openServiceSheet() {
-  // Clone applied → pending
-  selectedServiceIds = new Set(appliedServiceIds);
-  renderServiceSheet();
-  document.getElementById('service-sheet-overlay').classList.add('show');
+function openServicesStep() {
+  pendingServiceIds = new Set(appliedServiceIds);
+  filterSheetStep = 'services';
+  renderFilterSheetStep();
 }
 
-function closeServiceSheet(e) {
-  if (e && e.target !== document.getElementById('service-sheet-overlay')) return;
-  document.getElementById('service-sheet-overlay').classList.remove('show');
+function toggleServicePending(id) {
+  if (pendingServiceIds.has(id)) pendingServiceIds.delete(id);
+  else pendingServiceIds.add(id);
+  renderFilterSheetStep();
 }
 
-function renderServiceSheet() {
-  const body = document.getElementById('service-sheet-body');
-  body.innerHTML = STREAMING_SERVICES.map(s => `
-    <div class="service-row" onclick="toggleServiceId(${s.id})">
-      <div class="service-logo" style="background:${s.bg};">${escapeHtml(s.label)}</div>
-      <div class="service-name">${escapeHtml(s.name)}</div>
-      <div class="service-check ${selectedServiceIds.has(s.id) ? 'checked' : ''}" id="svc-check-${s.id}">
-        ${selectedServiceIds.has(s.id) ? checkSVG : ''}
-      </div>
-    </div>
-  `).join('');
+function selectServiceAny() {
+  pendingServiceIds.clear();
+  renderFilterSheetStep();
 }
 
-function toggleServiceId(id) {
-  if (selectedServiceIds.has(id)) selectedServiceIds.delete(id);
-  else selectedServiceIds.add(id);
-  // update just this checkbox
-  const el = document.getElementById(`svc-check-${id}`);
-  if (el) {
-    el.className = 'service-check' + (selectedServiceIds.has(id) ? ' checked' : '');
-    el.innerHTML = selectedServiceIds.has(id) ? checkSVG : '';
-  }
-}
-
-function clearServiceFilter() {
-  selectedServiceIds.clear();
-  appliedServiceIds.clear();
-  updateServiceChip();
-  document.getElementById('service-sheet-overlay').classList.remove('show');
-  renderFilteredGrid();
-}
-
-async function applyServiceFilter() {
-  appliedServiceIds = new Set(selectedServiceIds);
-  updateServiceChip();
-  document.getElementById('service-sheet-overlay').classList.remove('show');
+async function applyServiceFilterNew() {
+  appliedServiceIds = new Set(pendingServiceIds);
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
   await renderFilteredGrid();
-}
-
-function updateServiceChip() {
-  const chip = document.getElementById('service-filter-chip');
-  const label = document.getElementById('service-chip-label');
-  if (appliedServiceIds.size > 0) {
-    chip.classList.add('active');
-    const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
-    label.textContent = names.length === 1 ? names[0] : `${names.length} Services`;
-  } else {
-    chip.classList.remove('active');
-    label.textContent = 'SERVICE';
-  }
 }
 
 async function renderFilteredGrid() {
@@ -1326,6 +1239,7 @@ function filterSheetBack() {
   if (filterSheetStep === 'years') filterSheetStep = 'decades';
   else if (filterSheetStep === 'decades') filterSheetStep = 'main';
   else if (filterSheetStep === 'ageRating') filterSheetStep = 'main';
+  else if (filterSheetStep === 'services') filterSheetStep = 'main';
   renderFilterSheetStep();
 }
 
@@ -1382,6 +1296,12 @@ function ageRatingFilterLabel() {
   return [...appliedCertFilter].join(', ');
 }
 
+function servicesFilterLabel() {
+  if (!appliedServiceIds.size) return 'ANY';
+  const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
+  return names.length === 1 ? names[0] : `${names.length} Services`;
+}
+
 function filterOptionRowHtml(label, selected, onclickFn) {
   return `
     <div class="settings-option-row ${selected ? 'selected' : ''}" onclick="${onclickFn}">
@@ -1411,7 +1331,8 @@ function renderFilterSheetStep() {
     back.style.display = 'none';
     body.innerHTML =
       filterNavRowHtml('Year', yearFilterLabel(), "goFilterStep('decades')") +
-      filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()");
+      filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
+      filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()");
     return;
   }
 
@@ -1453,6 +1374,16 @@ function renderFilterSheetStep() {
     html += AGE_RATINGS.map(r => filterOptionRowHtml(r.label, pendingCertFilter.has(r.code), `toggleCertPending('${r.code}')`)).join('');
     html += `<button class="btn-primary" style="margin-top:16px;width:100%;" onclick="applyCertFilter()">Apply</button>`;
     body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'services') {
+    title.textContent = 'Services';
+    back.style.display = 'flex';
+    let html = filterOptionRowHtml('ANY', pendingServiceIds.size === 0, 'selectServiceAny()');
+    html += STREAMING_SERVICES.map(s => filterOptionRowHtml(s.name, pendingServiceIds.has(s.id), `toggleServicePending(${s.id})`)).join('');
+    html += `<button class="btn-primary" style="margin-top:16px;width:100%;" onclick="applyServiceFilterNew()">Apply</button>`;
+    body.innerHTML = html;
   }
 }
 
@@ -1474,6 +1405,7 @@ function updateFilterChip() {
   const parts = [];
   if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
   if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
+  if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
   if (parts.length) {
     chip.classList.add('active');
     label.textContent = parts.join(' · ');
@@ -1656,15 +1588,12 @@ function setHomeMediaType(type) {
   document.getElementById('home-grid').style.display = isLists ? 'none' : 'grid';
   document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
   document.getElementById('library-mode').style.display = isLists ? 'none' : '';
-  document.getElementById('service-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('year-filter-chip').style.display = isLists ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
 
   if (isLists) { resetTemporaryFilters(); loadLists(); return; }
 
-  appliedServiceIds.clear();
-  updateServiceChip();
   resetTemporaryFilters();
   renderLibraryModeOptions();
   loadLibrary();
@@ -1688,8 +1617,7 @@ function renderLibraryModeOptions() {
 }
 
 function onLibraryModeChange() {
-  appliedServiceIds.clear();
-  updateServiceChip();
+  resetServiceFilter();
   loadLibrary();
 }
 
