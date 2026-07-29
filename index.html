@@ -896,7 +896,21 @@ let pendingCertFilter = new Set(); // working copy while the sheet is open
 let certCache = {};                // key: "movie-123" or "tv-123" → cert code string or null
 function resetCertFilter() { appliedCertFilter = new Set(); updateFilterChip(); }
 
-function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); }
+// Genre filter state — also temporary/in-memory only. Two sets: genres that
+// must ALL be present (include) and genres that must NOT be present (exclude).
+// A genre can only be in one of the two sets at a time.
+let appliedGenreInclude = new Set();
+let appliedGenreExclude = new Set();
+let pendingGenreInclude = new Set(); // working copy while the sheet is open
+let pendingGenreExclude = new Set(); // working copy while the sheet is open
+let movieGenres = null; // [{id,name}] cached from TMDB, fetched once
+let tvGenres = null;    // [{id,name}] cached from TMDB, fetched once
+let genreItemCache = {}; // key: "movie-123" or "tv-123" → array of genre ids
+let genreClickTimer = null;
+let genreClickTarget = null;
+function resetGenreFilter() { appliedGenreInclude = new Set(); appliedGenreExclude = new Set(); updateFilterChip(); }
+
+function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); resetGenreFilter(); }
 
 // Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
 // This is intentionally in-memory only (not persisted to localStorage): it resets
@@ -1169,6 +1183,23 @@ async function renderFilteredGrid() {
     }
   }
 
+  if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await fetchReleaseDatesFor(items, type); // also populates genreItemCache in the same request
+    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    items = items.filter(item => {
+      const genres = genreItemCache[`${endpoint}-${item.tmdb_id}`] || [];
+      if (appliedGenreExclude.size && genres.some(g => appliedGenreExclude.has(g))) return false;
+      if (appliedGenreInclude.size && ![...appliedGenreInclude].every(g => genres.includes(g))) return false;
+      return true;
+    });
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the selected genre filters.</div>`;
+      return;
+    }
+  }
+
   if (getCurrentSort()) {
     grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
     items = await applySort(items, type);
@@ -1248,6 +1279,7 @@ function filterSheetBack() {
   else if (filterSheetStep === 'decades') filterSheetStep = 'main';
   else if (filterSheetStep === 'ageRating') filterSheetStep = 'main';
   else if (filterSheetStep === 'services') filterSheetStep = 'main';
+  else if (filterSheetStep === 'genre') filterSheetStep = 'main';
   renderFilterSheetStep();
 }
 
@@ -1287,6 +1319,65 @@ async function applyCertFilter() {
   await renderFilteredGrid();
 }
 
+async function openGenreStep() {
+  pendingGenreInclude = new Set(appliedGenreInclude);
+  pendingGenreExclude = new Set(appliedGenreExclude);
+  filterSheetStep = 'genre';
+  document.getElementById('filter-sheet-title').textContent = 'Genre';
+  document.getElementById('filter-sheet-back').style.display = 'flex';
+  document.getElementById('filter-sheet-body').innerHTML = `<div style="padding:30px 0;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  await ensureGenreList();
+  renderFilterSheetStep();
+}
+
+// Single tap toggles "include" (must have this genre). A second tap within
+// the window toggles "exclude" (must NOT have this genre) instead — this is
+// how a "double click" is expressed without relying on the native dblclick
+// event, which is unreliable once the tapped element gets re-rendered.
+function handleGenreClick(id) {
+  if (genreClickTimer && genreClickTarget === id) {
+    clearTimeout(genreClickTimer);
+    genreClickTimer = null;
+    genreClickTarget = null;
+    toggleGenreExclude(id);
+  } else {
+    clearTimeout(genreClickTimer);
+    genreClickTarget = id;
+    genreClickTimer = setTimeout(() => {
+      genreClickTimer = null;
+      genreClickTarget = null;
+      toggleGenreInclude(id);
+    }, 280);
+  }
+}
+
+function toggleGenreInclude(id) {
+  if (pendingGenreInclude.has(id)) pendingGenreInclude.delete(id);
+  else { pendingGenreInclude.add(id); pendingGenreExclude.delete(id); }
+  renderFilterSheetStep();
+}
+
+function toggleGenreExclude(id) {
+  if (pendingGenreExclude.has(id)) pendingGenreExclude.delete(id);
+  else { pendingGenreExclude.add(id); pendingGenreInclude.delete(id); }
+  renderFilterSheetStep();
+}
+
+function selectGenreAny() {
+  pendingGenreInclude.clear();
+  pendingGenreExclude.clear();
+  renderFilterSheetStep();
+}
+
+async function applyGenreFilter() {
+  appliedGenreInclude = new Set(pendingGenreInclude);
+  appliedGenreExclude = new Set(pendingGenreExclude);
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  await renderFilteredGrid();
+}
+
 function getDecadesList() {
   const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
   const decades = [];
@@ -1308,6 +1399,14 @@ function servicesFilterLabel() {
   if (!appliedServiceIds.size) return 'ANY';
   const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
   return names.length === 1 ? names[0] : `${names.length} Services`;
+}
+
+function genreFilterLabel() {
+  if (!appliedGenreInclude.size && !appliedGenreExclude.size) return 'ANY';
+  const parts = [];
+  if (appliedGenreInclude.size) parts.push([...appliedGenreInclude].map(genreNameById).join(', '));
+  if (appliedGenreExclude.size) parts.push('not ' + [...appliedGenreExclude].map(genreNameById).join(', '));
+  return parts.join(' · ');
 }
 
 function filterOptionRowHtml(label, selected, onclickFn) {
@@ -1339,6 +1438,7 @@ function renderFilterSheetStep() {
     back.style.display = 'none';
     body.innerHTML =
       filterNavRowHtml('Year', yearFilterLabel(), "goFilterStep('decades')") +
+      filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()") +
       filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
       filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()");
     return;
@@ -1392,6 +1492,33 @@ function renderFilterSheetStep() {
     html += STREAMING_SERVICES.map(s => filterOptionRowHtml(s.name, pendingServiceIds.has(s.id), `toggleServicePending(${s.id})`)).join('');
     html += `<button class="btn-primary" style="margin-top:16px;width:100%;" onclick="applyServiceFilterNew()">Apply</button>`;
     body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'genre') {
+    title.textContent = 'Genre';
+    back.style.display = 'flex';
+    const anySelected = pendingGenreInclude.size === 0 && pendingGenreExclude.size === 0;
+    let html = filterOptionRowHtml('ANY', anySelected, 'selectGenreAny()');
+    html += `<div style="font-size:11.5px;color:var(--text3);line-height:1.5;margin:12px 0 12px;">Tap a genre to require it — pick more than one and titles must match all of them. Tap a selected genre again quickly to switch it to excluded instead.</div>`;
+    const list = currentGenreList();
+    if (!list.length) {
+      html += `<div style="color:var(--text3);font-size:13px;padding:12px 0;">Couldn't load genres.</div>`;
+    } else {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
+      html += list.map(g => {
+        const included = pendingGenreInclude.has(g.id);
+        const excluded = pendingGenreExclude.has(g.id);
+        let cls = 'filter-chip';
+        let style = 'cursor:pointer;';
+        if (included) style += 'background:rgba(124,92,191,0.18);color:var(--purple-light);border-color:var(--purple);';
+        else if (excluded) style += 'background:rgba(224,88,74,0.14);color:var(--danger);border-color:var(--danger);text-decoration:line-through;';
+        return `<div class="${cls}" style="${style}" onclick="handleGenreClick(${g.id})">${excluded ? '\u2013 ' : ''}${escapeHtml(g.name)}</div>`;
+      }).join('');
+      html += `</div>`;
+    }
+    html += `<button class="btn-primary" style="margin-top:18px;width:100%;" onclick="applyGenreFilter()">Apply</button>`;
+    body.innerHTML = html;
   }
 }
 
@@ -1412,6 +1539,7 @@ function updateFilterChip() {
   if (!chip || !label) return;
   const parts = [];
   if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
+  if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel());
   if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
   if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
   if (parts.length) {
@@ -1442,14 +1570,39 @@ async function fetchReleaseDatesFor(items, type) {
   const endpoint = type === 'tv' ? 'tv' : 'movie';
   await Promise.all(items.map(async item => {
     const key = `${endpoint}-${item.tmdb_id}`;
-    if (releaseDateCache[key] !== undefined) return;
+    if (releaseDateCache[key] !== undefined && genreItemCache[key] !== undefined) return;
     try {
       const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
-      if (!res.ok) { releaseDateCache[key] = null; return; }
+      if (!res.ok) { releaseDateCache[key] = null; genreItemCache[key] = []; return; }
       const data = await res.json();
       releaseDateCache[key] = (type === 'tv' ? data.first_air_date : data.release_date) || null;
-    } catch { releaseDateCache[key] = null; }
+      genreItemCache[key] = (data.genres || []).map(g => g.id);
+    } catch { releaseDateCache[key] = null; genreItemCache[key] = []; }
   }));
+}
+
+/* ---- GENRES ---- */
+async function ensureGenreList() {
+  const type = homeMediaType === 'tv' ? 'tv' : 'movie';
+  if (type === 'tv' && tvGenres) return;
+  if (type === 'movie' && movieGenres) return;
+  try {
+    const res = await fetch(`${TMDB_BASE}/genre/${type}/list?api_key=${TMDB_API_KEY}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (type === 'tv') tvGenres = data.genres || []; else movieGenres = data.genres || [];
+  } catch {
+    if (type === 'tv') tvGenres = tvGenres || []; else movieGenres = movieGenres || [];
+  }
+}
+
+function currentGenreList() {
+  return (homeMediaType === 'tv' ? tvGenres : movieGenres) || [];
+}
+
+function genreNameById(id) {
+  const g = currentGenreList().find(g => g.id === id);
+  return g ? g.name : String(id);
 }
 
 function extractMovieCert(data) {
