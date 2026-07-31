@@ -648,7 +648,7 @@
       <div class="tab" id="home-tab-lists" onclick="setHomeMediaType('lists')">Lists</div>
       <div class="tab" id="home-tab-tags" onclick="setHomeMediaType('tags')">Tags</div>
     </div>
-    <div class="filter-bar">
+    <div class="filter-bar" id="home-filter-bar">
       <select id="library-mode" class="filter-chip" onchange="onLibraryModeChange()">
         <option value="watched">Watched</option>
         <option value="watchlist">Watchlist</option>
@@ -747,6 +747,16 @@
       </div>
       <div class="md-meta" id="list-detail-desc"></div>
     </div>
+    <div id="list-filter-bar" style="display:none;gap:10px;padding:2px 20px 12px;align-items:center;">
+      <div class="filter-chip" id="list-sort-filter-chip" onclick="openListSortSheet()">
+        <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
+        <span id="list-sort-chip-label">SORT</span>
+      </div>
+      <div class="filter-chip" id="list-year-filter-chip" onclick="openListFilterSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        <span id="list-year-filter-chip-label">FILTER</span>
+      </div>
+    </div>
     <div class="screen-body">
       <div class="film-grid" id="list-detail-grid"></div>
     </div>
@@ -760,7 +770,7 @@
       </div>
     </div>
     <div style="padding:0 20px 14px;">
-      <div class="md-title" id="tag-detail-title" style="font-size:20px;"></div>
+      <div class="logo-sm" id="tag-detail-title"></div>
     </div>
     <div class="screen-body">
       <div id="tag-detail-body"></div>
@@ -906,6 +916,33 @@ let pendingCertFilter = new Set(); // working copy while the sheet is open
 let certCache = {};                // key: "movie-123" or "tv-123" → cert code string or null
 function resetCertFilter() { appliedCertFilter = new Set(); updateFilterChip(); }
 
+// Liked / Watched filter state — also temporary/in-memory only.
+// null = ANY, true = only liked/watched, false = only not-liked/not-watched.
+let appliedLikedFilter = null;
+let appliedWatchedFilter = null;
+let libraryWatchedSetCache = new Set(); // tmdb_ids in the current library that have a watched entry elsewhere (e.g. watchlist items you've already seen)
+function resetLikedFilter() { appliedLikedFilter = null; updateFilterChip(); }
+function resetWatchedFilter() { appliedWatchedFilter = null; updateFilterChip(); }
+
+// Filter/sort context — lets the shared sort & filter sheets serve either the
+// Home library grid or a List Detail grid without the two states colliding.
+let filterContext = 'home'; // 'home' | 'list'
+let listSortValue = null;
+let listAppliedYearFilter = null;
+let listAppliedLikedFilter = null;
+let listAppliedWatchedFilter = null;
+let listLikedMapCache = {};             // tmdb_id -> true (movies only)
+let listRatingMapCache = {};            // key "movie-123"/"tv-123" -> rating
+let listWatchedSetCache = new Set();    // key "movie-123"/"tv-123"
+function resetListFilters() {
+  listSortValue = null;
+  listAppliedYearFilter = null;
+  listAppliedLikedFilter = null;
+  listAppliedWatchedFilter = null;
+  updateFilterChip();
+  updateSortChip();
+}
+
 // Genre filter state — also temporary/in-memory only. Two sets: genres that
 // must ALL be present (include) and genres that must NOT be present (exclude).
 // A genre can only be in one of the two sets at a time.
@@ -920,14 +957,20 @@ let genreClickTimer = null;
 let genreClickTarget = null;
 function resetGenreFilter() { appliedGenreInclude = new Set(); appliedGenreExclude = new Set(); updateFilterChip(); }
 
-function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); resetGenreFilter(); }
+function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); resetGenreFilter(); resetLikedFilter(); resetWatchedFilter(); }
 
 // Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
 // This is intentionally in-memory only (not persisted to localStorage): it resets
 // to "no sort" whenever the user switches tabs or navigates to a different screen.
 let sortStateByType = { movie: null, tv: null };
-function getCurrentSort() { return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null; }
-function setCurrentSort(val) { sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val; }
+function getCurrentSort() {
+  if (filterContext === 'list') return listSortValue;
+  return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null;
+}
+function setCurrentSort(val) {
+  if (filterContext === 'list') { listSortValue = val; return; }
+  sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val;
+}
 function resetAllSorts() { sortStateByType = { movie: null, tv: null }; updateSortChip(); }
 let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
 const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
@@ -1145,6 +1188,7 @@ async function applyServiceFilterNew() {
 }
 
 async function renderFilteredGrid() {
+  filterContext = 'home';
   const grid = document.getElementById('home-grid');
   const type = libraryMediaTypeCache;
 
@@ -1234,6 +1278,29 @@ async function renderFilteredGrid() {
     }
   }
 
+  if (appliedLikedFilter !== null) {
+    items = items.filter(item => {
+      if (type === 'tv') return false; // liked isn't tracked for TV shows
+      const liked = !!libraryLikedMapCache[item.tmdb_id];
+      return appliedLikedFilter ? liked : !liked;
+    });
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the Liked filter.</div>`;
+      return;
+    }
+  }
+
+  if (appliedWatchedFilter !== null) {
+    items = items.filter(item => {
+      const watchedBefore = libraryWatchedSetCache.has(item.tmdb_id);
+      return appliedWatchedFilter ? watchedBefore : !watchedBefore;
+    });
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the Watched filter.</div>`;
+      return;
+    }
+  }
+
   if (getCurrentSort()) {
     grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
     items = await applySort(items, type);
@@ -1244,6 +1311,13 @@ async function renderFilteredGrid() {
 
 /* ---- SORT SHEET ---- */
 function openSortSheet() {
+  filterContext = 'home';
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.add('show');
+}
+
+function openListSortSheet() {
+  filterContext = 'list';
   renderSortSheetBody();
   document.getElementById('sort-sheet-overlay').classList.add('show');
 }
@@ -1278,25 +1352,37 @@ async function chooseSortOption(value) {
   updateSortChip();
   renderSortSheetBody();
   document.getElementById('sort-sheet-overlay').classList.remove('show');
-  await renderFilteredGrid();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
 }
 
 function updateSortChip() {
   const chip = document.getElementById('sort-filter-chip');
   const label = document.getElementById('sort-chip-label');
-  if (!chip || !label) return;
-  const sort = getCurrentSort();
-  if (sort) {
-    chip.classList.add('active');
-    label.textContent = SORT_LABELS[sort] || 'SORT';
-  } else {
-    chip.classList.remove('active');
-    label.textContent = 'SORT';
+  if (chip && label) {
+    const sort = sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null;
+    if (sort) { chip.classList.add('active'); label.textContent = SORT_LABELS[sort] || 'SORT'; }
+    else { chip.classList.remove('active'); label.textContent = 'SORT'; }
+  }
+  const listChip = document.getElementById('list-sort-filter-chip');
+  const listLabel = document.getElementById('list-sort-chip-label');
+  if (listChip && listLabel) {
+    if (listSortValue) { listChip.classList.add('active'); listLabel.textContent = SORT_LABELS[listSortValue] || 'SORT'; }
+    else { listChip.classList.remove('active'); listLabel.textContent = 'SORT'; }
   }
 }
 
 /* ---- FILTER SHEET (Year, with more filters to come later) ---- */
 function openFilterSheet() {
+  filterContext = 'home';
+  filterSheetStep = 'main';
+  filterSheetDecade = null;
+  renderFilterSheetStep();
+  document.getElementById('filter-sheet-overlay').classList.add('show');
+}
+
+function openListFilterSheet() {
+  filterContext = 'list';
   filterSheetStep = 'main';
   filterSheetDecade = null;
   renderFilterSheetStep();
@@ -1310,10 +1396,7 @@ function closeFilterSheet(e) {
 
 function filterSheetBack() {
   if (filterSheetStep === 'years') filterSheetStep = 'decades';
-  else if (filterSheetStep === 'decades') filterSheetStep = 'main';
-  else if (filterSheetStep === 'ageRating') filterSheetStep = 'main';
-  else if (filterSheetStep === 'services') filterSheetStep = 'main';
-  else if (filterSheetStep === 'genre') filterSheetStep = 'main';
+  else filterSheetStep = 'main';
   renderFilterSheetStep();
 }
 
@@ -1424,6 +1507,38 @@ function yearFilterLabel() {
   return appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`;
 }
 
+function activeYearFilter() { return filterContext === 'list' ? listAppliedYearFilter : appliedYearFilter; }
+function activeYearFilterLabel() {
+  const yf = activeYearFilter();
+  if (!yf) return 'ANY';
+  return yf.type === 'year' ? String(yf.year) : `${yf.decade}s`;
+}
+
+function likedFilterLabel() {
+  const v = filterContext === 'list' ? listAppliedLikedFilter : appliedLikedFilter;
+  return v === true ? 'Liked' : v === false ? 'Not Liked' : 'ANY';
+}
+function watchedFilterLabel() {
+  const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+  return v === true ? 'Watched' : v === false ? 'Not Watched' : 'ANY';
+}
+async function selectLikedFilter(val) {
+  if (filterContext === 'list') listAppliedLikedFilter = val; else appliedLikedFilter = val;
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+async function selectWatchedFilter(val) {
+  if (filterContext === 'list') listAppliedWatchedFilter = val; else appliedWatchedFilter = val;
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+
 function ageRatingFilterLabel() {
   if (!appliedCertFilter.size) return 'ANY';
   return [...appliedCertFilter].join(', ');
@@ -1470,21 +1585,31 @@ function renderFilterSheetStep() {
   if (filterSheetStep === 'main') {
     title.textContent = 'Filters';
     back.style.display = 'none';
-    body.innerHTML =
-      filterNavRowHtml('Year', yearFilterLabel(), "goFilterStep('decades')") +
-      filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()") +
-      filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
-      filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()");
+    if (filterContext === 'list') {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
+        filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
+    } else {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()") +
+        filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
+        filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()") +
+        filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
+        filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
+    }
     return;
   }
 
   if (filterSheetStep === 'decades') {
     title.textContent = 'Year';
     back.style.display = 'flex';
-    const anySelected = !appliedYearFilter;
+    const activeYf = activeYearFilter();
+    const anySelected = !activeYf;
     let html = filterOptionRowHtml('ANY', anySelected, 'selectYearAny()');
     html += getDecadesList().map(d => {
-      const selected = appliedYearFilter?.type === 'decade' && appliedYearFilter.decade === d;
+      const selected = activeYf?.type === 'decade' && activeYf.decade === d;
       return `
         <div class="settings-option-row ${selected ? 'selected' : ''}" style="display:flex;justify-content:space-between;align-items:center;" onclick="openDecadeYears(${d})">
           <span>${d}s</span>
@@ -1497,15 +1622,38 @@ function renderFilterSheetStep() {
 
   if (filterSheetStep === 'years') {
     const d = filterSheetDecade;
+    const activeYf = activeYearFilter();
     title.textContent = `${d}s`;
     back.style.display = 'flex';
-    const anySelected = appliedYearFilter?.type === 'decade' && appliedYearFilter.decade === d;
+    const anySelected = activeYf?.type === 'decade' && activeYf.decade === d;
     let html = filterOptionRowHtml('ANY', anySelected, `selectDecadeAny(${d})`);
     for (let y = d + 9; y >= d; y--) {
-      const selected = appliedYearFilter?.type === 'year' && appliedYearFilter.year === y;
+      const selected = activeYf?.type === 'year' && activeYf.year === y;
       html += filterOptionRowHtml(String(y), selected, `selectYear(${y})`);
     }
     body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'liked') {
+    title.textContent = 'Liked';
+    back.style.display = 'flex';
+    const v = filterContext === 'list' ? listAppliedLikedFilter : appliedLikedFilter;
+    body.innerHTML =
+      filterOptionRowHtml('ANY', v === null, 'selectLikedFilter(null)') +
+      filterOptionRowHtml('Liked', v === true, 'selectLikedFilter(true)') +
+      filterOptionRowHtml('Not Liked', v === false, 'selectLikedFilter(false)');
+    return;
+  }
+
+  if (filterSheetStep === 'watchedStatus') {
+    title.textContent = 'Watched';
+    back.style.display = 'flex';
+    const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+    body.innerHTML =
+      filterOptionRowHtml('ANY', v === null, 'selectWatchedFilter(null)') +
+      filterOptionRowHtml('Watched only', v === true, 'selectWatchedFilter(true)') +
+      filterOptionRowHtml('Not watched', v === false, 'selectWatchedFilter(false)');
     return;
   }
 
@@ -1557,10 +1705,11 @@ function renderFilterSheetStep() {
 }
 
 async function applyYearFilterAndClose(val) {
-  appliedYearFilter = val;
+  if (filterContext === 'list') listAppliedYearFilter = val; else appliedYearFilter = val;
   updateFilterChip();
   document.getElementById('filter-sheet-overlay').classList.remove('show');
-  await renderFilteredGrid();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
 }
 
 function selectYearAny() { applyYearFilterAndClose(null); }
@@ -1570,18 +1719,26 @@ function selectYear(year) { applyYearFilterAndClose({ type: 'year', year }); }
 function updateFilterChip() {
   const chip = document.getElementById('year-filter-chip');
   const label = document.getElementById('year-filter-chip-label');
-  if (!chip || !label) return;
-  const parts = [];
-  if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
-  if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel());
-  if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
-  if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
-  if (parts.length) {
-    chip.classList.add('active');
-    label.textContent = parts.join(' · ');
-  } else {
-    chip.classList.remove('active');
-    label.textContent = 'FILTER';
+  if (chip && label) {
+    const parts = [];
+    if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
+    if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel());
+    if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
+    if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
+    if (appliedLikedFilter !== null) parts.push(appliedLikedFilter ? 'Liked' : 'Not Liked');
+    if (appliedWatchedFilter !== null) parts.push(appliedWatchedFilter ? 'Watched' : 'Not Watched');
+    if (parts.length) { chip.classList.add('active'); label.textContent = parts.join(' · '); }
+    else { chip.classList.remove('active'); label.textContent = 'FILTER'; }
+  }
+  const listChip = document.getElementById('list-year-filter-chip');
+  const listLabel = document.getElementById('list-year-filter-chip-label');
+  if (listChip && listLabel) {
+    const parts = [];
+    if (listAppliedYearFilter) parts.push(listAppliedYearFilter.type === 'year' ? String(listAppliedYearFilter.year) : `${listAppliedYearFilter.decade}s`);
+    if (listAppliedLikedFilter !== null) parts.push(listAppliedLikedFilter ? 'Liked' : 'Not Liked');
+    if (listAppliedWatchedFilter !== null) parts.push(listAppliedWatchedFilter ? 'Watched' : 'Not Watched');
+    if (parts.length) { listChip.classList.add('active'); listLabel.textContent = parts.join(' · '); }
+    else { listChip.classList.remove('active'); listLabel.textContent = 'FILTER'; }
   }
 }
 
@@ -1789,6 +1946,7 @@ function setHomeMediaType(type) {
   document.getElementById('sort-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
   document.getElementById('year-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
+  document.getElementById('home-filter-bar').style.display = isTags ? 'none' : 'flex';
 
   if (isTags) { resetTemporaryFilters(); loadTags(); return; }
   if (isLists) { resetTemporaryFilters(); loadLists(); return; }
@@ -2543,6 +2701,19 @@ async function loadLibrary() {
     (data || []).forEach(item => {
       if (item.rating) libraryRatingMapCache[item.tmdb_id] = item.rating;
     });
+    if (mode === 'watched') {
+      libraryWatchedSetCache = new Set(libraryItemsCache.map(i => i.tmdb_id));
+    } else {
+      const ids = [...new Set(libraryItemsCache.map(i => i.tmdb_id))];
+      let wSet = new Set();
+      if (ids.length) {
+        let wq = db.from('tv_status').select('tmdb_id').eq('status', 'watched').in('tmdb_id', ids);
+        if (uid) wq = wq.eq('user_id', uid);
+        const { data: wRows } = await wq;
+        wSet = new Set((wRows || []).map(r => r.tmdb_id));
+      }
+      libraryWatchedSetCache = wSet;
+    }
     await renderFilteredGrid();
   } else {
     const table = mode === 'watched' ? 'watched' : 'watchlist';
@@ -2573,6 +2744,19 @@ async function loadLibrary() {
       reviewedSet = new Set((reviewedRows || []).map(r => r.tmdb_id));
     }
     libraryReviewedSetCache = reviewedSet;
+
+    if (mode === 'watched') {
+      libraryWatchedSetCache = new Set(libraryItemsCache.map(i => i.tmdb_id));
+    } else {
+      let wSet = new Set();
+      if (tmdbIds.length) {
+        let wq = db.from('watched').select('tmdb_id').in('tmdb_id', tmdbIds);
+        if (uid) wq = wq.eq('user_id', uid);
+        const { data: wRows } = await wq;
+        wSet = new Set((wRows || []).map(r => r.tmdb_id));
+      }
+      libraryWatchedSetCache = wSet;
+    }
 
     await renderFilteredGrid();
   }
@@ -2863,7 +3047,7 @@ function statsPersonCardHtml(person, label, totalFilms) {
     </div>`;
 }
 
-function renderStatsHtml({ watchedCount, watchlistCount, avgRating, genreCounts, rewatchList, topActor, topDirector, totalFilms, hoursWatched, countriesCount }) {
+function renderStatsHtml({ watchedCount, watchlistCount, avgRating, genreCounts, rewatchList, topActor, topDirector, totalFilms, hoursWatched, countriesCount, directorsCount }) {
   const overviewHtml = `
     <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
@@ -2871,9 +3055,10 @@ function renderStatsHtml({ watchedCount, watchlistCount, avgRating, genreCounts,
       <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);">${watchlistCount}</div></div>
       <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);">${avgRating}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;">
       <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Hours Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);">${hoursWatched.toLocaleString()}</div></div>
       <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Countries</div><div style="font-size:20px;font-weight:600;color:var(--text);">${countriesCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Directors</div><div style="font-size:20px;font-weight:600;color:var(--text);">${directorsCount}</div></div>
     </div>`;
 
   const pie = buildGenrePie(genreCounts);
@@ -2960,7 +3145,7 @@ async function renderStatsBody() {
     // recorded "first watch" — assume one untracked watch before joining betterboxd.
     let total = entries.length + (hasFirstWatch ? 0 : 1);
     return { tmdbId: Number(tmdbId), title: info.title, poster_path: info.poster_path, total };
-  }).filter(f => f.total > 1).sort((a, b) => b.total - a.total).slice(0, 10);
+  }).filter(f => f.total > 1).sort((a, b) => b.total - a.total).slice(0, 8);
 
   // Genre / cast / crew data for every unique film watched in the period
   await ensureMovieGenreList();
@@ -2990,11 +3175,12 @@ async function renderStatsBody() {
   const topDirector = Object.values(directorCounts).sort((a, b) => b.count - a.count)[0] || null;
   const hoursWatched = Math.round(totalMinutes / 60);
   const countriesCount = countrySet.size;
+  const directorsCount = Object.keys(directorCounts).length;
 
   if (!uniqueWatchedIds.length) {
     body.innerHTML = renderStatsHtml({
       watchedCount: 0, watchlistCount: watchlistCount ?? 0, avgRating, genreCounts: {},
-      rewatchList: [], topActor: null, topDirector: null, totalFilms: 0, hoursWatched: 0, countriesCount: 0
+      rewatchList: [], topActor: null, topDirector: null, totalFilms: 0, hoursWatched: 0, countriesCount: 0, directorsCount: 0
     });
     return;
   }
@@ -3002,7 +3188,7 @@ async function renderStatsBody() {
   body.innerHTML = renderStatsHtml({
     watchedCount: uniqueWatchedIds.length, watchlistCount: watchlistCount ?? 0, avgRating,
     genreCounts, rewatchList, topActor, topDirector, totalFilms: uniqueWatchedIds.length,
-    hoursWatched, countriesCount
+    hoursWatched, countriesCount, directorsCount
   });
 }
 
@@ -3130,22 +3316,34 @@ function renderTagDetailDiaryView() {
     body.innerHTML = toggle + `<div class="empty-grid">No diary entries tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
     return;
   }
-  body.innerHTML = toggle + tagDetailDiaryEntries.map(entry => {
+  // Group by month, same as the main Diary screen (entries already arrive
+  // newest-first from the query, so this preserves that ordering per group).
+  const groups = [];
+  let currentKey = null;
+  tagDetailDiaryEntries.forEach(entry => {
     const d = new Date(entry.watched_on);
-    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    return `
-      <div class="diary-entry" style="margin-left:20px;margin-right:20px;" onclick="openTagDiaryEntry('${entry.id}')">
-        ${entry.poster_path ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />` : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
-        <div class="diary-entry-info">
-          <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ` <span class="rewatch-symbol" title="Rewatch">${REWATCH_SYMBOL}</span>` : ''}</div>
-          <div class="diary-entry-meta">
-            <span class="diary-entry-date">${dateStr}</span>
-            ${entry.rating ? `<span class="diary-entry-stars">${starsDisplay(entry.rating)}</span>` : ''}
-            ${entry.liked ? `<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>` : ''}
+    const key = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (key !== currentKey) { groups.push({ key, items: [] }); currentKey = key; }
+    groups[groups.length - 1].items.push(entry);
+  });
+  body.innerHTML = toggle + groups.map(g => `
+    <div class="diary-month-header">${g.key}</div>
+    ${g.items.map(entry => {
+      const d = new Date(entry.watched_on);
+      const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      return `
+        <div class="diary-entry" onclick="openTagDiaryEntry('${entry.id}')">
+          ${entry.poster_path ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />` : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
+          <div class="diary-entry-info">
+            <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ` <span class="rewatch-symbol" title="Rewatch">${REWATCH_SYMBOL}</span>` : ''}</div>
+            <div class="diary-entry-meta">
+              <span class="diary-entry-date">${dateStr}</span>
+              ${entry.rating ? `<span class="diary-entry-stars">${starsDisplay(entry.rating)}</span>` : ''}
+              ${entry.liked ? `<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>` : ''}
+            </div>
           </div>
-        </div>
-      </div>`;
-  }).join('') + `<div style="height:6px;"></div>`;
+        </div>`;
+    }).join('')}`).join('') + `<div style="height:6px;"></div>`;
 }
 
 function openTagDiaryEntry(id) {
@@ -3309,6 +3507,7 @@ async function openListDetail(id, prefetched) {
   currentListId = id;
   currentListType = listTypeCache[id] || 'titles';
   listViewMode = 'percent';
+  resetListFilters();
   goTo('screen-list-detail');
   const grid = document.getElementById('list-detail-grid');
   grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
@@ -3336,9 +3535,156 @@ async function loadListItems() {
     currentListType = currentListItems[0].media_type === 'person' ? 'people' : 'titles';
     listTypeCache[currentListId] = currentListType;
   }
-  renderListDetailGrid();
+  const filterBar = document.getElementById('list-filter-bar');
+  if (filterBar) filterBar.style.display = (currentListType === 'people' || !currentListItems.length) ? 'none' : 'flex';
+  await computeListMetaMaps();
+  await renderFilteredListGrid();
   await computeListWatchStats();
   renderListWatchWidget();
+}
+
+// Fetches liked/rating/watched info for every title in the current list, so
+// the list's own Liked / Watched filters and Rating sort have something to
+// work with (list_items itself doesn't store any of this).
+async function computeListMetaMaps() {
+  listLikedMapCache = {};
+  listRatingMapCache = {};
+  listWatchedSetCache = new Set();
+  if (currentListType === 'people' || !currentListItems.length) return;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  const movieIds = [...new Set(currentListItems.filter(i => i.media_type === 'movie').map(i => i.tmdb_id))];
+  const tvIds = [...new Set(currentListItems.filter(i => i.media_type === 'tv').map(i => i.tmdb_id))];
+  const tasks = [];
+  if (movieIds.length) {
+    let q = db.from('watched').select('tmdb_id, liked, rating').in('tmdb_id', movieIds);
+    if (uid) q = q.eq('user_id', uid);
+    tasks.push(q.then(({ data }) => {
+      (data || []).forEach(r => {
+        listWatchedSetCache.add(`movie-${r.tmdb_id}`);
+        if (r.liked) listLikedMapCache[r.tmdb_id] = true;
+        if (r.rating && !listRatingMapCache[`movie-${r.tmdb_id}`]) listRatingMapCache[`movie-${r.tmdb_id}`] = r.rating;
+      });
+    }));
+  }
+  if (tvIds.length) {
+    let q = db.from('tv_status').select('tmdb_id, rating').eq('status', 'watched').in('tmdb_id', tvIds);
+    if (uid) q = q.eq('user_id', uid);
+    tasks.push(q.then(({ data }) => {
+      (data || []).forEach(r => {
+        listWatchedSetCache.add(`tv-${r.tmdb_id}`);
+        if (r.rating) listRatingMapCache[`tv-${r.tmdb_id}`] = r.rating;
+      });
+    }));
+  }
+  await Promise.all(tasks);
+}
+
+async function applyListSort(items) {
+  const arr = [...items];
+  switch (listSortValue) {
+    case 'title_az':
+      arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      break;
+    case 'added_newest':
+      arr.sort((a, b) => (b.position || 0) - (a.position || 0));
+      break;
+    case 'added_oldest':
+      arr.sort((a, b) => (a.position || 0) - (b.position || 0));
+      break;
+    case 'rating_highest':
+      arr.sort((a, b) => (listRatingMapCache[`${b.media_type}-${b.tmdb_id}`] || 0) - (listRatingMapCache[`${a.media_type}-${a.tmdb_id}`] || 0));
+      break;
+    case 'rating_lowest':
+      arr.sort((a, b) => {
+        const ra = listRatingMapCache[`${a.media_type}-${a.tmdb_id}`] || 0, rb = listRatingMapCache[`${b.media_type}-${b.tmdb_id}`] || 0;
+        if (!ra && !rb) return 0;
+        if (!ra) return 1;
+        if (!rb) return -1;
+        return ra - rb;
+      });
+      break;
+    case 'release_newest':
+    case 'release_oldest': {
+      await Promise.all(arr.map(async item => {
+        const key = `${item.media_type}-${item.tmdb_id}`;
+        if (releaseDateCache[key] !== undefined) return;
+        try {
+          const res = await fetch(`${TMDB_BASE}/${item.media_type}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+          if (!res.ok) { releaseDateCache[key] = null; return; }
+          const data = await res.json();
+          releaseDateCache[key] = (item.media_type === 'tv' ? data.first_air_date : data.release_date) || null;
+        } catch { releaseDateCache[key] = null; }
+      }));
+      arr.sort((a, b) => {
+        const da = releaseDateCache[`${a.media_type}-${a.tmdb_id}`], dbv = releaseDateCache[`${b.media_type}-${b.tmdb_id}`];
+        if (!da && !dbv) return 0;
+        if (!da) return 1;
+        if (!dbv) return -1;
+        return listSortValue === 'release_newest' ? new Date(dbv) - new Date(da) : new Date(da) - new Date(dbv);
+      });
+      break;
+    }
+  }
+  return arr;
+}
+
+async function renderFilteredListGrid() {
+  filterContext = 'list';
+  const grid = document.getElementById('list-detail-grid');
+  if (!grid) return;
+  if (currentListType === 'people' || !currentListItems.length) { renderListDetailGrid(); return; }
+
+  let items = [...currentListItems];
+
+  if (listAppliedLikedFilter !== null) {
+    items = items.filter(item => {
+      if (item.media_type !== 'movie') return false;
+      const liked = !!listLikedMapCache[item.tmdb_id];
+      return listAppliedLikedFilter ? liked : !liked;
+    });
+  }
+
+  if (listAppliedWatchedFilter !== null) {
+    items = items.filter(item => {
+      const watched = listWatchedSetCache.has(`${item.media_type}-${item.tmdb_id}`);
+      return listAppliedWatchedFilter ? watched : !watched;
+    });
+  }
+
+  if (listAppliedYearFilter) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await Promise.all(items.map(async item => {
+      const key = `${item.media_type}-${item.tmdb_id}`;
+      if (releaseDateCache[key] !== undefined) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/${item.media_type}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { releaseDateCache[key] = null; return; }
+        const data = await res.json();
+        releaseDateCache[key] = (item.media_type === 'tv' ? data.first_air_date : data.release_date) || null;
+      } catch { releaseDateCache[key] = null; }
+    }));
+    items = items.filter(item => {
+      const key = `${item.media_type}-${item.tmdb_id}`;
+      const rd = releaseDateCache[key];
+      if (!rd) return false;
+      const y = parseInt(rd.slice(0, 4), 10);
+      if (listAppliedYearFilter.type === 'year') return y === listAppliedYearFilter.year;
+      return y >= listAppliedYearFilter.decade && y <= listAppliedYearFilter.decade + 9;
+    });
+  }
+
+  if (listSortValue) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    items = await applyListSort(items);
+  }
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-grid">No items match the current filters.</div>`;
+    return;
+  }
+
+  renderListDetailGrid(items);
 }
 
 async function computeListWatchStats() {
@@ -3388,14 +3734,15 @@ function renderListWatchWidget() {
   }
 }
 
-function renderListDetailGrid() {
+function renderListDetailGrid(items) {
+  const list = items || currentListItems;
   const grid = document.getElementById('list-detail-grid');
   if (!currentListItems.length) {
     grid.innerHTML = `<div class="empty-grid">No items yet.<br>Tap the + button above to add ${currentListType === 'people' ? 'cast &amp; crew' : 'films or shows'}.</div>`;
     return;
   }
   if (currentListType === 'people') {
-    grid.innerHTML = currentListItems.map(item => `
+    grid.innerHTML = list.map(item => `
       <div class="film-card-wrap"
         onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
         ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
@@ -3408,7 +3755,11 @@ function renderListDetailGrid() {
         <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.title)}</span></div>
       </div>`).join('');
   } else {
-    grid.innerHTML = currentListItems.map(item => `
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty-grid">No items match the current filters.</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(item => `
       <div class="film-card-wrap"
         onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
         ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
