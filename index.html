@@ -1652,8 +1652,8 @@ function renderFilterSheetStep() {
     const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
     body.innerHTML =
       filterOptionRowHtml('ANY', v === null, 'selectWatchedFilter(null)') +
-      filterOptionRowHtml('Watched only', v === true, 'selectWatchedFilter(true)') +
-      filterOptionRowHtml('Not watched', v === false, 'selectWatchedFilter(false)');
+      filterOptionRowHtml('Watched', v === true, 'selectWatchedFilter(true)') +
+      filterOptionRowHtml('Not Watched', v === false, 'selectWatchedFilter(false)');
     return;
   }
 
