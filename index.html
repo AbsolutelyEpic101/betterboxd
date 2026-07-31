@@ -1966,14 +1966,15 @@ function renderSearchTabs() {
   wrap.style.display = 'flex';
   wrap.innerHTML = `
     <div class="tab ${searchMediaType === 'movie' ? 'active' : ''}" onclick="setSearchMediaType('movie')">Movies</div>
-    <div class="tab ${searchMediaType === 'tv' ? 'active' : ''}" onclick="setSearchMediaType('tv')">TV Shows</div>`;
+    <div class="tab ${searchMediaType === 'tv' ? 'active' : ''}" onclick="setSearchMediaType('tv')">TV Shows</div>
+    <div class="tab ${searchMediaType === 'person' ? 'active' : ''}" onclick="setSearchMediaType('person')">People</div>`;
 }
 
 function setSearchMediaType(type) {
   searchMediaType = type;
   renderSearchTabs();
   const input = document.getElementById('search-input');
-  if (input) input.placeholder = type === 'tv' ? 'Search TV shows...' : 'Search films...';
+  if (input) input.placeholder = type === 'tv' ? 'Search TV shows...' : type === 'person' ? 'Search actors, directors...' : 'Search films...';
   const q = input ? input.value.trim() : '';
   if (q.length > 2) runSearch(q); else document.getElementById('search-grid').innerHTML = '';
 }
@@ -2112,7 +2113,7 @@ function debouncedSearch(query) {
 async function runSearch(query) {
   const type = searchPurpose === 'quick' ? searchMediaType : 'movie';
   try {
-    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    const endpoint = type === 'person' ? 'person' : (type === 'tv' ? 'tv' : 'movie');
     const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
     if (!res.ok) throw new Error();
     const data = await res.json();
@@ -2122,7 +2123,23 @@ async function runSearch(query) {
 
 function renderSearchResults(results = [], type = 'movie') {
   const grid = document.getElementById('search-grid');
-  if (!results.length) { grid.innerHTML = `<div class="empty-grid">No ${type === 'tv' ? 'TV shows' : 'films'} found.</div>`; return; }
+  if (!results.length) {
+    const label = type === 'tv' ? 'TV shows' : type === 'person' ? 'people' : 'films';
+    grid.innerHTML = `<div class="empty-grid">No ${label} found.</div>`;
+    return;
+  }
+  if (type === 'person') {
+    grid.innerHTML = results.map(item => `
+      <div class="film-card-wrap" onclick="openPersonDetail(${item.id})">
+        <div class="person-grid-card">
+          ${item.profile_path
+            ? `<img src="https://image.tmdb.org/t/p/w185${item.profile_path}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div class="poster-label" style="padding:0;">${escapeHtml((item.name || '?')[0])}</div>`}
+        </div>
+        <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.name)}</span></div>
+      </div>`).join('');
+    return;
+  }
   grid.innerHTML = results.map(item => {
     const name = type === 'tv' ? item.name : item.title;
     return `
