@@ -974,6 +974,7 @@ function setCurrentSort(val) {
 function resetAllSorts() { sortStateByType = { movie: null, tv: null }; updateSortChip(); }
 let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
 const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
+const SORT_SHUFFLE_OPTION = { value: 'shuffle', label: 'Shuffle' };
 const SORT_SECTIONS = [
   { title: 'Release Date', options: [
     { value: 'release_newest', label: 'Newest First' },
@@ -991,6 +992,7 @@ const SORT_SECTIONS = [
 
 const SORT_LABELS = {
   title_az: 'Title A–Z',
+  shuffle: 'Shuffle',
   release_newest: 'Newest Release',
   release_oldest: 'Earliest Release',
   added_newest: 'Recently Added',
@@ -1339,6 +1341,7 @@ function sortOptionRowHtml(value, label) {
 function renderSortSheetBody() {
   const body = document.getElementById('sort-sheet-body');
   let html = sortOptionRowHtml(SORT_TITLE_OPTION.value, SORT_TITLE_OPTION.label);
+  html += sortOptionRowHtml(SORT_SHUFFLE_OPTION.value, SORT_SHUFFLE_OPTION.label);
   SORT_SECTIONS.forEach(section => {
     html += `<div class="settings-section-title" style="margin:18px 0 10px;">${escapeHtml(section.title)}</div>`;
     html += section.options.map(opt => sortOptionRowHtml(opt.value, opt.label)).join('');
@@ -1828,6 +1831,15 @@ function getCertValue(item, type) {
   return certCache[`${endpoint}-${item.tmdb_id}`] || null;
 }
 
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function applySort(items, type) {
   const sort = getCurrentSort();
   if (!sort) return items;
@@ -1836,6 +1848,8 @@ async function applySort(items, type) {
     case 'title_az':
       arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       break;
+    case 'shuffle':
+      return shuffleArray(arr);
     case 'added_newest':
       arr.sort((a, b) => new Date(getAddedDateValue(b) || 0) - new Date(getAddedDateValue(a) || 0));
       break;
@@ -3586,6 +3600,8 @@ async function applyListSort(items) {
     case 'title_az':
       arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       break;
+    case 'shuffle':
+      return shuffleArray(arr);
     case 'added_newest':
       arr.sort((a, b) => (b.position || 0) - (a.position || 0));
       break;
