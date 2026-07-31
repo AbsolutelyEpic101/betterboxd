@@ -719,6 +719,32 @@
     <div class="screen-body" id="movie-detail"></div>
   </div>
 
+  <!-- PERSON DETAIL -->
+  <div class="screen" id="screen-person">
+    <div class="home-header">
+      <div onclick="goTo(personReturnScreen)" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div class="screen-body" id="person-detail-body"></div>
+  </div>
+
+  <!-- PERSON JOB DETAIL (full list for one role, e.g. all films they Directed) -->
+  <div class="screen" id="screen-person-job-detail">
+    <div class="home-header">
+      <div onclick="goTo('screen-person')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:0 20px 6px;">
+      <div class="logo-sm" id="person-job-detail-title" style="font-size:19px;"></div>
+      <div class="md-meta" id="person-job-detail-subtitle" style="margin-top:2px;"></div>
+    </div>
+    <div class="screen-body">
+      <div class="film-grid" id="person-job-detail-grid"></div>
+    </div>
+  </div>
+
   <!-- LIST DETAIL -->
   <div class="screen" id="screen-list-detail">
     <div class="home-header">
@@ -856,6 +882,17 @@ const STREAMING_SERVICES = [
 
 /* ---- STATE ---- */
 let selectedMovie = null;
+// Person (actor/director/crew) detail state
+let selectedPerson = null;
+let personReturnScreen = 'screen-home';
+let personMediaTab = 'movie';
+let personCreditsCache = { movie: {}, tv: {} }; // { movie: { Actor: [items], Director: [items] }, tv: {...} }
+let personWatchedMovieSet = new Set();
+let personWatchedTvSet = new Set();
+let personJobDetailJob = null;
+let personJobDetailType = null;
+let personJobDetailItems = [];
+let personViewModeMap = {}; // key: "movie-Director" etc -> 'percent' | 'count' — each job row toggles independently
 let selectedMediaType = 'movie';
 let searchTimeout = null;
 let logSearchTimeout = null;
@@ -2503,10 +2540,10 @@ function buildDetailTabsHtml(item, isTv) {
 
   // Cast content
   const CAST_INITIAL = 6;
-  const castHtml = cast.slice(0, CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('');
+  const castHtml = cast.slice(0, CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character, p.id)).join('');
   const castMore = cast.length > CAST_INITIAL
     ? `<button class="see-more-btn" onclick="expandDetailSection('cast-extra')">See ${cast.length - CAST_INITIAL} more</button>
-       <div id="cast-extra" style="display:none;">${cast.slice(CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('')}</div>`
+       <div id="cast-extra" style="display:none;">${cast.slice(CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character, p.id)).join('')}</div>`
     : '';
   const castContent = cast.length ? (castHtml + castMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No cast listed.</div>';
 
@@ -2524,10 +2561,10 @@ function buildDetailTabsHtml(item, isTv) {
 
   const CREW_INITIAL = 8;
   const allKeyFirst = [...keyCrew, ...restCrew];
-  const crewHtml = allKeyFirst.slice(0, CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('');
+  const crewHtml = allKeyFirst.slice(0, CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job, p.id)).join('');
   const crewMore = allKeyFirst.length > CREW_INITIAL
     ? `<button class="see-more-btn" onclick="expandDetailSection('crew-extra')">See ${allKeyFirst.length - CREW_INITIAL} more</button>
-       <div id="crew-extra" style="display:none;">${allKeyFirst.slice(CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('')}</div>`
+       <div id="crew-extra" style="display:none;">${allKeyFirst.slice(CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job, p.id)).join('')}</div>`
     : '';
   const crewContent = allKeyFirst.length ? (crewHtml + crewMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No crew listed.</div>';
 
@@ -2558,11 +2595,12 @@ function buildDetailTabsHtml(item, isTv) {
   return tabBar + `<div style="padding:0 20px;">${contents}</div><div style="height:20px;"></div>`;
 }
 
-function personRowHtml(profilePath, name, role) {
+function personRowHtml(profilePath, name, role, personId) {
   const img = profilePath
     ? `<img class="person-avatar" src="https://image.tmdb.org/t/p/w92${profilePath}" />`
     : `<div class="person-avatar-placeholder">${escapeHtml((name || '?')[0].toUpperCase())}</div>`;
-  return `<div class="person-row">${img}<div><div class="person-name">${escapeHtml(name)}</div><div class="person-role">${escapeHtml(role || '')}</div></div></div>`;
+  const clickAttr = personId ? ` onclick="openPersonDetail(${personId})" style="cursor:pointer;"` : '';
+  return `<div class="person-row"${clickAttr}>${img}<div><div class="person-name">${escapeHtml(name)}</div><div class="person-role">${escapeHtml(role || '')}</div></div></div>`;
 }
 
 function switchDetailTab(tab) {
@@ -2585,6 +2623,213 @@ function expandDetailSection(id) {
   // hide the button before it
   const btn = el.previousElementSibling;
   if (btn && btn.classList.contains('see-more-btn')) btn.style.display = 'none';
+}
+
+/* ---- PERSON DETAIL (actor / director / cast / crew pages) ---- */
+
+// Common roles are pinned to the top in this order (mirrors how Letterboxd
+// orders a person's page); any other job the person has done follows,
+// ranked by how many credits they have in it.
+const PERSON_ROLE_PRIORITY = ['Director', 'Actor', 'Writer', 'Screenplay', 'Story', 'Producer', 'Executive Producer', 'Director of Photography', 'Original Music Composer', 'Editor', 'Costume Design', 'Casting'];
+
+async function openPersonDetail(id) {
+  const current = document.querySelector('.screen.active');
+  personReturnScreen = current ? current.id : 'screen-home';
+  personMediaTab = 'movie';
+  personViewModeMap = {};
+  goTo('screen-person');
+  document.getElementById('person-detail-body').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  try {
+    const res = await fetch(`${TMDB_BASE}/person/${id}?api_key=${TMDB_API_KEY}&append_to_response=combined_credits`);
+    if (!res.ok) throw new Error();
+    const person = await res.json();
+    selectedPerson = person;
+    personCreditsCache = groupPersonCredits(person);
+    await loadPersonWatchedSets();
+    renderPersonDetail();
+  } catch {
+    document.getElementById('person-detail-body').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this person.</div>`;
+    showToast('Could not load details', 'error');
+  }
+}
+
+function groupPersonCredits(person) {
+  const cast = person.combined_credits?.cast || [];
+  const crew = person.combined_credits?.crew || [];
+  const groups = { movie: {}, tv: {} };
+
+  const seenCast = new Set();
+  cast.forEach(c => {
+    const type = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
+    if (!type) return;
+    const key = `${type}-${c.id}`;
+    if (seenCast.has(key)) return;
+    seenCast.add(key);
+    const title = type === 'tv' ? c.name : c.title;
+    const date = type === 'tv' ? c.first_air_date : c.release_date;
+    if (!groups[type]['Actor']) groups[type]['Actor'] = [];
+    groups[type]['Actor'].push({ id: c.id, title, poster_path: c.poster_path, date, popularity: c.popularity || 0, type });
+  });
+
+  const seenCrew = new Set();
+  crew.forEach(c => {
+    const type = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
+    if (!type) return;
+    const job = c.job || c.department || 'Crew';
+    const key = `${type}-${c.id}-${job}`;
+    if (seenCrew.has(key)) return;
+    seenCrew.add(key);
+    const title = type === 'tv' ? c.name : c.title;
+    const date = type === 'tv' ? c.first_air_date : c.release_date;
+    if (!groups[type][job]) groups[type][job] = [];
+    groups[type][job].push({ id: c.id, title, poster_path: c.poster_path, date, popularity: c.popularity || 0, type });
+  });
+
+  // Default order matches TMDB popularity (most popular first), same as how
+  // TMDB/Letterboxd surface a person's filmography by default.
+  ['movie', 'tv'].forEach(type => {
+    Object.values(groups[type]).forEach(arr => arr.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)));
+  });
+
+  return groups;
+}
+
+async function loadPersonWatchedSets() {
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  let mQuery = db.from('watched').select('tmdb_id');
+  if (uid) mQuery = mQuery.eq('user_id', uid);
+  let tQuery = db.from('tv_status').select('tmdb_id').eq('status', 'watched');
+  if (uid) tQuery = tQuery.eq('user_id', uid);
+  const [{ data: mRows }, { data: tRows }] = await Promise.all([mQuery, tQuery]);
+  personWatchedMovieSet = new Set((mRows || []).map(r => r.tmdb_id));
+  personWatchedTvSet = new Set((tRows || []).map(r => r.tmdb_id));
+}
+
+function orderPersonJobNames(groups) {
+  const names = Object.keys(groups);
+  const priorityPresent = PERSON_ROLE_PRIORITY.filter(r => names.includes(r));
+  const rest = names.filter(n => !PERSON_ROLE_PRIORITY.includes(n)).sort((a, b) => (groups[b]?.length || 0) - (groups[a]?.length || 0));
+  return [...priorityPresent, ...rest];
+}
+
+function renderPersonDetail() {
+  const person = selectedPerson;
+  const el = document.getElementById('person-detail-body');
+  const photo = person.profile_path
+    ? `<img src="https://image.tmdb.org/t/p/w300${person.profile_path}" style="width:112px;height:112px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" />`
+    : `<div class="profile-avatar-lg" style="width:112px;height:112px;font-size:38px;">${escapeHtml((person.name || '?')[0].toUpperCase())}</div>`;
+
+  el.innerHTML = `
+    <div style="padding:26px 20px 4px;text-align:center;">
+      ${photo}
+      <div class="profile-name" style="margin-top:14px;">${escapeHtml(person.name || '')}</div>
+    </div>
+    <div class="tabs" style="padding:0 20px;margin-top:18px;">
+      <div class="tab ${personMediaTab === 'movie' ? 'active' : ''}" id="person-tab-movie" onclick="setPersonMediaTab('movie')">Movies</div>
+      <div class="tab ${personMediaTab === 'tv' ? 'active' : ''}" id="person-tab-tv" onclick="setPersonMediaTab('tv')">TV Shows</div>
+    </div>
+    <div id="person-tab-content" style="padding:18px 20px 30px;"></div>`;
+  renderPersonTabContent();
+}
+
+function setPersonMediaTab(tab) {
+  personMediaTab = tab;
+  document.getElementById('person-tab-movie').classList.toggle('active', tab === 'movie');
+  document.getElementById('person-tab-tv').classList.toggle('active', tab === 'tv');
+  renderPersonTabContent();
+}
+
+function personCreditCardHtml(item) {
+  return `
+    <div class="film-card-wrap" style="flex-shrink:0;width:80px;" onclick="openMovieDetail(${item.id}, 'screen-person', '${item.type === 'tv' ? 'quick' : 'log'}', '${item.type}')">
+      <div class="film-card" style="width:80px;">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label" style="font-size:9px;padding:6px 3px;">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`;
+}
+
+// Same eye icon + tap-to-toggle behavior as the list watch widget
+// (percent watched vs. a raw "X of Y" count). Each job row keeps its own
+// mode, keyed by media type + job name, so toggling one doesn't affect the others.
+function personWatchWidgetHtml(watchedCount, total, type, job) {
+  if (!total) return '';
+  const key = `${type}-${job}`;
+  const mode = personViewModeMap[key] || 'percent';
+  const text = mode === 'percent' ? `${Math.round((watchedCount / total) * 100)}%` : `${watchedCount} of ${total}`;
+  return `
+    <div style="display:flex;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();togglePersonViewMode('${jsAttrString(type)}','${jsAttrString(job)}');" title="Tap to toggle">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--purple-light)" stroke-width="2" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span style="font-size:12px;color:var(--purple-light);font-weight:600;">${text}</span>
+    </div>`;
+}
+
+function togglePersonViewMode(type, job) {
+  const key = `${type}-${job}`;
+  const current = personViewModeMap[key] || 'percent';
+  personViewModeMap[key] = current === 'percent' ? 'count' : 'percent';
+  renderPersonTabContent();
+}
+
+function renderPersonTabContent() {
+  const wrap = document.getElementById('person-tab-content');
+  const type = personMediaTab;
+  const groups = personCreditsCache[type] || {};
+  const jobNames = orderPersonJobNames(groups);
+  if (!jobNames.length) {
+    wrap.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:24px 0;text-align:center;">No ${type === 'tv' ? 'TV show' : 'film'} credits found.</div>`;
+    return;
+  }
+  const watchedSet = type === 'tv' ? personWatchedTvSet : personWatchedMovieSet;
+  const PREVIEW_COUNT = 10;
+
+  wrap.innerHTML = jobNames.map(job => {
+    const items = groups[job];
+    const watchedCount = items.filter(i => watchedSet.has(i.id)).length;
+    const preview = items.slice(0, PREVIEW_COUNT);
+    const hasMore = items.length > PREVIEW_COUNT;
+    return `
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;" onclick="openPersonJobDetail('${jsAttrString(job)}','${type}')">
+          <div style="font-size:15px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">${escapeHtml(job)}</div>
+          ${personWatchWidgetHtml(watchedCount, items.length, type, job)}
+        </div>
+        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;">
+          ${preview.map(i => personCreditCardHtml(i)).join('')}
+          ${hasMore ? `
+            <div class="film-card-wrap" style="flex-shrink:0;width:80px;" onclick="openPersonJobDetail('${jsAttrString(job)}','${type}')">
+              <div class="film-card" style="width:80px;display:flex;align-items:center;justify-content:center;background:var(--bg3);">
+                <span style="font-size:11px;color:var(--text2);text-align:center;padding:6px;">+${items.length - PREVIEW_COUNT} more</span>
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openPersonJobDetail(job, type) {
+  personJobDetailJob = job;
+  personJobDetailType = type;
+  personJobDetailItems = (personCreditsCache[type] && personCreditsCache[type][job]) || [];
+  document.getElementById('person-job-detail-title').textContent = job;
+  document.getElementById('person-job-detail-subtitle').textContent = `${selectedPerson?.name || ''} · ${type === 'tv' ? 'TV Shows' : 'Films'}`;
+  goTo('screen-person-job-detail');
+  renderPersonJobDetailGrid();
+}
+
+function renderPersonJobDetailGrid() {
+  const grid = document.getElementById('person-job-detail-grid');
+  if (!personJobDetailItems.length) { grid.innerHTML = `<div class="empty-grid">Nothing here.</div>`; return; }
+  grid.innerHTML = personJobDetailItems.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.id}, 'screen-person-job-detail', '${item.type === 'tv' ? 'quick' : 'log'}', '${item.type}')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('');
 }
 
 function renderMovieDetail(item) {
@@ -3053,7 +3298,7 @@ function statsPersonCardHtml(person, label, totalFilms) {
     ? `<img src="https://image.tmdb.org/t/p/w185${person.profile_path}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" />`
     : `<div class="person-avatar-placeholder" style="width:64px;height:64px;font-size:20px;margin:0 auto;">${escapeHtml((person.name || '?')[0].toUpperCase())}</div>`;
   return `
-    <div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;min-width:0;">
+    <div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;min-width:0;cursor:pointer;" onclick="openPersonDetail(${person.id})">
       <div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</div>
       ${img}
       <div style="font-size:13px;font-weight:600;color:var(--text);margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(person.name)}</div>
@@ -3175,11 +3420,11 @@ async function renderStatsBody() {
     (genreItemCache[key] || []).forEach(gid => { genreCounts[gid] = (genreCounts[gid] || 0) + 1; });
     const meta = movieCreditsCache[key] || { cast: [], directors: [], runtime: 0, countries: [] };
     meta.cast.forEach(p => {
-      if (!actorCounts[p.id]) actorCounts[p.id] = { name: p.name, profile_path: p.profile_path, count: 0 };
+      if (!actorCounts[p.id]) actorCounts[p.id] = { id: p.id, name: p.name, profile_path: p.profile_path, count: 0 };
       actorCounts[p.id].count++;
     });
     meta.directors.forEach(p => {
-      if (!directorCounts[p.id]) directorCounts[p.id] = { name: p.name, profile_path: p.profile_path, count: 0 };
+      if (!directorCounts[p.id]) directorCounts[p.id] = { id: p.id, name: p.name, profile_path: p.profile_path, count: 0 };
       directorCounts[p.id].count++;
     });
     totalMinutes += meta.runtime || 0;
@@ -3762,7 +4007,8 @@ function renderListDetailGrid(items) {
       <div class="film-card-wrap"
         onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
         ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
-        oncontextmenu="return false;">
+        oncontextmenu="return false;"
+        onclick="handlePersonListItemTap(event, ${item.tmdb_id})">
         <div class="person-grid-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -3813,6 +4059,16 @@ function handleListItemTap(e, tmdbId, mediaType) {
     return;
   }
   openMovieDetail(tmdbId, 'screen-list-detail', 'quick', mediaType);
+}
+
+function handlePersonListItemTap(e, tmdbId) {
+  if (longPressTriggered) {
+    e.preventDefault();
+    e.stopPropagation();
+    longPressTriggered = false;
+    return;
+  }
+  openPersonDetail(tmdbId);
 }
 
 function confirmRemoveListItem(itemId) {
