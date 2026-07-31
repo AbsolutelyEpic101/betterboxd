@@ -712,7 +712,7 @@
   <!-- MOVIE DETAIL -->
   <div class="screen" id="screen-movie">
     <div class="home-header">
-      <div onclick="goTo(returnScreen)" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+      <div onclick="goBackFromDetail()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
         <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
     </div>
@@ -722,7 +722,7 @@
   <!-- PERSON DETAIL -->
   <div class="screen" id="screen-person">
     <div class="home-header">
-      <div onclick="goTo(personReturnScreen)" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+      <div onclick="goBackFromDetail()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
         <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
     </div>
@@ -884,7 +884,7 @@ const STREAMING_SERVICES = [
 let selectedMovie = null;
 // Person (actor/director/crew) detail state
 let selectedPerson = null;
-let personReturnScreen = 'screen-home';
+let navStack = []; // shared back-navigation history for the Movie/TV and Person detail screens (see buildNavDescriptor/goBackFromDetail)
 let personMediaTab = 'movie';
 let personCreditsCache = { movie: {}, tv: {} }; // { movie: { Actor: [items], Director: [items] }, tv: {...} }
 let personWatchedMovieSet = new Set();
@@ -896,7 +896,6 @@ let personViewModeMap = {}; // key: "movie-Director" etc -> 'percent' | 'count' 
 let selectedMediaType = 'movie';
 let searchTimeout = null;
 let logSearchTimeout = null;
-let returnScreen = 'screen-home';
 let formRating = 0;
 let formLiked = false;
 let formInWatchlist = false;
@@ -1153,6 +1152,7 @@ function goToGeneralSettings() {
 
 /* ---- PROFILE ---- */
 function goToProfile() {
+  navStack = [];
   goTo('screen-profile');
   loadProfileInfo();
 }
@@ -1937,12 +1937,14 @@ function goTo(id) {
 }
 
 function goHome() {
+  navStack = [];
   goTo('screen-home');
   if (homeMediaType === 'lists') { setHomeMediaType('movie'); } else { loadLibrary(); }
   loadStats();
 }
 
 function goToStats() {
+  navStack = [];
   goTo('screen-stats');
   loadStats();
 }
@@ -1977,6 +1979,7 @@ function setSearchMediaType(type) {
 }
 
 function openDiary() {
+  navStack = [];
   goTo('screen-diary');
   loadDiary();
 }
@@ -2352,8 +2355,33 @@ async function submitLogForm() {
 }
 
 /* ---- MOVIE / TV DETAIL ---- */
-async function openMovieDetail(id, fromScreen, mode, mediaType) {
-  returnScreen = fromScreen || 'screen-home';
+// The Movie/TV and Person detail screens are single shared divs that get
+// overwritten every time you open a new title/person, so a simple "go back
+// to this screen id" pointer breaks once you bounce between them more than
+// one level deep (e.g. Person -> Movie -> Person again). navStack instead
+// remembers *what* was showing, and restores it (re-opening that exact
+// movie/person, or just returning to a plain screen) rather than trusting
+// that the shared div still holds the right content.
+function buildNavDescriptor(screenId) {
+  if (screenId === 'screen-movie' && selectedMovie) {
+    return { kind: 'movie', tmdbId: selectedMovie.id, mediaType: selectedMediaType, mode: detailMode };
+  }
+  if (screenId === 'screen-person' && selectedPerson) {
+    return { kind: 'person', personId: selectedPerson.id };
+  }
+  return { kind: 'screen', screenId: screenId || 'screen-home' };
+}
+
+function goBackFromDetail() {
+  const prev = navStack.pop();
+  if (!prev) { goTo('screen-home'); return; }
+  if (prev.kind === 'movie') openMovieDetail(prev.tmdbId, null, prev.mode, prev.mediaType, true);
+  else if (prev.kind === 'person') openPersonDetail(prev.personId, true);
+  else goTo(prev.screenId);
+}
+
+async function openMovieDetail(id, fromScreen, mode, mediaType, silent) {
+  if (!silent) navStack.push(buildNavDescriptor(fromScreen || 'screen-home'));
   detailMode = mode === 'quick' ? 'quick' : 'log';
   selectedMediaType = mediaType === 'tv' ? 'tv' : 'movie';
   if (selectedMediaType === 'tv') detailMode = 'quick';
@@ -2632,9 +2660,11 @@ function expandDetailSection(id) {
 // ranked by how many credits they have in it.
 const PERSON_ROLE_PRIORITY = ['Director', 'Actor', 'Writer', 'Screenplay', 'Story', 'Producer', 'Executive Producer', 'Director of Photography', 'Original Music Composer', 'Editor', 'Costume Design', 'Casting'];
 
-async function openPersonDetail(id) {
-  const current = document.querySelector('.screen.active');
-  personReturnScreen = current ? current.id : 'screen-home';
+async function openPersonDetail(id, silent) {
+  if (!silent) {
+    const current = document.querySelector('.screen.active');
+    navStack.push(buildNavDescriptor(current ? current.id : 'screen-home'));
+  }
   personMediaTab = 'movie';
   personViewModeMap = {};
   goTo('screen-person');
@@ -2912,7 +2942,7 @@ async function toggleWatchedQuick() {
         formQuickWatched = false;
         showToast('Removed from Watched');
         loadLibrary(); loadStats();
-        openMovieDetail(selectedMovie.id, returnScreen, detailMode);
+        openMovieDetail(selectedMovie.id, null, detailMode, selectedMediaType, true);
       }
     });
     return;
@@ -2935,7 +2965,7 @@ async function toggleWatchedQuick() {
   formInWatchlist = false; formQuickWatched = true;
   showToast('Added to Watched');
   loadLibrary(); loadStats();
-  openMovieDetail(selectedMovie.id, returnScreen, detailMode);
+  openMovieDetail(selectedMovie.id, null, detailMode, selectedMediaType, true);
 }
 
 /* ---- LIBRARY ---- */
