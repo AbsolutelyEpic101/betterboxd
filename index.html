@@ -2389,7 +2389,7 @@ async function openMovieDetail(id, fromScreen, mode, mediaType, silent) {
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
   try {
     if (selectedMediaType === 'tv') {
-      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings,credits`);
+      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings,aggregate_credits`);
       if (!res.ok) throw new Error();
       const show = await res.json();
       selectedMovie = show;
@@ -2544,9 +2544,28 @@ async function removeTvStatus() {
 let activeDetailTab = 'cast';
 
 function buildDetailTabsHtml(item, isTv) {
-  const credits = item.credits || {};
-  const cast = credits.cast || [];
-  const crew = credits.crew || [];
+  // TV shows use TMDB's aggregate_credits (cast/crew combined across every
+  // season) since the plain `credits` field on /tv/{id} only reflects the
+  // most recently aired episode and undercounts the full cast/crew.
+  // Its shape differs from movie credits — cast entries carry a `roles`
+  // array and crew entries a `jobs` array — so normalize both into the same
+  // flat { id, name, profile_path, character/job } shape movies already use.
+  let cast, crew;
+  if (isTv) {
+    const agg = item.aggregate_credits || {};
+    cast = (agg.cast || []).map(p => ({
+      id: p.id, name: p.name, profile_path: p.profile_path,
+      character: (p.roles || []).map(r => r.character).filter(Boolean).join(' / ')
+    }));
+    crew = (agg.crew || []).flatMap(p =>
+      (p.jobs && p.jobs.length ? p.jobs : [{ job: p.department || 'Crew' }])
+        .map(j => ({ id: p.id, name: p.name, profile_path: p.profile_path, job: j.job }))
+    );
+  } else {
+    const credits = item.credits || {};
+    cast = credits.cast || [];
+    crew = credits.crew || [];
+  }
 
   // Genres
   const genres = item.genres || [];
