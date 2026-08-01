@@ -6,8 +6,8 @@
 <title>betterboxd</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -139,22 +139,6 @@
   .auth-error.show { display: block; }
   .auth-success { background: rgba(76,175,117,0.12); border: 0.5px solid rgba(76,175,117,0.3); border-radius: 10px; padding: 12px 14px; color: var(--green); font-size: 13px; line-height: 1.45; display: none; align-items: center; gap: 8px; }
   .auth-success.show { display: flex; }
-
-  /* IMPORT PICKER */
-  .import-picker { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-radius: 12px; border: 0.5px dashed var(--border2); background: var(--bg3); cursor: pointer; }
-  .import-picker.has-file { border-style: solid; border-color: var(--purple); background: rgba(124,92,191,0.1); }
-  .import-picker svg { width: 20px; height: 20px; stroke: var(--purple-light); fill: none; stroke-width: 1.8; flex-shrink: 0; }
-  .import-picker-text { flex: 1; min-width: 0; }
-  .import-picker-title { font-size: 13.5px; font-weight: 500; color: var(--text); }
-  .import-picker-sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
-  .import-picker-clear { color: var(--text3); font-size: 18px; line-height: 1; padding: 2px 4px; flex-shrink: 0; }
-  .import-progress-card { background: rgba(124,92,191,0.1); border: 0.5px solid rgba(124,92,191,0.3); border-radius: 10px; padding: 14px 16px; display: none; flex-direction: column; gap: 10px; }
-  .import-progress-card.show { display: flex; }
-  .import-progress-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text); }
-  .import-progress-bar-track { height: 6px; border-radius: 3px; background: var(--bg4); overflow: hidden; }
-  .import-progress-bar-fill { height: 100%; background: var(--purple); border-radius: 3px; transition: width 0.2s ease; width: 0%; }
-  .import-progress-detail { font-size: 11.5px; color: var(--text3); }
-  .import-summary { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
   .auth-footer { padding: 20px 32px 40px; display: flex; flex-direction: column; gap: 14px; }
   .auth-switch { text-align: center; font-size: 14px; color: var(--text2); }
   .auth-switch span { color: var(--purple-light); font-weight: 500; cursor: pointer; }
@@ -192,7 +176,8 @@
   .header-icons svg { width: 22px; height: 22px; stroke: var(--text2); fill: none; cursor: pointer; }
   .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; }
 
-  .tabs { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .tabs { display: flex; padding: 0 20px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab { padding: 10px 18px; font-size: 14px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
   .tab.active { color: var(--text); border-bottom-color: var(--text); }
 
@@ -373,35 +358,6 @@
   .sheet-close { font-size: 20px; color: var(--text3); cursor: pointer; padding: 0 4px; line-height: 1; }
   .sheet-body { flex: 1; overflow-y: auto; scrollbar-width: none; padding: 4px 20px 0; }
   .sheet-body::-webkit-scrollbar { display: none; }
-  .service-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 0.5px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-  .service-row:last-child { border-bottom: none; }
-  .service-logo {
-    width: 36px; height: 36px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff;
-    flex-shrink: 0; letter-spacing: -0.3px;
-  }
-  .service-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
-  .service-check {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 1.5px solid var(--border2);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; transition: all 0.15s;
-  }
-  .service-check.checked { background: var(--purple); border-color: var(--purple); }
-  .service-check svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2.5; }
-  .sheet-footer { padding: 14px 20px 0; display: flex; gap: 10px; flex-shrink: 0; }
-  .sheet-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; }
-  .sheet-btn.secondary { background: var(--bg4); color: var(--text2); }
-  .sheet-btn.primary { background: var(--purple); color: #fff; }
 
   /* LISTS */
   #lists-container { display: none; padding: 4px 20px 20px; }
@@ -410,11 +366,30 @@
   .list-card-name { font-size: 15px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; }
   .list-card-meta { font-size: 12px; color: var(--text2); margin-top: 4px; }
   .list-card-desc { font-size: 13px; color: var(--text2); margin-top: 6px; line-height: 1.4; }
+  .list-card-preview { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+  .list-card-preview-thumb { width: 34px; height: 51px; border-radius: 6px; object-fit: cover; background: var(--bg4); flex-shrink: 0; }
+  .list-card-preview-thumb.round { width: 34px; height: 34px; border-radius: 50%; }
+  .list-card-preview-fallback { display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); }
+  .list-card-preview-more { font-size: 11px; font-weight: 600; color: var(--text3); background: var(--bg4); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .person-grid-card { aspect-ratio: 1/1; background: var(--bg3); overflow: hidden; position: relative; border-radius: 50%; flex-shrink: 0; }
   .list-item-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: #fff; cursor: pointer; z-index: 2; }
   #list-detail-grid .film-card-wrap { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   #list-detail-grid .film-card-wrap:active .film-card,
   #list-detail-grid .film-card-wrap:active .person-grid-card { opacity: 0.6; transition: opacity 0.15s ease; }
+
+  /* PROFILE */
+  .profile-avatar-lg { width:84px;height:84px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:600;color:#fff;margin:0 auto; }
+  .profile-name { font-size:18px;font-weight:600;color:var(--text);text-align:center;margin-top:14px;font-family:'DM Serif Display',serif; }
+  .profile-email { font-size:13px;color:var(--text2);text-align:center;margin-top:4px; }
+  .settings-row { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px; }
+  .settings-row-label { display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;color:var(--text); }
+  .settings-row svg.chev { width:16px;height:16px;stroke:var(--text3);fill:none;flex-shrink:0; }
+  .settings-section-title { font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin:22px 0 10px; }
+  .settings-option-row { display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:8px;font-size:14px;color:var(--text); }
+  .settings-option-row.selected { border-color:var(--purple);background:rgba(124,92,191,0.14); }
+  .settings-option-check { width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .settings-option-check.checked { background:var(--purple);border-color:var(--purple); }
+  .settings-option-check svg { width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2.5; }
 
   @media (min-width:600px) { .phone { display: none; } .desktop-msg { display: block; } }
 </style>
@@ -428,19 +403,32 @@
   <!-- TOASTS -->
   <div class="toast-stack" id="toast-stack"></div>
 
-  <!-- SERVICE PICKER SHEET -->
-  <div class="sheet-overlay" id="service-sheet-overlay" onclick="closeServiceSheet(event)">
+  <!-- SORT SHEET -->
+  <div class="sheet-overlay" id="sort-sheet-overlay" onclick="closeSortSheet(event)">
     <div class="service-sheet" onclick="event.stopPropagation()">
       <div class="sheet-handle"></div>
       <div class="sheet-header">
-        <div class="sheet-title">Streaming Services</div>
-        <div class="sheet-close" onclick="closeServiceSheet()">×</div>
+        <div class="sheet-title">Sort By</div>
+        <div class="sheet-close" onclick="closeSortSheet()">×</div>
       </div>
-      <div class="sheet-body" id="service-sheet-body"></div>
-      <div class="sheet-footer">
-        <button class="sheet-btn secondary" onclick="clearServiceFilter()">Clear</button>
-        <button class="sheet-btn primary" onclick="applyServiceFilter()">Apply Filter</button>
+      <div class="sheet-body" id="sort-sheet-body" style="padding-bottom:24px;"></div>
+    </div>
+  </div>
+
+  <!-- FILTER SHEET -->
+  <div class="sheet-overlay" id="filter-sheet-overlay" onclick="closeFilterSheet(event)">
+    <div class="service-sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <div id="filter-sheet-back" onclick="filterSheetBack()" style="display:none;cursor:pointer;flex-shrink:0;">
+            <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
+          <div class="sheet-title" id="filter-sheet-title">Filters</div>
+        </div>
+        <div class="sheet-close" onclick="closeFilterSheet()">×</div>
       </div>
+      <div class="sheet-body" id="filter-sheet-body" style="padding-bottom:24px;"></div>
     </div>
   </div>
 
@@ -501,6 +489,8 @@
       <input type="date" class="form-input" id="edit-watched-date" />
       <div class="md-field-label">REVIEW (OPTIONAL)</div>
       <textarea class="form-input" id="edit-review-text" placeholder="What did you think?"></textarea>
+      <div class="md-field-label">TAGS</div>
+      <input type="text" class="form-input" id="edit-tags" placeholder="comma, separated, tags" />
       <label class="checkbox-row" style="margin-top:10px;">
         <input type="checkbox" id="edit-spoilers"> Contains spoilers
       </label>
@@ -519,6 +509,11 @@
   <!-- NEW LIST MODAL -->
   <div class="modal-overlay" id="new-list-modal">
     <div class="edit-modal-card" id="new-list-card"></div>
+  </div>
+
+  <!-- EDIT LIST MODAL -->
+  <div class="modal-overlay" id="edit-list-modal">
+    <div class="edit-modal-card" id="edit-list-card"></div>
   </div>
 
   <!-- ADD ITEM TO LIST MODAL -->
@@ -629,29 +624,21 @@
           <div class="form-label">Password</div>
           <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
         </div>
-        <div class="form-group">
-          <div class="form-label">Import from Letterboxd (optional)</div>
-          <input type="file" id="signup-import-file" accept=".zip" style="display:none;" onchange="handleImportFileSelect(this)">
-          <div class="import-picker" id="import-picker" onclick="document.getElementById('signup-import-file').click()">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div class="import-picker-text">
-              <div class="import-picker-title" id="import-picker-title">Upload Letterboxd export (.zip)</div>
-              <div class="import-picker-sub">Export at letterboxd.com/settings/data — we'll bring in your watched films, ratings, diary &amp; watchlist.</div>
-            </div>
-            <div class="import-picker-clear" id="import-picker-clear" style="display:none;" onclick="event.stopPropagation();clearImportFile();">×</div>
-          </div>
-          <div class="import-progress-card" id="import-progress-card">
-            <div class="import-progress-row"><span class="spinner dark" style="width:14px;height:14px;"></span><span id="import-progress-label">Importing your Letterboxd data...</span></div>
-            <div class="import-progress-bar-track"><div class="import-progress-bar-fill" id="import-progress-bar"></div></div>
-            <div class="import-progress-detail" id="import-progress-detail"></div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="auth-footer">
       <button class="btn-primary" id="signup-btn" onclick="handleSignup()">Create Account</button>
       <div class="auth-switch">Already have an account? <span onclick="goTo('screen-login')">Sign in</span></div>
     </div>
+  </div>
+
+  <!-- IMPORT LETTERBOXD DATA -->
+  <div class="screen" id="screen-import">
+    <div class="home-header">
+      <div class="logo-sm">Import Data</div>
+      <div onclick="closeImportScreen()" style="color:var(--text2);cursor:pointer;">Close</div>
+    </div>
+    <div class="screen-body" id="import-body" style="padding:24px 20px 40px;"></div>
   </div>
 
   <!-- HOME -->
@@ -663,25 +650,28 @@
           <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
         <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <div class="avatar" id="home-avatar" onclick="handleLogout()" title="Tap to sign out">?</div>
+        <div class="avatar" id="home-avatar" onclick="goToProfile()" title="Profile">?</div>
       </div>
     </div>
     <div class="tabs">
       <div class="tab active" id="home-tab-films" onclick="setHomeMediaType('movie')">Films</div>
       <div class="tab" id="home-tab-tv" onclick="setHomeMediaType('tv')">TV Shows</div>
       <div class="tab" id="home-tab-lists" onclick="setHomeMediaType('lists')">Lists</div>
+      <div class="tab" id="home-tab-tags" onclick="setHomeMediaType('tags')">Tags</div>
     </div>
-    <div class="filter-bar">
+    <div class="filter-bar" id="home-filter-bar">
       <select id="library-mode" class="filter-chip" onchange="onLibraryModeChange()">
         <option value="watched">Watched</option>
         <option value="watchlist">Watchlist</option>
       </select>
-      <div class="filter-chip" id="service-filter-chip" onclick="openServiceSheet()">
-        <svg viewBox="0 0 24 24" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-        <span id="service-chip-label">SERVICE</span>
+      <div class="filter-chip" id="sort-filter-chip" onclick="openSortSheet()">
+        <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
+        <span id="sort-chip-label">SORT</span>
       </div>
-      <div class="filter-chip" id="recent-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>RECENT</div>
-      <div class="filter-chip" id="sort-filter-chip"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg></div>
+      <div class="filter-chip" id="year-filter-chip" onclick="openFilterSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        <span id="year-filter-chip-label">FILTER</span>
+      </div>
       <div class="filter-chip" id="new-list-chip" style="display:none;" onclick="openNewListModal()">
         <svg viewBox="0 0 24 24" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         NEW LIST
@@ -690,39 +680,30 @@
     <div class="screen-body">
       <div class="film-grid" id="home-grid"></div>
       <div id="lists-container"></div>
+      <div id="tags-container" style="display:none;"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+      <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
   </div>
 
   <!-- STATS -->
   <div class="screen" id="screen-stats">
-    <div style="padding:14px 20px;flex-shrink:0;"><div style="font-size:24px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">Stats</div></div>
-    <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;">
-      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--text);color:var(--bg);cursor:pointer;">ALL TIME</div>
-      <div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);cursor:pointer;">THIS YEAR</div>
-    </div>
+    <div class="home-header"><div class="logo-sm">Stats</div></div>
+    <div style="display:flex;gap:6px;padding:0 20px 14px;flex-shrink:0;flex-wrap:wrap;" id="stats-period-bar"></div>
     <div class="screen-body">
-      <div style="padding:0 20px 20px;">
-        <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watched">—</div></div>
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-watchlist">—</div></div>
-          <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);" id="stat-avg">—</div></div>
-        </div>
-      </div>
+      <div id="stats-body" style="padding:0 20px 30px;"></div>
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item active" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+      <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
   </div>
 
@@ -735,18 +716,44 @@
       <div class="nav-item active" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+      <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
     </div>
   </div>
 
   <!-- MOVIE DETAIL -->
   <div class="screen" id="screen-movie">
     <div class="home-header">
-      <div onclick="goTo(returnScreen)" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+      <div onclick="goBackFromDetail()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
         <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
       </div>
     </div>
     <div class="screen-body" id="movie-detail"></div>
+  </div>
+
+  <!-- PERSON DETAIL -->
+  <div class="screen" id="screen-person">
+    <div class="home-header">
+      <div onclick="goBackFromDetail()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div class="screen-body" id="person-detail-body"></div>
+  </div>
+
+  <!-- PERSON JOB DETAIL (full list for one role, e.g. all films they Directed) -->
+  <div class="screen" id="screen-person-job-detail">
+    <div class="home-header">
+      <div onclick="goTo('screen-person')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:0 20px 6px;">
+      <div class="logo-sm" id="person-job-detail-title" style="font-size:19px;"></div>
+      <div class="md-meta" id="person-job-detail-subtitle" style="margin-top:2px;"></div>
+    </div>
+    <div class="screen-body">
+      <div class="film-grid" id="person-job-detail-grid"></div>
+    </div>
   </div>
 
   <!-- LIST DETAIL -->
@@ -759,8 +766,11 @@
         <div onclick="openAddListItemModal()" title="Add item" style="cursor:pointer;">
           <svg viewBox="0 0 24 24" stroke-width="2" width="22" height="22" style="stroke:var(--text2);fill:none;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </div>
+        <div onclick="openEditListModal()" title="Edit list" style="cursor:pointer;">
+          <svg viewBox="0 0 24 24" stroke-width="2" style="width:18px;height:18px;stroke:var(--text2);fill:none;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="M15 5l4 4"/></svg>
+        </div>
         <div onclick="confirmDeleteList()" title="Delete list" style="cursor:pointer;">
-          <svg viewBox="0 0 24 24" stroke-width="2" width="20" height="20" style="stroke:var(--text2);fill:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <svg viewBox="0 0 24 24" stroke-width="2" style="width:18px;height:18px;stroke:var(--text2);fill:none;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </div>
       </div>
     </div>
@@ -774,8 +784,89 @@
       </div>
       <div class="md-meta" id="list-detail-desc"></div>
     </div>
+    <div id="list-filter-bar" style="display:none;gap:10px;padding:2px 20px 12px;align-items:center;">
+      <div class="filter-chip" id="list-sort-filter-chip" onclick="openListSortSheet()">
+        <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
+        <span id="list-sort-chip-label">SORT</span>
+      </div>
+      <div class="filter-chip" id="list-year-filter-chip" onclick="openListFilterSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        <span id="list-year-filter-chip-label">FILTER</span>
+      </div>
+    </div>
     <div class="screen-body">
       <div class="film-grid" id="list-detail-grid"></div>
+    </div>
+  </div>
+
+  <!-- TAG DETAIL -->
+  <div class="screen" id="screen-tag-detail">
+    <div class="home-header">
+      <div onclick="goTo('screen-home')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:0 20px 14px;">
+      <div class="logo-sm" id="tag-detail-title"></div>
+    </div>
+    <div class="screen-body">
+      <div id="tag-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="screen-profile">
+    <div class="home-header"><div class="logo-sm">Profile</div></div>
+    <div class="screen-body">
+      <div style="padding:20px 20px 6px;">
+        <div class="profile-avatar-lg" id="profile-avatar-lg">?</div>
+        <div class="profile-name" id="profile-name">—</div>
+        <div class="profile-email" id="profile-email">—</div>
+      </div>
+      <div style="padding:26px 20px 20px;">
+        <div class="settings-row" onclick="goToGeneralSettings()">
+          <div class="settings-row-label">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" width="18" height="18" style="stroke:var(--text2);fill:none;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>General</span>
+          </div>
+          <svg class="chev" viewBox="0 0 24 24" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="settings-row" onclick="openImportFromProfile()">
+          <div class="settings-row-label">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" width="18" height="18" style="stroke:var(--text2);fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Import Letterboxd Data</span>
+          </div>
+          <svg class="chev" viewBox="0 0 24 24" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <button class="btn-secondary" style="color:var(--danger);margin-top:16px;" onclick="handleLogout()">Log Out</button>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
+      <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+      <div class="nav-item active" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- GENERAL SETTINGS -->
+  <div class="screen" id="screen-general-settings">
+    <div class="home-header">
+      <div onclick="goTo('screen-profile')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:2px 20px 0;flex-shrink:0;">
+      <div class="logo-sm" style="font-size:24px;">General</div>
+    </div>
+    <div class="screen-body">
+      <div style="padding:28px 20px 30px;">
+        <div class="settings-section-title" style="margin-top:0;">Default TV Show Tab</div>
+        <div id="default-tv-tab-options"></div>
+        <div class="settings-section-title">Default Movies Tab</div>
+        <div id="default-movie-tab-options"></div>
+      </div>
     </div>
   </div>
 
@@ -793,26 +884,36 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 /* ---- STREAMING SERVICES (TMDB provider IDs, UK focused) ---- */
 const STREAMING_SERVICES = [
-  { id: 8,   name: 'Netflix',         bg: '#E50914', label: 'N' },
-  { id: 9,   name: 'Prime Video',     bg: '#00A8E0', label: 'P' },
-  { id: 337, name: 'Disney+',         bg: '#113CCF', label: 'D+' },
-  { id: 350, name: 'Apple TV+',       bg: '#1c1c1e', label: '▶' },
-  { id: 531, name: 'Paramount+',      bg: '#0064FF', label: 'P+' },
-  { id: 29,  name: 'NOW',             bg: '#00C274', label: 'N' },
-  { id: 11,  name: 'MUBI',            bg: '#738FFF', label: 'M' },
-  { id: 151, name: 'BritBox',         bg: '#C8102E', label: 'B' },
-  { id: 99,  name: 'Shudder',         bg: '#181818', label: 'S' },
-  { id: 283, name: 'Crunchyroll',     bg: '#F47521', label: 'C' },
-  { id: 188, name: 'YouTube Premium', bg: '#FF0000', label: 'YT' },
-  { id: 386, name: 'Peacock',         bg: '#000078', label: 'P' },
+  { id: 8,   name: 'Netflix' },
+  { id: 9,   name: 'Prime Video' },
+  { id: 337, name: 'Disney+' },
+  { id: 350, name: 'Apple TV+' },
+  { id: 531, name: 'Paramount+' },
+  { id: 29,  name: 'NOW' },
+  { id: 11,  name: 'MUBI' },
+  { id: 151, name: 'BritBox' },
+  { id: 99,  name: 'Shudder' },
+  { id: 283, name: 'Crunchyroll' },
+  { id: 188, name: 'YouTube Premium' },
+  { id: 386, name: 'Peacock' },
 ];
 
 /* ---- STATE ---- */
 let selectedMovie = null;
+// Person (actor/director/crew) detail state
+let selectedPerson = null;
+let navStack = []; // shared back-navigation history for the Movie/TV and Person detail screens (see buildNavDescriptor/goBackFromDetail)
+let personMediaTab = 'movie';
+let personCreditsCache = { movie: {}, tv: {} }; // { movie: { Actor: [items], Director: [items] }, tv: {...} }
+let personWatchedMovieSet = new Set();
+let personWatchedTvSet = new Set();
+let personJobDetailJob = null;
+let personJobDetailType = null;
+let personJobDetailItems = [];
+let personViewModeMap = {}; // key: "movie-Director" etc -> 'percent' | 'count' — each job row toggles independently
 let selectedMediaType = 'movie';
 let searchTimeout = null;
 let logSearchTimeout = null;
-let returnScreen = 'screen-home';
 let formRating = 0;
 let formLiked = false;
 let formInWatchlist = false;
@@ -835,9 +936,6 @@ let logFormRewatch = false;
 let logSearchQuery = '';
 let logSearchResults = [];
 
-// Letterboxd import state
-let signupImportFile = null;
-
 // Library cache (for service filtering)
 let libraryItemsCache = [];
 let libraryRatingMapCache = {};
@@ -845,10 +943,117 @@ let libraryLikedMapCache = {};
 let libraryReviewedSetCache = new Set();
 let libraryMediaTypeCache = 'movie';
 
-// Service filter state
-let selectedServiceIds = new Set(); // pending (in sheet)
+// Service filter state — now lives inside the Filter menu (see filterSheetStep 'services')
+let pendingServiceIds = new Set(); // working copy while the sheet is open
 let appliedServiceIds = new Set();  // currently applied
 let providerCache = {};             // key: "movie-123" or "tv-123" → Set of provider IDs
+function resetServiceFilter() { appliedServiceIds.clear(); updateFilterChip(); }
+
+// Year filter state — also temporary/in-memory only, same as sort: resets when
+// switching tabs or leaving the Home screen.
+let appliedYearFilter = null; // null | { type:'year', year:1998 } | { type:'decade', decade:1990 }
+let filterSheetStep = 'main'; // 'main' | 'decades' | 'years' | 'ageRating'
+let filterSheetDecade = null;
+function resetYearFilter() { appliedYearFilter = null; updateFilterChip(); }
+
+// Age Rating filter state — multi-select, also temporary/in-memory only.
+const AGE_RATINGS = [
+  { code: 'U',   label: 'BBFC U' },
+  { code: 'PG',  label: 'BBFC PG' },
+  { code: '12',  label: 'BBFC 12' },
+  { code: '12A', label: 'BBFC 12A' },
+  { code: '15',  label: 'BBFC 15' },
+  { code: '18',  label: 'BBFC 18' }
+];
+let appliedCertFilter = new Set(); // empty set = ANY
+let pendingCertFilter = new Set(); // working copy while the sheet is open
+let certCache = {};                // key: "movie-123" or "tv-123" → cert code string or null
+function resetCertFilter() { appliedCertFilter = new Set(); updateFilterChip(); }
+
+// Liked / Watched filter state — also temporary/in-memory only.
+// null = ANY, true = only liked/watched, false = only not-liked/not-watched.
+let appliedLikedFilter = null;
+let appliedWatchedFilter = null;
+let libraryWatchedSetCache = new Set(); // tmdb_ids in the current library that have a watched entry elsewhere (e.g. watchlist items you've already seen)
+function resetLikedFilter() { appliedLikedFilter = null; updateFilterChip(); }
+function resetWatchedFilter() { appliedWatchedFilter = null; updateFilterChip(); }
+
+// Filter/sort context — lets the shared sort & filter sheets serve either the
+// Home library grid or a List Detail grid without the two states colliding.
+let filterContext = 'home'; // 'home' | 'list'
+let listSortValue = null;
+let listAppliedYearFilter = null;
+let listAppliedLikedFilter = null;
+let listAppliedWatchedFilter = null;
+let listLikedMapCache = {};             // tmdb_id -> true (movies only)
+let listRatingMapCache = {};            // key "movie-123"/"tv-123" -> rating
+let listWatchedSetCache = new Set();    // key "movie-123"/"tv-123"
+function resetListFilters() {
+  listSortValue = null;
+  listAppliedYearFilter = null;
+  listAppliedLikedFilter = null;
+  listAppliedWatchedFilter = null;
+  updateFilterChip();
+  updateSortChip();
+}
+
+// Genre filter state — also temporary/in-memory only. Two sets: genres that
+// must ALL be present (include) and genres that must NOT be present (exclude).
+// A genre can only be in one of the two sets at a time.
+let appliedGenreInclude = new Set();
+let appliedGenreExclude = new Set();
+let pendingGenreInclude = new Set(); // working copy while the sheet is open
+let pendingGenreExclude = new Set(); // working copy while the sheet is open
+let movieGenres = null; // [{id,name}] cached from TMDB, fetched once
+let tvGenres = null;    // [{id,name}] cached from TMDB, fetched once
+let genreItemCache = {}; // key: "movie-123" or "tv-123" → array of genre ids
+let genreClickTimer = null;
+let genreClickTarget = null;
+function resetGenreFilter() { appliedGenreInclude = new Set(); appliedGenreExclude = new Set(); updateFilterChip(); }
+
+function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); resetGenreFilter(); resetLikedFilter(); resetWatchedFilter(); }
+
+// Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
+// This is intentionally in-memory only (not persisted to localStorage): it resets
+// to "no sort" whenever the user switches tabs or navigates to a different screen.
+let sortStateByType = { movie: null, tv: null };
+function getCurrentSort() {
+  if (filterContext === 'list') return listSortValue;
+  return sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null;
+}
+function setCurrentSort(val) {
+  if (filterContext === 'list') { listSortValue = val; return; }
+  sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] = val;
+}
+function resetAllSorts() { sortStateByType = { movie: null, tv: null }; updateSortChip(); }
+let releaseDateCache = {};          // key: "movie-123" or "tv-123" → release date string or null
+const SORT_TITLE_OPTION = { value: 'title_az', label: 'Film Title (A–Z)' };
+const SORT_SHUFFLE_OPTION = { value: 'shuffle', label: 'Shuffle' };
+const SORT_SECTIONS = [
+  { title: 'Release Date', options: [
+    { value: 'release_newest', label: 'Newest First' },
+    { value: 'release_oldest', label: 'Earliest First' }
+  ]},
+  { title: 'When Added', options: [
+    { value: 'added_newest', label: 'Newest First' },
+    { value: 'added_oldest', label: 'Earliest First' }
+  ]},
+  { title: 'Your Rating', options: [
+    { value: 'rating_highest', label: 'Highest First' },
+    { value: 'rating_lowest', label: 'Lowest First' }
+  ]}
+];
+
+const SORT_LABELS = {
+  title_az: 'Title A–Z',
+  shuffle: 'Shuffle',
+  release_newest: 'Newest Release',
+  release_oldest: 'Earliest Release',
+  added_newest: 'Recently Added',
+  added_oldest: 'Added: Earliest',
+  rating_highest: 'Top Rated',
+  rating_lowest: 'Lowest Rated'
+};
 
 // Lists state
 let listsCache = [];
@@ -866,10 +1071,123 @@ let listViewMode = 'percent';
 let longPressTimer = null;
 let longPressTriggered = false;
 
+// Tags state
+let tagsDomain = 'films';          // 'films' | 'lists' — which kind of tags the Tags tab is browsing
+let tagsListCache = [];            // [{name, count}] sorted by count desc
+let tagDetailName = null;
+let tagDetailDomain = 'films';
+let tagDetailViewMode = 'films';   // 'films' | 'diary' — only relevant when tagDetailDomain === 'films'
+let tagDetailFilms = [];           // unique films for the current film-tag
+let tagDetailDiaryEntries = [];    // all diary entries for the current film-tag
+let tagDetailLists = [];           // lists for the current list-tag
+// These let diary-entry-modal actions (edit/delete) refresh whichever screen opened them
+// (the normal Diary screen, or a tag detail screen) instead of always refreshing the diary.
+let diaryModalRefreshFn = () => { loadDiary(); loadStats(); };
+let editModalRefreshFn = () => { loadDiary(); loadStats(); };
+
+function parseTagsInput(str = '') {
+  return [...new Set(String(str).split(',').map(t => t.trim().toLowerCase()).filter(Boolean))];
+}
+function tagsToInputValue(arr) { return (arr || []).join(', '); }
+
+// Stats screen state
+let statsPeriod = 'all'; // 'all' or a specific year (number)
+let statsYearsList = [];  // years (desc) the user has diary entries for, computed once
+let movieCreditsCache = {}; // key "movie-123" -> { cast:[{id,name,profile_path}], directors:[{id,name,profile_path}] }
+
 /* ---- HEART SVG ---- */
 const heartSVG = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 const checkSVG = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
 const REWATCH_SYMBOL = '&#8634;';
+
+/* ---- SETTINGS (local preferences) ---- */
+const TV_TAB_OPTIONS = [
+  { value: 'watching', label: 'Watching' },
+  { value: 'watched', label: 'Watched' },
+  { value: 'watchlist', label: 'Watchlist' }
+];
+
+const MOVIE_TAB_OPTIONS = [
+  { value: 'watched', label: 'Watched' },
+  { value: 'watchlist', label: 'Watchlist' }
+];
+
+function getDefaultTvTab() {
+  return localStorage.getItem('bb_default_tv_tab') || 'watching';
+}
+
+function setDefaultTvTab(val) {
+  localStorage.setItem('bb_default_tv_tab', val);
+}
+
+function chooseDefaultTvTab(val) {
+  setDefaultTvTab(val);
+  renderDefaultTvTabOptions();
+  showToast('Default TV tab updated');
+}
+
+function renderDefaultTvTabOptions() {
+  const wrap = document.getElementById('default-tv-tab-options');
+  if (!wrap) return;
+  const current = getDefaultTvTab();
+  wrap.innerHTML = TV_TAB_OPTIONS.map(opt => `
+    <div class="settings-option-row ${opt.value === current ? 'selected' : ''}" onclick="chooseDefaultTvTab('${opt.value}')">
+      <span>${opt.label}</span>
+      <div class="settings-option-check ${opt.value === current ? 'checked' : ''}">${opt.value === current ? checkSVG : ''}</div>
+    </div>`).join('');
+}
+
+function getDefaultMovieTab() {
+  return localStorage.getItem('bb_default_movie_tab') || 'watched';
+}
+
+function setDefaultMovieTab(val) {
+  localStorage.setItem('bb_default_movie_tab', val);
+}
+
+function chooseDefaultMovieTab(val) {
+  setDefaultMovieTab(val);
+  renderDefaultMovieTabOptions();
+  showToast('Default Movies tab updated');
+}
+
+function renderDefaultMovieTabOptions() {
+  const wrap = document.getElementById('default-movie-tab-options');
+  if (!wrap) return;
+  const current = getDefaultMovieTab();
+  wrap.innerHTML = MOVIE_TAB_OPTIONS.map(opt => `
+    <div class="settings-option-row ${opt.value === current ? 'selected' : ''}" onclick="chooseDefaultMovieTab('${opt.value}')">
+      <span>${opt.label}</span>
+      <div class="settings-option-check ${opt.value === current ? 'checked' : ''}">${opt.value === current ? checkSVG : ''}</div>
+    </div>`).join('');
+}
+
+function goToGeneralSettings() {
+  goTo('screen-general-settings');
+  renderDefaultTvTabOptions();
+  renderDefaultMovieTabOptions();
+}
+
+/* ---- PROFILE ---- */
+function goToProfile() {
+  navStack = [];
+  goTo('screen-profile');
+  loadProfileInfo();
+}
+
+async function loadProfileInfo() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const name = (user.user_metadata?.name || '').trim();
+  const email = user.email || '';
+  const initial = (name || email || '?')[0].toUpperCase();
+  const avatarEl = document.getElementById('profile-avatar-lg');
+  const nameEl = document.getElementById('profile-name');
+  const emailEl = document.getElementById('profile-email');
+  if (avatarEl) avatarEl.textContent = initial;
+  if (nameEl) nameEl.textContent = name || email || 'User';
+  if (emailEl) emailEl.textContent = email;
+}
 
 /* ---- TOAST ---- */
 function showToast(message, type = 'success', duration = 2600) {
@@ -901,133 +1219,750 @@ function showConfirm({ title, message, confirmText = 'Confirm', danger = true, o
 }
 
 /* ---- SERVICE SHEET ---- */
-function openServiceSheet() {
-  // Clone applied → pending
-  selectedServiceIds = new Set(appliedServiceIds);
-  renderServiceSheet();
-  document.getElementById('service-sheet-overlay').classList.add('show');
+function openServicesStep() {
+  pendingServiceIds = new Set(appliedServiceIds);
+  filterSheetStep = 'services';
+  renderFilterSheetStep();
 }
 
-function closeServiceSheet(e) {
-  if (e && e.target !== document.getElementById('service-sheet-overlay')) return;
-  document.getElementById('service-sheet-overlay').classList.remove('show');
+function toggleServicePending(id) {
+  if (pendingServiceIds.has(id)) pendingServiceIds.delete(id);
+  else pendingServiceIds.add(id);
+  renderFilterSheetStep();
 }
 
-function renderServiceSheet() {
-  const body = document.getElementById('service-sheet-body');
-  body.innerHTML = STREAMING_SERVICES.map(s => `
-    <div class="service-row" onclick="toggleServiceId(${s.id})">
-      <div class="service-logo" style="background:${s.bg};">${escapeHtml(s.label)}</div>
-      <div class="service-name">${escapeHtml(s.name)}</div>
-      <div class="service-check ${selectedServiceIds.has(s.id) ? 'checked' : ''}" id="svc-check-${s.id}">
-        ${selectedServiceIds.has(s.id) ? checkSVG : ''}
-      </div>
-    </div>
-  `).join('');
+function selectServiceAny() {
+  pendingServiceIds.clear();
+  renderFilterSheetStep();
 }
 
-function toggleServiceId(id) {
-  if (selectedServiceIds.has(id)) selectedServiceIds.delete(id);
-  else selectedServiceIds.add(id);
-  // update just this checkbox
-  const el = document.getElementById(`svc-check-${id}`);
-  if (el) {
-    el.className = 'service-check' + (selectedServiceIds.has(id) ? ' checked' : '');
-    el.innerHTML = selectedServiceIds.has(id) ? checkSVG : '';
-  }
-}
-
-function clearServiceFilter() {
-  selectedServiceIds.clear();
-  appliedServiceIds.clear();
-  updateServiceChip();
-  document.getElementById('service-sheet-overlay').classList.remove('show');
-  renderFilteredGrid();
-}
-
-async function applyServiceFilter() {
-  appliedServiceIds = new Set(selectedServiceIds);
-  updateServiceChip();
-  document.getElementById('service-sheet-overlay').classList.remove('show');
+async function applyServiceFilterNew() {
+  appliedServiceIds = new Set(pendingServiceIds);
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
   await renderFilteredGrid();
 }
 
-function updateServiceChip() {
-  const chip = document.getElementById('service-filter-chip');
-  const label = document.getElementById('service-chip-label');
+async function renderFilteredGrid() {
+  filterContext = 'home';
+  const grid = document.getElementById('home-grid');
+  const type = libraryMediaTypeCache;
+
+  const seen = new Set();
+  let items = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
+
   if (appliedServiceIds.size > 0) {
-    chip.classList.add('active');
-    const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
-    label.textContent = names.length === 1 ? names[0] : `${names.length} Services`;
-  } else {
-    chip.classList.remove('active');
-    label.textContent = 'SERVICE';
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+
+    // Fetch providers for all items (use cache when available)
+    const endpoint = type === 'tv' ? 'tv' : 'movie';
+
+    await Promise.all(items.map(async item => {
+      const cacheKey = `${endpoint}-${item.tmdb_id}`;
+      if (providerCache[cacheKey] !== undefined) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+        const data = await res.json();
+        const gb = data.results?.GB;
+        const providers = new Set();
+        const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
+        addList(gb?.flatrate);
+        addList(gb?.free);
+        providerCache[cacheKey] = providers;
+      } catch { providerCache[cacheKey] = new Set(); }
+    }));
+
+    items = items.filter(item => {
+      const cacheKey = `${endpoint}-${item.tmdb_id}`;
+      const providers = providerCache[cacheKey] || new Set();
+      return [...appliedServiceIds].some(sid => providers.has(sid));
+    });
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
+      return;
+    }
+  }
+
+  if (appliedYearFilter) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await fetchReleaseDatesFor(items, type);
+    items = items.filter(item => {
+      const rd = getReleaseDateValue(item, type);
+      if (!rd) return false;
+      const y = parseInt(rd.slice(0, 4), 10);
+      if (appliedYearFilter.type === 'year') return y === appliedYearFilter.year;
+      return y >= appliedYearFilter.decade && y <= appliedYearFilter.decade + 9;
+    });
+
+    if (!items.length) {
+      const yearLabel = appliedYearFilter.type === 'year' ? appliedYearFilter.year : `the ${appliedYearFilter.decade}s`;
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are from ${yearLabel}.</div>`;
+      return;
+    }
+  }
+
+  if (appliedCertFilter.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await fetchCertsFor(items, type);
+    items = items.filter(item => {
+      const cert = getCertValue(item, type);
+      return cert && appliedCertFilter.has(cert);
+    });
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the selected age rating${appliedCertFilter.size > 1 ? 's' : ''}.</div>`;
+      return;
+    }
+  }
+
+  if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await fetchReleaseDatesFor(items, type); // also populates genreItemCache in the same request
+    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    items = items.filter(item => {
+      const genres = genreItemCache[`${endpoint}-${item.tmdb_id}`] || [];
+      if (appliedGenreExclude.size && genres.some(g => appliedGenreExclude.has(g))) return false;
+      if (appliedGenreInclude.size && ![...appliedGenreInclude].every(g => genres.includes(g))) return false;
+      return true;
+    });
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the selected genre filters.</div>`;
+      return;
+    }
+  }
+
+  if (appliedLikedFilter !== null) {
+    items = items.filter(item => {
+      if (type === 'tv') return false; // liked isn't tracked for TV shows
+      const liked = !!libraryLikedMapCache[item.tmdb_id];
+      return appliedLikedFilter ? liked : !liked;
+    });
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the Liked filter.</div>`;
+      return;
+    }
+  }
+
+  if (appliedWatchedFilter !== null) {
+    items = items.filter(item => {
+      const watchedBefore = libraryWatchedSetCache.has(item.tmdb_id);
+      return appliedWatchedFilter ? watchedBefore : !watchedBefore;
+    });
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} match the Watched filter.</div>`;
+      return;
+    }
+  }
+
+  if (getCurrentSort()) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    items = await applySort(items, type);
+  }
+
+  renderHomeGrid(items, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
+}
+
+/* ---- SORT SHEET ---- */
+function openSortSheet() {
+  filterContext = 'home';
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.add('show');
+}
+
+function openListSortSheet() {
+  filterContext = 'list';
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.add('show');
+}
+
+function closeSortSheet(e) {
+  if (e && e.target !== document.getElementById('sort-sheet-overlay')) return;
+  document.getElementById('sort-sheet-overlay').classList.remove('show');
+}
+
+function sortOptionRowHtml(value, label) {
+  const selected = getCurrentSort() === value;
+  return `
+    <div class="settings-option-row ${selected ? 'selected' : ''}" onclick="chooseSortOption('${value}')">
+      <span>${label}</span>
+      <div class="settings-option-check ${selected ? 'checked' : ''}">${selected ? checkSVG : ''}</div>
+    </div>`;
+}
+
+function renderSortSheetBody() {
+  const body = document.getElementById('sort-sheet-body');
+  let html = sortOptionRowHtml(SORT_TITLE_OPTION.value, SORT_TITLE_OPTION.label);
+  html += sortOptionRowHtml(SORT_SHUFFLE_OPTION.value, SORT_SHUFFLE_OPTION.label);
+  SORT_SECTIONS.forEach(section => {
+    html += `<div class="settings-section-title" style="margin:18px 0 10px;">${escapeHtml(section.title)}</div>`;
+    html += section.options.map(opt => sortOptionRowHtml(opt.value, opt.label)).join('');
+  });
+  body.innerHTML = html;
+}
+
+async function chooseSortOption(value) {
+  const newVal = getCurrentSort() === value ? null : value; // tap again to clear back to default
+  setCurrentSort(newVal);
+  updateSortChip();
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.remove('show');
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+
+function updateSortChip() {
+  const chip = document.getElementById('sort-filter-chip');
+  const label = document.getElementById('sort-chip-label');
+  if (chip && label) {
+    const sort = sortStateByType[homeMediaType === 'tv' ? 'tv' : 'movie'] || null;
+    if (sort) { chip.classList.add('active'); label.textContent = SORT_LABELS[sort] || 'SORT'; }
+    else { chip.classList.remove('active'); label.textContent = 'SORT'; }
+  }
+  const listChip = document.getElementById('list-sort-filter-chip');
+  const listLabel = document.getElementById('list-sort-chip-label');
+  if (listChip && listLabel) {
+    if (listSortValue) { listChip.classList.add('active'); listLabel.textContent = SORT_LABELS[listSortValue] || 'SORT'; }
+    else { listChip.classList.remove('active'); listLabel.textContent = 'SORT'; }
   }
 }
 
-async function renderFilteredGrid() {
-  if (appliedServiceIds.size === 0) {
-    // No filter — show full cache
-    renderHomeGrid(libraryItemsCache, libraryMediaTypeCache, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache);
+/* ---- FILTER SHEET (Year, with more filters to come later) ---- */
+function openFilterSheet() {
+  filterContext = 'home';
+  filterSheetStep = 'main';
+  filterSheetDecade = null;
+  renderFilterSheetStep();
+  document.getElementById('filter-sheet-overlay').classList.add('show');
+}
+
+function openListFilterSheet() {
+  filterContext = 'list';
+  filterSheetStep = 'main';
+  filterSheetDecade = null;
+  renderFilterSheetStep();
+  document.getElementById('filter-sheet-overlay').classList.add('show');
+}
+
+function closeFilterSheet(e) {
+  if (e && e.target !== document.getElementById('filter-sheet-overlay')) return;
+  document.getElementById('filter-sheet-overlay').classList.remove('show');
+}
+
+function filterSheetBack() {
+  if (filterSheetStep === 'years') filterSheetStep = 'decades';
+  else filterSheetStep = 'main';
+  renderFilterSheetStep();
+}
+
+function goFilterStep(step) {
+  filterSheetStep = step;
+  renderFilterSheetStep();
+}
+
+function openDecadeYears(decade) {
+  filterSheetDecade = decade;
+  filterSheetStep = 'years';
+  renderFilterSheetStep();
+}
+
+function openAgeRatingStep() {
+  pendingCertFilter = new Set(appliedCertFilter);
+  filterSheetStep = 'ageRating';
+  renderFilterSheetStep();
+}
+
+function toggleCertPending(code) {
+  if (pendingCertFilter.has(code)) pendingCertFilter.delete(code);
+  else pendingCertFilter.add(code);
+  renderFilterSheetStep();
+}
+
+function selectCertAny() {
+  pendingCertFilter.clear();
+  renderFilterSheetStep();
+}
+
+async function applyCertFilter() {
+  appliedCertFilter = new Set(pendingCertFilter);
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  await renderFilteredGrid();
+}
+
+async function openGenreStep() {
+  pendingGenreInclude = new Set(appliedGenreInclude);
+  pendingGenreExclude = new Set(appliedGenreExclude);
+  filterSheetStep = 'genre';
+  document.getElementById('filter-sheet-title').textContent = 'Genre';
+  document.getElementById('filter-sheet-back').style.display = 'flex';
+  document.getElementById('filter-sheet-body').innerHTML = `<div style="padding:30px 0;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  await ensureGenreList();
+  renderFilterSheetStep();
+}
+
+// Single tap toggles "include" (must have this genre). A second tap within
+// the window toggles "exclude" (must NOT have this genre) instead — this is
+// how a "double click" is expressed without relying on the native dblclick
+// event, which is unreliable once the tapped element gets re-rendered.
+function handleGenreClick(id) {
+  if (genreClickTimer && genreClickTarget === id) {
+    clearTimeout(genreClickTimer);
+    genreClickTimer = null;
+    genreClickTarget = null;
+    toggleGenreExclude(id);
+  } else {
+    clearTimeout(genreClickTimer);
+    genreClickTarget = id;
+    genreClickTimer = setTimeout(() => {
+      genreClickTimer = null;
+      genreClickTarget = null;
+      toggleGenreInclude(id);
+    }, 280);
+  }
+}
+
+function toggleGenreInclude(id) {
+  if (pendingGenreInclude.has(id)) pendingGenreInclude.delete(id);
+  else { pendingGenreInclude.add(id); pendingGenreExclude.delete(id); }
+  renderFilterSheetStep();
+}
+
+function toggleGenreExclude(id) {
+  if (pendingGenreExclude.has(id)) pendingGenreExclude.delete(id);
+  else { pendingGenreExclude.add(id); pendingGenreInclude.delete(id); }
+  renderFilterSheetStep();
+}
+
+function selectGenreAny() {
+  pendingGenreInclude.clear();
+  pendingGenreExclude.clear();
+  renderFilterSheetStep();
+}
+
+async function applyGenreFilter() {
+  appliedGenreInclude = new Set(pendingGenreInclude);
+  appliedGenreExclude = new Set(pendingGenreExclude);
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  await renderFilteredGrid();
+}
+
+function getDecadesList() {
+  const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
+  const decades = [];
+  for (let d = currentDecade; d >= 1870; d -= 10) decades.push(d);
+  return decades;
+}
+
+function yearFilterLabel() {
+  if (!appliedYearFilter) return 'ANY';
+  return appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`;
+}
+
+function activeYearFilter() { return filterContext === 'list' ? listAppliedYearFilter : appliedYearFilter; }
+function activeYearFilterLabel() {
+  const yf = activeYearFilter();
+  if (!yf) return 'ANY';
+  return yf.type === 'year' ? String(yf.year) : `${yf.decade}s`;
+}
+
+function likedFilterLabel() {
+  const v = filterContext === 'list' ? listAppliedLikedFilter : appliedLikedFilter;
+  return v === true ? 'Liked' : v === false ? 'Not Liked' : 'ANY';
+}
+function watchedFilterLabel() {
+  const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+  return v === true ? 'Watched' : v === false ? 'Not Watched' : 'ANY';
+}
+async function selectLikedFilter(val) {
+  if (filterContext === 'list') listAppliedLikedFilter = val; else appliedLikedFilter = val;
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+async function selectWatchedFilter(val) {
+  if (filterContext === 'list') listAppliedWatchedFilter = val; else appliedWatchedFilter = val;
+  updateFilterChip();
+  filterSheetStep = 'main';
+  renderFilterSheetStep();
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+
+function ageRatingFilterLabel() {
+  if (!appliedCertFilter.size) return 'ANY';
+  return [...appliedCertFilter].join(', ');
+}
+
+function servicesFilterLabel() {
+  if (!appliedServiceIds.size) return 'ANY';
+  const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
+  return names.length === 1 ? names[0] : `${names.length} Services`;
+}
+
+function genreFilterLabel() {
+  if (!appliedGenreInclude.size && !appliedGenreExclude.size) return 'ANY';
+  const parts = [];
+  if (appliedGenreInclude.size) parts.push([...appliedGenreInclude].map(genreNameById).join(', '));
+  if (appliedGenreExclude.size) parts.push('not ' + [...appliedGenreExclude].map(genreNameById).join(', '));
+  return parts.join(' · ');
+}
+
+function filterOptionRowHtml(label, selected, onclickFn) {
+  return `
+    <div class="settings-option-row ${selected ? 'selected' : ''}" onclick="${onclickFn}">
+      <span>${escapeHtml(label)}</span>
+      <div class="settings-option-check ${selected ? 'checked' : ''}">${selected ? checkSVG : ''}</div>
+    </div>`;
+}
+
+function filterNavRowHtml(label, valueLabel, onclickFn) {
+  return `
+    <div class="settings-row" style="margin-bottom:10px;" onclick="${onclickFn}">
+      <div class="settings-row-label"><span>${escapeHtml(label)}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:13px;color:var(--text2);">${escapeHtml(valueLabel)}</span>
+        <svg viewBox="0 0 24 24" stroke-width="2" width="16" height="16" style="stroke:var(--text);fill:none;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>`;
+}
+
+function renderFilterSheetStep() {
+  const title = document.getElementById('filter-sheet-title');
+  const back = document.getElementById('filter-sheet-back');
+  const body = document.getElementById('filter-sheet-body');
+
+  if (filterSheetStep === 'main') {
+    title.textContent = 'Filters';
+    back.style.display = 'none';
+    if (filterContext === 'list') {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
+        filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
+    } else {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()") +
+        filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
+        filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()") +
+        filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
+        filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
+    }
     return;
   }
 
-  const grid = document.getElementById('home-grid');
-  grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  if (filterSheetStep === 'decades') {
+    title.textContent = 'Year';
+    back.style.display = 'flex';
+    const activeYf = activeYearFilter();
+    const anySelected = !activeYf;
+    let html = filterOptionRowHtml('ANY', anySelected, 'selectYearAny()');
+    html += getDecadesList().map(d => {
+      const selected = activeYf?.type === 'decade' && activeYf.decade === d;
+      return `
+        <div class="settings-option-row ${selected ? 'selected' : ''}" style="display:flex;justify-content:space-between;align-items:center;" onclick="openDecadeYears(${d})">
+          <span>${d}s</span>
+          <svg viewBox="0 0 24 24" stroke-width="2" width="16" height="16" style="stroke:var(--text);fill:none;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>`;
+    }).join('');
+    body.innerHTML = html;
+    return;
+  }
 
-  // Fetch providers for all items (use cache when available)
-  const type = libraryMediaTypeCache;
+  if (filterSheetStep === 'years') {
+    const d = filterSheetDecade;
+    const activeYf = activeYearFilter();
+    title.textContent = `${d}s`;
+    back.style.display = 'flex';
+    const anySelected = activeYf?.type === 'decade' && activeYf.decade === d;
+    let html = filterOptionRowHtml('ANY', anySelected, `selectDecadeAny(${d})`);
+    for (let y = d + 9; y >= d; y--) {
+      const selected = activeYf?.type === 'year' && activeYf.year === y;
+      html += filterOptionRowHtml(String(y), selected, `selectYear(${y})`);
+    }
+    body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'liked') {
+    title.textContent = 'Liked';
+    back.style.display = 'flex';
+    const v = filterContext === 'list' ? listAppliedLikedFilter : appliedLikedFilter;
+    body.innerHTML =
+      filterOptionRowHtml('ANY', v === null, 'selectLikedFilter(null)') +
+      filterOptionRowHtml('Liked', v === true, 'selectLikedFilter(true)') +
+      filterOptionRowHtml('Not Liked', v === false, 'selectLikedFilter(false)');
+    return;
+  }
+
+  if (filterSheetStep === 'watchedStatus') {
+    title.textContent = 'Watched';
+    back.style.display = 'flex';
+    const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+    body.innerHTML =
+      filterOptionRowHtml('ANY', v === null, 'selectWatchedFilter(null)') +
+      filterOptionRowHtml('Watched', v === true, 'selectWatchedFilter(true)') +
+      filterOptionRowHtml('Not Watched', v === false, 'selectWatchedFilter(false)');
+    return;
+  }
+
+  if (filterSheetStep === 'ageRating') {
+    title.textContent = 'Age Rating';
+    back.style.display = 'flex';
+    let html = filterOptionRowHtml('ANY', pendingCertFilter.size === 0, 'selectCertAny()');
+    html += AGE_RATINGS.map(r => filterOptionRowHtml(r.label, pendingCertFilter.has(r.code), `toggleCertPending('${r.code}')`)).join('');
+    html += `<button class="btn-primary" style="margin-top:16px;width:100%;" onclick="applyCertFilter()">Apply</button>`;
+    body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'services') {
+    title.textContent = 'Services';
+    back.style.display = 'flex';
+    let html = filterOptionRowHtml('ANY', pendingServiceIds.size === 0, 'selectServiceAny()');
+    html += STREAMING_SERVICES.map(s => filterOptionRowHtml(s.name, pendingServiceIds.has(s.id), `toggleServicePending(${s.id})`)).join('');
+    html += `<button class="btn-primary" style="margin-top:16px;width:100%;" onclick="applyServiceFilterNew()">Apply</button>`;
+    body.innerHTML = html;
+    return;
+  }
+
+  if (filterSheetStep === 'genre') {
+    title.textContent = 'Genre';
+    back.style.display = 'flex';
+    const anySelected = pendingGenreInclude.size === 0 && pendingGenreExclude.size === 0;
+    let html = filterOptionRowHtml('ANY', anySelected, 'selectGenreAny()');
+    html += `<div style="font-size:11.5px;color:var(--text3);line-height:1.5;margin:12px 0 12px;">Tap a genre to require it — pick more than one and titles must match all of them. Tap a selected genre again quickly to switch it to excluded instead.</div>`;
+    const list = currentGenreList();
+    if (!list.length) {
+      html += `<div style="color:var(--text3);font-size:13px;padding:12px 0;">Couldn't load genres.</div>`;
+    } else {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px;">`;
+      html += list.map(g => {
+        const included = pendingGenreInclude.has(g.id);
+        const excluded = pendingGenreExclude.has(g.id);
+        let cls = 'filter-chip';
+        let style = 'cursor:pointer;';
+        if (included) style += 'background:rgba(124,92,191,0.18);color:var(--purple-light);border-color:var(--purple);';
+        else if (excluded) style += 'background:rgba(224,88,74,0.14);color:var(--danger);border-color:var(--danger);text-decoration:line-through;';
+        return `<div class="${cls}" style="${style}" onclick="handleGenreClick(${g.id})">${excluded ? '\u2013 ' : ''}${escapeHtml(g.name)}</div>`;
+      }).join('');
+      html += `</div>`;
+    }
+    html += `<button class="btn-primary" style="margin-top:18px;width:100%;" onclick="applyGenreFilter()">Apply</button>`;
+    body.innerHTML = html;
+  }
+}
+
+async function applyYearFilterAndClose(val) {
+  if (filterContext === 'list') listAppliedYearFilter = val; else appliedYearFilter = val;
+  updateFilterChip();
+  document.getElementById('filter-sheet-overlay').classList.remove('show');
+  if (filterContext === 'list') await renderFilteredListGrid();
+  else await renderFilteredGrid();
+}
+
+function selectYearAny() { applyYearFilterAndClose(null); }
+function selectDecadeAny(decade) { applyYearFilterAndClose({ type: 'decade', decade }); }
+function selectYear(year) { applyYearFilterAndClose({ type: 'year', year }); }
+
+function updateFilterChip() {
+  const chip = document.getElementById('year-filter-chip');
+  const label = document.getElementById('year-filter-chip-label');
+  if (chip && label) {
+    const parts = [];
+    if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
+    if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel());
+    if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
+    if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
+    if (appliedLikedFilter !== null) parts.push(appliedLikedFilter ? 'Liked' : 'Not Liked');
+    if (appliedWatchedFilter !== null) parts.push(appliedWatchedFilter ? 'Watched' : 'Not Watched');
+    if (parts.length) { chip.classList.add('active'); label.textContent = parts.join(' · '); }
+    else { chip.classList.remove('active'); label.textContent = 'FILTER'; }
+  }
+  const listChip = document.getElementById('list-year-filter-chip');
+  const listLabel = document.getElementById('list-year-filter-chip-label');
+  if (listChip && listLabel) {
+    const parts = [];
+    if (listAppliedYearFilter) parts.push(listAppliedYearFilter.type === 'year' ? String(listAppliedYearFilter.year) : `${listAppliedYearFilter.decade}s`);
+    if (listAppliedLikedFilter !== null) parts.push(listAppliedLikedFilter ? 'Liked' : 'Not Liked');
+    if (listAppliedWatchedFilter !== null) parts.push(listAppliedWatchedFilter ? 'Watched' : 'Not Watched');
+    if (parts.length) { listChip.classList.add('active'); listLabel.textContent = parts.join(' · '); }
+    else { listChip.classList.remove('active'); listLabel.textContent = 'FILTER'; }
+  }
+}
+
+function getAddedDateValue(item) {
+  return item.watched_on || item.added_on || item.updated_on || item.created_at || null;
+}
+
+function getSortRatingValue(item, type) {
+  if (type === 'tv') return item.rating || 0;
+  return libraryRatingMapCache[item.tmdb_id] || item.rating || 0;
+}
+
+function getReleaseDateValue(item, type) {
   const endpoint = type === 'tv' ? 'tv' : 'movie';
+  const key = `${endpoint}-${item.tmdb_id}`;
+  return releaseDateCache[key] || null;
+}
 
-  const seen = new Set();
-  const unique = libraryItemsCache.filter(i => { if (seen.has(i.tmdb_id)) return false; seen.add(i.tmdb_id); return true; });
-
-  await Promise.all(unique.map(async item => {
-    const cacheKey = `${endpoint}-${item.tmdb_id}`;
-    if (providerCache[cacheKey] !== undefined) return;
+async function fetchReleaseDatesFor(items, type) {
+  const endpoint = type === 'tv' ? 'tv' : 'movie';
+  await Promise.all(items.map(async item => {
+    const key = `${endpoint}-${item.tmdb_id}`;
+    if (releaseDateCache[key] !== undefined && genreItemCache[key] !== undefined) return;
     try {
-      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
-      if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+      if (!res.ok) { releaseDateCache[key] = null; genreItemCache[key] = []; return; }
       const data = await res.json();
-      const gb = data.results?.GB;
-      const providers = new Set();
-      const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
-      addList(gb?.flatrate);
-      addList(gb?.free);
-      providerCache[cacheKey] = providers;
-    } catch { providerCache[cacheKey] = new Set(); }
+      releaseDateCache[key] = (type === 'tv' ? data.first_air_date : data.release_date) || null;
+      genreItemCache[key] = (data.genres || []).map(g => g.id);
+    } catch { releaseDateCache[key] = null; genreItemCache[key] = []; }
   }));
+}
 
-  const filtered = unique.filter(item => {
-    const cacheKey = `${endpoint}-${item.tmdb_id}`;
-    const providers = providerCache[cacheKey] || new Set();
-    return [...appliedServiceIds].some(sid => providers.has(sid));
-  });
-
-  if (!filtered.length) {
-    grid.innerHTML = `<div class="empty-grid">None of your ${type === 'tv' ? 'shows' : 'films'} are on the selected services right now.</div>`;
-    return;
+/* ---- GENRES ---- */
+async function ensureGenreList() {
+  const type = homeMediaType === 'tv' ? 'tv' : 'movie';
+  if (type === 'tv' && tvGenres) return;
+  if (type === 'movie' && movieGenres) return;
+  try {
+    const res = await fetch(`${TMDB_BASE}/genre/${type}/list?api_key=${TMDB_API_KEY}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (type === 'tv') tvGenres = data.genres || []; else movieGenres = data.genres || [];
+  } catch {
+    if (type === 'tv') tvGenres = tvGenres || []; else movieGenres = movieGenres || [];
   }
+}
 
-  renderHomeGrid(filtered, type, libraryRatingMapCache, libraryLikedMapCache, libraryReviewedSetCache, true);
+function currentGenreList() {
+  return (homeMediaType === 'tv' ? tvGenres : movieGenres) || [];
+}
+
+function genreNameById(id) {
+  const g = currentGenreList().find(g => g.id === id);
+  return g ? g.name : String(id);
+}
+
+function extractMovieCert(data) {
+  const uk = (data.results || []).find(r => r.iso_3166_1 === 'GB');
+  if (!uk || !uk.release_dates?.length) return null;
+  for (const rd of uk.release_dates) { if (rd.certification) return rd.certification; }
+  return null;
+}
+
+function extractTvCert(data) {
+  const uk = (data.results || []).find(r => r.iso_3166_1 === 'GB');
+  return (uk && uk.rating) ? uk.rating : null;
+}
+
+async function fetchCertsFor(items, type) {
+  const endpoint = type === 'tv' ? 'tv' : 'movie';
+  const certEndpoint = type === 'tv' ? 'content_ratings' : 'release_dates';
+  await Promise.all(items.map(async item => {
+    const key = `${endpoint}-${item.tmdb_id}`;
+    if (certCache[key] !== undefined) return;
+    try {
+      const res = await fetch(`${TMDB_BASE}/${endpoint}/${item.tmdb_id}/${certEndpoint}?api_key=${TMDB_API_KEY}`);
+      if (!res.ok) { certCache[key] = null; return; }
+      const data = await res.json();
+      certCache[key] = type === 'tv' ? extractTvCert(data) : extractMovieCert(data);
+    } catch { certCache[key] = null; }
+  }));
+}
+
+function getCertValue(item, type) {
+  const endpoint = type === 'tv' ? 'tv' : 'movie';
+  return certCache[`${endpoint}-${item.tmdb_id}`] || null;
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function applySort(items, type) {
+  const sort = getCurrentSort();
+  if (!sort) return items;
+  const arr = [...items];
+  switch (sort) {
+    case 'title_az':
+      arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      break;
+    case 'shuffle':
+      return shuffleArray(arr);
+    case 'added_newest':
+      arr.sort((a, b) => new Date(getAddedDateValue(b) || 0) - new Date(getAddedDateValue(a) || 0));
+      break;
+    case 'added_oldest':
+      arr.sort((a, b) => new Date(getAddedDateValue(a) || 0) - new Date(getAddedDateValue(b) || 0));
+      break;
+    case 'rating_highest':
+      arr.sort((a, b) => getSortRatingValue(b, type) - getSortRatingValue(a, type));
+      break;
+    case 'rating_lowest':
+      arr.sort((a, b) => {
+        const ra = getSortRatingValue(a, type), rb = getSortRatingValue(b, type);
+        // unrated items sink to the bottom rather than being treated as "lowest"
+        if (!ra && !rb) return 0;
+        if (!ra) return 1;
+        if (!rb) return -1;
+        return ra - rb;
+      });
+      break;
+    case 'release_newest':
+    case 'release_oldest': {
+      await fetchReleaseDatesFor(arr, type);
+      arr.sort((a, b) => {
+        const da = getReleaseDateValue(a, type), db = getReleaseDateValue(b, type);
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return sort === 'release_newest' ? new Date(db) - new Date(da) : new Date(da) - new Date(db);
+      });
+      break;
+    }
+  }
+  return arr;
 }
 
 /* ---- NAV ---- */
 function goTo(id) {
+  const current = document.querySelector('.screen.active');
+  const leavingHome = current && current.id === 'screen-home' && id !== 'screen-home';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
   el.classList.add('active');
   const body = el.querySelector('.screen-body');
   if (body) body.scrollTop = 0;
+  // Sorting and the year filter are only ever meant to be temporary — leaving
+  // Home for any other screen/page clears them so they don't silently carry over.
+  if (leavingHome) resetTemporaryFilters();
 }
 
 function goHome() {
+  navStack = [];
   goTo('screen-home');
   if (homeMediaType === 'lists') { setHomeMediaType('movie'); } else { loadLibrary(); }
   loadStats();
 }
 
 function goToStats() {
+  navStack = [];
   goTo('screen-stats');
   loadStats();
 }
@@ -1049,42 +1984,47 @@ function renderSearchTabs() {
   wrap.style.display = 'flex';
   wrap.innerHTML = `
     <div class="tab ${searchMediaType === 'movie' ? 'active' : ''}" onclick="setSearchMediaType('movie')">Movies</div>
-    <div class="tab ${searchMediaType === 'tv' ? 'active' : ''}" onclick="setSearchMediaType('tv')">TV Shows</div>`;
+    <div class="tab ${searchMediaType === 'tv' ? 'active' : ''}" onclick="setSearchMediaType('tv')">TV Shows</div>
+    <div class="tab ${searchMediaType === 'person' ? 'active' : ''}" onclick="setSearchMediaType('person')">People</div>`;
 }
 
 function setSearchMediaType(type) {
   searchMediaType = type;
   renderSearchTabs();
   const input = document.getElementById('search-input');
-  if (input) input.placeholder = type === 'tv' ? 'Search TV shows...' : 'Search films...';
+  if (input) input.placeholder = type === 'tv' ? 'Search TV shows...' : type === 'person' ? 'Search actors, directors...' : 'Search films...';
   const q = input ? input.value.trim() : '';
   if (q.length > 2) runSearch(q); else document.getElementById('search-grid').innerHTML = '';
 }
 
 function openDiary() {
+  navStack = [];
   goTo('screen-diary');
   loadDiary();
 }
 
 function setHomeMediaType(type) {
-  homeMediaType = type === 'tv' ? 'tv' : (type === 'lists' ? 'lists' : 'movie');
+  homeMediaType = type === 'tv' ? 'tv' : (type === 'lists' ? 'lists' : (type === 'tags' ? 'tags' : 'movie'));
   document.getElementById('home-tab-films').classList.toggle('active', homeMediaType === 'movie');
   document.getElementById('home-tab-tv').classList.toggle('active', homeMediaType === 'tv');
   document.getElementById('home-tab-lists').classList.toggle('active', homeMediaType === 'lists');
+  document.getElementById('home-tab-tags').classList.toggle('active', homeMediaType === 'tags');
 
   const isLists = homeMediaType === 'lists';
-  document.getElementById('home-grid').style.display = isLists ? 'none' : 'grid';
+  const isTags = homeMediaType === 'tags';
+  document.getElementById('home-grid').style.display = (isLists || isTags) ? 'none' : 'grid';
   document.getElementById('lists-container').style.display = isLists ? 'block' : 'none';
-  document.getElementById('library-mode').style.display = isLists ? 'none' : '';
-  document.getElementById('service-filter-chip').style.display = isLists ? 'none' : 'flex';
-  document.getElementById('recent-filter-chip').style.display = isLists ? 'none' : 'flex';
-  document.getElementById('sort-filter-chip').style.display = isLists ? 'none' : 'flex';
+  document.getElementById('tags-container').style.display = isTags ? 'block' : 'none';
+  document.getElementById('library-mode').style.display = (isLists || isTags) ? 'none' : '';
+  document.getElementById('sort-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
+  document.getElementById('year-filter-chip').style.display = (isLists || isTags) ? 'none' : 'flex';
   document.getElementById('new-list-chip').style.display = isLists ? 'flex' : 'none';
+  document.getElementById('home-filter-bar').style.display = isTags ? 'none' : 'flex';
 
-  if (isLists) { loadLists(); return; }
+  if (isTags) { resetTemporaryFilters(); loadTags(); return; }
+  if (isLists) { resetTemporaryFilters(); loadLists(); return; }
 
-  appliedServiceIds.clear();
-  updateServiceChip();
+  resetTemporaryFilters();
   renderLibraryModeOptions();
   loadLibrary();
 }
@@ -1097,16 +2037,17 @@ function renderLibraryModeOptions() {
       <option value="watching">Watching</option>
       <option value="watched">Watched</option>
       <option value="watchlist">Watchlist</option>`;
+    select.value = getDefaultTvTab();
   } else {
     select.innerHTML = `
       <option value="watched">Watched</option>
       <option value="watchlist">Watchlist</option>`;
+    select.value = getDefaultMovieTab();
   }
 }
 
 function onLibraryModeChange() {
-  appliedServiceIds.clear();
-  updateServiceChip();
+  resetServiceFilter();
   loadLibrary();
 }
 
@@ -1145,167 +2086,6 @@ async function handleLogin() {
   enterApp(data.user);
 }
 
-function handleImportFileSelect(input) {
-  const file = input.files && input.files[0];
-  if (!file) return;
-  if (!/\.zip$/i.test(file.name)) {
-    showToast('Please upload the .zip file from your Letterboxd export', 'error');
-    input.value = '';
-    return;
-  }
-  signupImportFile = file;
-  document.getElementById('import-picker').classList.add('has-file');
-  document.getElementById('import-picker-title').textContent = file.name;
-  document.getElementById('import-picker-clear').style.display = 'block';
-}
-
-function clearImportFile() {
-  signupImportFile = null;
-  const input = document.getElementById('signup-import-file');
-  if (input) input.value = '';
-  document.getElementById('import-picker').classList.remove('has-file');
-  document.getElementById('import-picker-title').textContent = 'Upload Letterboxd export (.zip)';
-  document.getElementById('import-picker-clear').style.display = 'none';
-}
-
-function setImportProgress(done, total, detail) {
-  const card = document.getElementById('import-progress-card');
-  const bar = document.getElementById('import-progress-bar');
-  const label = document.getElementById('import-progress-label');
-  const det = document.getElementById('import-progress-detail');
-  if (!card) return;
-  card.classList.add('show');
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  bar.style.width = pct + '%';
-  label.textContent = `Importing your Letterboxd data... ${done}/${total}`;
-  if (det) det.textContent = detail || '';
-}
-
-/* ---- LETTERBOXD IMPORT ---- */
-async function findTmdbMovieMatch(name, year) {
-  try {
-    let url = `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`;
-    if (year) url += `&year=${year}`;
-    let res = await fetch(url);
-    let results = res.ok ? (await res.json()).results || [] : [];
-    if (!results.length && year) {
-      const res2 = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`);
-      if (res2.ok) results = (await res2.json()).results || [];
-    }
-    if (!results.length) return null;
-    if (year) {
-      const exact = results.find(r => r.release_date && r.release_date.startsWith(String(year)));
-      if (exact) return exact;
-    }
-    return results[0];
-  } catch { return null; }
-}
-
-async function runWithConcurrency(items, limit, worker) {
-  let i = 0;
-  const runners = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while (i < items.length) {
-      const idx = i++;
-      await worker(items[idx], idx);
-    }
-  });
-  await Promise.all(runners);
-}
-
-async function readZipCsv(zip, filenameSuffix) {
-  const key = Object.keys(zip.files).find(name => name.toLowerCase().endsWith(filenameSuffix) && !zip.files[name].dir);
-  if (!key) return [];
-  const text = await zip.files[key].async('string');
-  const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-  return parsed.data || [];
-}
-
-async function importDiaryRow(row, reviewMap, user, results) {
-  const name = (row['Name'] || '').trim();
-  const watchedOn = row['Watched Date'] || row['Date'];
-  if (!name || !watchedOn) { results.skipped++; return; }
-  const year = row['Year'] ? parseInt(row['Year'], 10) : null;
-  const match = await findTmdbMovieMatch(name, year);
-  if (!match) { results.skipped++; return; }
-  const rating = row['Rating'] ? parseFloat(row['Rating']) : null;
-  const rewatch = String(row['Rewatch'] || '').toLowerCase() === 'yes';
-  const uri = row['Letterboxd URI'];
-  const reviewRow = uri ? reviewMap[uri] : null;
-  const reviewText = reviewRow ? (reviewRow['Review'] || '').trim() : '';
-  const spoilers = reviewRow ? String(reviewRow['Spoiler'] || '').toLowerCase() === 'true' : false;
-
-  const { data: inserted, error } = await db.from('watched').insert({
-    user_id: user.id, tmdb_id: match.id, media_type: 'movie',
-    title: match.title, poster_path: match.poster_path,
-    watched_on: watchedOn, rating: rating || null, liked: false
-  }).select().single();
-  if (error) { results.failed++; return; }
-
-  const { error: diaryError } = await db.from('diary').insert({
-    user_id: user.id, watched_id: inserted.id, tmdb_id: match.id,
-    media_type: 'movie', title: match.title, poster_path: match.poster_path,
-    watched_on: watchedOn, rating: rating || null, liked: false,
-    rewatch, review_text: reviewText || null, contains_spoilers: spoilers
-  });
-  if (diaryError) { results.failed++; return; }
-  results.imported++;
-}
-
-async function importWatchlistRow(row, user, results) {
-  const name = (row['Name'] || '').trim();
-  if (!name) { results.skipped++; return; }
-  const year = row['Year'] ? parseInt(row['Year'], 10) : null;
-  const match = await findTmdbMovieMatch(name, year);
-  if (!match) { results.skipped++; return; }
-  const { error } = await db.from('watchlist').upsert({
-    user_id: user.id, tmdb_id: match.id, media_type: 'movie',
-    title: match.title, poster_path: match.poster_path
-  }, { onConflict: 'user_id,tmdb_id,media_type' });
-  if (error) { results.failed++; return; }
-  results.imported++;
-}
-
-async function runLetterboxdImport(file, user) {
-  const results = { imported: 0, skipped: 0, failed: 0 };
-  let zip;
-  try {
-    zip = await JSZip.loadAsync(file);
-  } catch {
-    showToast('Could not read that file — make sure it\'s the .zip from Letterboxd', 'error');
-    return results;
-  }
-
-  const [diaryRows, watchlistRows, reviewRows] = await Promise.all([
-    readZipCsv(zip, 'diary.csv'),
-    readZipCsv(zip, 'watchlist.csv'),
-    readZipCsv(zip, 'reviews.csv')
-  ]);
-
-  const reviewMap = {};
-  reviewRows.forEach(r => { if (r['Letterboxd URI']) reviewMap[r['Letterboxd URI']] = r; });
-
-  const total = diaryRows.length + watchlistRows.length;
-  if (!total) {
-    showToast('No diary or watchlist entries found in that export', 'error');
-    return results;
-  }
-
-  let done = 0;
-  setImportProgress(done, total, 'Matching titles against TMDB — this can take a minute for large libraries.');
-
-  await runWithConcurrency(diaryRows, 4, async row => {
-    await importDiaryRow(row, reviewMap, user, results);
-    done++; setImportProgress(done, total, `Diary: ${row['Name'] || ''}`);
-  });
-
-  await runWithConcurrency(watchlistRows, 4, async row => {
-    await importWatchlistRow(row, user, results);
-    done++; setImportProgress(done, total, `Watchlist: ${row['Name'] || ''}`);
-  });
-
-  return results;
-}
-
 async function handleSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
@@ -1324,34 +2104,12 @@ async function handleSignup() {
   if (error) { err.textContent = error.message; err.classList.add('show'); return; }
   successSpinner.style.display = 'inline-block';
   success.classList.add('show');
-
-  const importFile = signupImportFile;
-
   if (data.session) {
-    if (importFile) {
-      successText.textContent = "Account created! Importing your Letterboxd data...";
-      successSpinner.style.display = 'none';
-      const results = await runLetterboxdImport(importFile, data.user);
-      document.getElementById('import-progress-card').classList.remove('show');
-      clearImportFile();
-      if (results.imported) {
-        showToast(`Imported ${results.imported} title${results.imported === 1 ? '' : 's'} from Letterboxd${results.skipped ? ` (${results.skipped} couldn't be matched)` : ''}`);
-      } else {
-        showToast("Signed up, but we couldn't import that file", 'error');
-      }
-      enterApp(data.user);
-    } else {
-      successText.textContent = "You're all set! Taking you home...";
-      setTimeout(() => { successSpinner.style.display = 'none'; enterApp(data.user); }, 1400);
-    }
+    successText.textContent = "You're all set!";
+    setTimeout(() => { successSpinner.style.display = 'none'; goToImportScreen(data.user); }, 1200);
   } else {
-    successSpinner.style.display = 'none';
-    if (importFile) {
-      showToast("Account created — confirm your email, sign in, then re-import your Letterboxd data from the sign up screen.", 'success', 5000);
-      clearImportFile();
-    }
     successText.textContent = 'Account created — check your email to confirm, then sign in.';
-    setTimeout(() => { document.getElementById('login-email').value = email; goTo('screen-login'); }, 2200);
+    setTimeout(() => { successSpinner.style.display = 'none'; document.getElementById('login-email').value = email; goTo('screen-login'); }, 2200);
   }
 }
 
@@ -1373,7 +2131,7 @@ function debouncedSearch(query) {
 async function runSearch(query) {
   const type = searchPurpose === 'quick' ? searchMediaType : 'movie';
   try {
-    const endpoint = type === 'tv' ? 'tv' : 'movie';
+    const endpoint = type === 'person' ? 'person' : (type === 'tv' ? 'tv' : 'movie');
     const res = await fetch(`${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
     if (!res.ok) throw new Error();
     const data = await res.json();
@@ -1383,7 +2141,23 @@ async function runSearch(query) {
 
 function renderSearchResults(results = [], type = 'movie') {
   const grid = document.getElementById('search-grid');
-  if (!results.length) { grid.innerHTML = `<div class="empty-grid">No ${type === 'tv' ? 'TV shows' : 'films'} found.</div>`; return; }
+  if (!results.length) {
+    const label = type === 'tv' ? 'TV shows' : type === 'person' ? 'people' : 'films';
+    grid.innerHTML = `<div class="empty-grid">No ${label} found.</div>`;
+    return;
+  }
+  if (type === 'person') {
+    grid.innerHTML = results.map(item => `
+      <div class="film-card-wrap" onclick="openPersonDetail(${item.id})">
+        <div class="person-grid-card">
+          ${item.profile_path
+            ? `<img src="https://image.tmdb.org/t/p/w185${item.profile_path}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div class="poster-label" style="padding:0;">${escapeHtml((item.name || '?')[0])}</div>`}
+        </div>
+        <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.name)}</span></div>
+      </div>`).join('');
+    return;
+  }
   grid.innerHTML = results.map(item => {
     const name = type === 'tv' ? item.name : item.title;
     return `
@@ -1399,6 +2173,22 @@ function renderSearchResults(results = [], type = 'movie') {
 
 function escapeHtml(str = '') {
   return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// Safely embed a raw string as a single-quoted JS string literal inside an
+// inline onclick="..." (double-quoted) HTML attribute. HTML entity-decoding
+// happens BEFORE the attribute's JS is parsed, so entities like &#39; are the
+// wrong tool here — they decode back to a literal ' and break the string.
+// Instead we JS-escape backslashes/quotes first, then HTML-escape only the
+// characters that matter for a double-quoted attribute (& and ").
+function jsAttrString(str = '') {
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
 }
 
 /* ---- HALF-STAR RATING ---- */
@@ -1546,6 +2336,8 @@ function renderLogFormStep() {
     <input type="date" class="form-input" id="log-modal-watched-date" value="${new Date().toISOString().slice(0,10)}" />
     <div class="md-field-label">REVIEW (OPTIONAL)</div>
     <textarea class="form-input" id="log-modal-review-text" placeholder="What did you think?"></textarea>
+    <div class="md-field-label">TAGS</div>
+    <input type="text" class="form-input" id="log-modal-tags" placeholder="comma, separated, tags" />
     <label class="checkbox-row" style="margin-top:10px;"><input type="checkbox" id="log-modal-spoilers"> Contains spoilers</label>
     <label class="checkbox-row"><input type="checkbox" id="log-modal-rewatch" ${logFormRewatch ? 'checked' : ''}> Rewatch</label>
     <button class="btn-primary" style="margin-top:16px;" onclick="submitLogForm()">Log this Watch</button>`;
@@ -1571,6 +2363,7 @@ async function submitLogForm() {
   const reviewText = document.getElementById('log-modal-review-text').value.trim();
   const spoilers = document.getElementById('log-modal-spoilers').checked;
   const rewatch = document.getElementById('log-modal-rewatch').checked;
+  const tags = parseTagsInput(document.getElementById('log-modal-tags').value);
   const movie = logFormMovie;
   const { data: inserted, error } = await db.from('watched').insert({
     user_id: user.id, tmdb_id: movie.id, media_type: 'movie',
@@ -1578,12 +2371,17 @@ async function submitLogForm() {
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked
   }).select().single();
   if (error) { showToast('Could not log this watch: ' + (error.message || ''), 'error'); return; }
-  const { error: diaryError } = await db.from('diary').insert({
+  const diaryPayload = {
     user_id: user.id, watched_id: inserted.id, tmdb_id: movie.id,
     media_type: 'movie', title: movie.title, poster_path: movie.poster_path,
     watched_on: watchedOn, rating: logFormRating || null, liked: logFormLiked,
-    rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers
-  });
+    rewatch: rewatch, review_text: reviewText || null, contains_spoilers: spoilers, tags
+  };
+  let { error: diaryError } = await db.from('diary').insert(diaryPayload);
+  if (diaryError && (diaryError.code === '42703' || /tags|column/i.test(diaryError.message || ''))) {
+    const rest = { ...diaryPayload }; delete rest.tags;
+    ({ error: diaryError } = await db.from('diary').insert(rest));
+  }
   if (diaryError) showToast('Logged, but diary entry failed: ' + (diaryError.message || ''), 'error');
   await db.from('watchlist').delete().eq('user_id', user.id).eq('tmdb_id', movie.id);
   closeLogSearchModal();
@@ -1592,8 +2390,33 @@ async function submitLogForm() {
 }
 
 /* ---- MOVIE / TV DETAIL ---- */
-async function openMovieDetail(id, fromScreen, mode, mediaType) {
-  returnScreen = fromScreen || 'screen-home';
+// The Movie/TV and Person detail screens are single shared divs that get
+// overwritten every time you open a new title/person, so a simple "go back
+// to this screen id" pointer breaks once you bounce between them more than
+// one level deep (e.g. Person -> Movie -> Person again). navStack instead
+// remembers *what* was showing, and restores it (re-opening that exact
+// movie/person, or just returning to a plain screen) rather than trusting
+// that the shared div still holds the right content.
+function buildNavDescriptor(screenId) {
+  if (screenId === 'screen-movie' && selectedMovie) {
+    return { kind: 'movie', tmdbId: selectedMovie.id, mediaType: selectedMediaType, mode: detailMode };
+  }
+  if (screenId === 'screen-person' && selectedPerson) {
+    return { kind: 'person', personId: selectedPerson.id };
+  }
+  return { kind: 'screen', screenId: screenId || 'screen-home' };
+}
+
+function goBackFromDetail() {
+  const prev = navStack.pop();
+  if (!prev) { goTo('screen-home'); return; }
+  if (prev.kind === 'movie') openMovieDetail(prev.tmdbId, null, prev.mode, prev.mediaType, true);
+  else if (prev.kind === 'person') openPersonDetail(prev.personId, true);
+  else goTo(prev.screenId);
+}
+
+async function openMovieDetail(id, fromScreen, mode, mediaType, silent) {
+  if (!silent) navStack.push(buildNavDescriptor(fromScreen || 'screen-home'));
   detailMode = mode === 'quick' ? 'quick' : 'log';
   selectedMediaType = mediaType === 'tv' ? 'tv' : 'movie';
   if (selectedMediaType === 'tv') detailMode = 'quick';
@@ -1601,7 +2424,7 @@ async function openMovieDetail(id, fromScreen, mode, mediaType) {
   document.getElementById('movie-detail').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
   try {
     if (selectedMediaType === 'tv') {
-      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings,credits`);
+      const res = await fetch(`${TMDB_BASE}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=content_ratings,aggregate_credits`);
       if (!res.ok) throw new Error();
       const show = await res.json();
       selectedMovie = show;
@@ -1756,9 +2579,28 @@ async function removeTvStatus() {
 let activeDetailTab = 'cast';
 
 function buildDetailTabsHtml(item, isTv) {
-  const credits = item.credits || {};
-  const cast = credits.cast || [];
-  const crew = credits.crew || [];
+  // TV shows use TMDB's aggregate_credits (cast/crew combined across every
+  // season) since the plain `credits` field on /tv/{id} only reflects the
+  // most recently aired episode and undercounts the full cast/crew.
+  // Its shape differs from movie credits — cast entries carry a `roles`
+  // array and crew entries a `jobs` array — so normalize both into the same
+  // flat { id, name, profile_path, character/job } shape movies already use.
+  let cast, crew;
+  if (isTv) {
+    const agg = item.aggregate_credits || {};
+    cast = (agg.cast || []).map(p => ({
+      id: p.id, name: p.name, profile_path: p.profile_path,
+      character: (p.roles || []).map(r => r.character).filter(Boolean).join(' / ')
+    }));
+    crew = (agg.crew || []).flatMap(p =>
+      (p.jobs && p.jobs.length ? p.jobs : [{ job: p.department || 'Crew' }])
+        .map(j => ({ id: p.id, name: p.name, profile_path: p.profile_path, job: j.job }))
+    );
+  } else {
+    const credits = item.credits || {};
+    cast = credits.cast || [];
+    crew = credits.crew || [];
+  }
 
   // Genres
   const genres = item.genres || [];
@@ -1780,10 +2622,10 @@ function buildDetailTabsHtml(item, isTv) {
 
   // Cast content
   const CAST_INITIAL = 6;
-  const castHtml = cast.slice(0, CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('');
+  const castHtml = cast.slice(0, CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character, p.id)).join('');
   const castMore = cast.length > CAST_INITIAL
     ? `<button class="see-more-btn" onclick="expandDetailSection('cast-extra')">See ${cast.length - CAST_INITIAL} more</button>
-       <div id="cast-extra" style="display:none;">${cast.slice(CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character)).join('')}</div>`
+       <div id="cast-extra" style="display:none;">${cast.slice(CAST_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.character, p.id)).join('')}</div>`
     : '';
   const castContent = cast.length ? (castHtml + castMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No cast listed.</div>';
 
@@ -1801,10 +2643,10 @@ function buildDetailTabsHtml(item, isTv) {
 
   const CREW_INITIAL = 8;
   const allKeyFirst = [...keyCrew, ...restCrew];
-  const crewHtml = allKeyFirst.slice(0, CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('');
+  const crewHtml = allKeyFirst.slice(0, CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job, p.id)).join('');
   const crewMore = allKeyFirst.length > CREW_INITIAL
     ? `<button class="see-more-btn" onclick="expandDetailSection('crew-extra')">See ${allKeyFirst.length - CREW_INITIAL} more</button>
-       <div id="crew-extra" style="display:none;">${allKeyFirst.slice(CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job)).join('')}</div>`
+       <div id="crew-extra" style="display:none;">${allKeyFirst.slice(CREW_INITIAL).map(p => personRowHtml(p.profile_path, p.name, p.job, p.id)).join('')}</div>`
     : '';
   const crewContent = allKeyFirst.length ? (crewHtml + crewMore) : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">No crew listed.</div>';
 
@@ -1835,11 +2677,12 @@ function buildDetailTabsHtml(item, isTv) {
   return tabBar + `<div style="padding:0 20px;">${contents}</div><div style="height:20px;"></div>`;
 }
 
-function personRowHtml(profilePath, name, role) {
+function personRowHtml(profilePath, name, role, personId) {
   const img = profilePath
     ? `<img class="person-avatar" src="https://image.tmdb.org/t/p/w92${profilePath}" />`
     : `<div class="person-avatar-placeholder">${escapeHtml((name || '?')[0].toUpperCase())}</div>`;
-  return `<div class="person-row">${img}<div><div class="person-name">${escapeHtml(name)}</div><div class="person-role">${escapeHtml(role || '')}</div></div></div>`;
+  const clickAttr = personId ? ` onclick="openPersonDetail(${personId})" style="cursor:pointer;"` : '';
+  return `<div class="person-row"${clickAttr}>${img}<div><div class="person-name">${escapeHtml(name)}</div><div class="person-role">${escapeHtml(role || '')}</div></div></div>`;
 }
 
 function switchDetailTab(tab) {
@@ -1862,6 +2705,293 @@ function expandDetailSection(id) {
   // hide the button before it
   const btn = el.previousElementSibling;
   if (btn && btn.classList.contains('see-more-btn')) btn.style.display = 'none';
+}
+
+/* ---- PERSON DETAIL (actor / director / cast / crew pages) ---- */
+
+// Only these categories are ever shown on a person's page. Raw TMDB job
+// titles are folded into one of these (e.g. "Screenplay" and "Writer" both
+// become "Writer"); anything not covered here — including "Thanks" — is
+// left out entirely rather than shown as its own section.
+const PERSON_JOB_MAP = {
+  'Director': 'Director',
+  'Producer': 'Producer',
+  'Executive Producer': 'Executive Producer',
+  'Story': 'Story',
+  'Writer': 'Writer',
+  'Screenplay': 'Writer',
+  'Screenstory': 'Writer',
+  'Original Film Writer': 'Original Writer',
+  'Editor': 'Editor',
+  'Title Design': 'Title Design',
+  'Director of Photography': 'Cinematographer',
+  'Camera Operator': 'Camera Operator',
+  'Production Design': 'Production Design',
+  'Visual Effects Supervisor': 'Visual Effects',
+  'Visual Effects Producer': 'Visual Effects',
+  'Visual Effects Editor': 'Visual Effects',
+  'Visual Effects': 'Visual Effects',
+  'Stunts': 'Stunts',
+  'Stunt Coordinator': 'Stunts',
+  'Stunt Double': 'Stunts',
+  'Choreographer': 'Choreography',
+  'Original Music Composer': 'Composer',
+  'Music': 'Composer',
+  'Costume Design': 'Costume Design',
+  'Makeup Artist': 'Makeup',
+  'Makeup Department Head': 'Makeup',
+  'Personal Makeup Artist': 'Makeup',
+  'Hairstylist': 'Hairstyling',
+  'Hair Designer': 'Hairstyling',
+  'Personal Hair Stylist': 'Hairstyling',
+  'Casting': 'Casting Director',
+  'Casting Director': 'Casting Director',
+  'Sound Designer': 'Sound',
+  'Sound Editor': 'Sound',
+  'Sound Mixer': 'Sound',
+  'Sound Re-Recording Mixer': 'Sound',
+  'Supervising Sound Editor': 'Sound',
+  'Production Sound Mixer': 'Sound',
+  'Sound Effects Editor': 'Sound'
+};
+
+// Maps a raw TMDB crew job title to one of the allowed page sections above,
+// falling back to loose keyword matching for job titles TMDB phrases
+// slightly differently across films. Returns null for anything not covered
+// (e.g. "Thanks"), which excludes it from the person's page entirely.
+function normalizePersonJob(job) {
+  if (!job) return null;
+  if (PERSON_JOB_MAP[job]) return PERSON_JOB_MAP[job];
+  const j = job.toLowerCase();
+  if (j === 'thanks') return null;
+  if (j.includes('sound')) return 'Sound';
+  if (j.includes('makeup') || j.includes('make-up')) return 'Makeup';
+  if (j.includes('hair')) return 'Hairstyling';
+  if (j.includes('stunt')) return 'Stunts';
+  if (j.includes('visual effects')) return 'Visual Effects';
+  if (j.includes('casting')) return 'Casting Director';
+  if (j.includes('choreograph')) return 'Choreography';
+  return null;
+}
+
+// TMDB's broad "known for" department, mapped down to the specific section
+// on this page that best represents it. Used only to decide which section
+// (if the person has one) gets pinned to the top of their filmography.
+const KNOWN_FOR_DEPARTMENT_MAP = {
+  'Acting': 'Actor',
+  'Directing': 'Director',
+  'Writing': 'Writer',
+  'Production': 'Producer',
+  'Camera': 'Cinematographer',
+  'Editing': 'Editor',
+  'Art': 'Production Design',
+  'Sound': 'Sound',
+  'Costume & Make-Up': 'Costume Design',
+  'Visual Effects': 'Visual Effects'
+};
+
+async function openPersonDetail(id, silent) {
+  if (!silent) {
+    const current = document.querySelector('.screen.active');
+    navStack.push(buildNavDescriptor(current ? current.id : 'screen-home'));
+  }
+  personMediaTab = 'movie';
+  personViewModeMap = {};
+  goTo('screen-person');
+  document.getElementById('person-detail-body').innerHTML = `<div style="padding:60px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  try {
+    const res = await fetch(`${TMDB_BASE}/person/${id}?api_key=${TMDB_API_KEY}&append_to_response=combined_credits`);
+    if (!res.ok) throw new Error();
+    const person = await res.json();
+    selectedPerson = person;
+    personCreditsCache = groupPersonCredits(person);
+    await loadPersonWatchedSets();
+    renderPersonDetail();
+  } catch {
+    document.getElementById('person-detail-body').innerHTML = `<div style="padding:24px;color:var(--text2);">Something went wrong loading this person.</div>`;
+    showToast('Could not load details', 'error');
+  }
+}
+
+function groupPersonCredits(person) {
+  const cast = person.combined_credits?.cast || [];
+  const crew = person.combined_credits?.crew || [];
+  const groups = { movie: {}, tv: {} };
+
+  const seenCast = new Set();
+  cast.forEach(c => {
+    const type = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
+    if (!type) return;
+    const key = `${type}-${c.id}`;
+    if (seenCast.has(key)) return;
+    seenCast.add(key);
+    const title = type === 'tv' ? c.name : c.title;
+    const date = type === 'tv' ? c.first_air_date : c.release_date;
+    if (!groups[type]['Actor']) groups[type]['Actor'] = [];
+    groups[type]['Actor'].push({ id: c.id, title, poster_path: c.poster_path, date, popularity: c.popularity || 0, type });
+  });
+
+  const seenCrew = new Set();
+  crew.forEach(c => {
+    const type = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
+    if (!type) return;
+    const job = normalizePersonJob(c.job || c.department);
+    if (!job) return; // not one of the categories this page shows (e.g. "Thanks")
+    const key = `${type}-${c.id}-${job}`;
+    if (seenCrew.has(key)) return;
+    seenCrew.add(key);
+    const title = type === 'tv' ? c.name : c.title;
+    const date = type === 'tv' ? c.first_air_date : c.release_date;
+    if (!groups[type][job]) groups[type][job] = [];
+    groups[type][job].push({ id: c.id, title, poster_path: c.poster_path, date, popularity: c.popularity || 0, type });
+  });
+
+  // Default order matches TMDB popularity (most popular first), same as how
+  // TMDB/Letterboxd surface a person's filmography by default.
+  ['movie', 'tv'].forEach(type => {
+    Object.values(groups[type]).forEach(arr => arr.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)));
+  });
+
+  return groups;
+}
+
+async function loadPersonWatchedSets() {
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  let mQuery = db.from('watched').select('tmdb_id');
+  if (uid) mQuery = mQuery.eq('user_id', uid);
+  let tQuery = db.from('tv_status').select('tmdb_id').eq('status', 'watched');
+  if (uid) tQuery = tQuery.eq('user_id', uid);
+  const [{ data: mRows }, { data: tRows }] = await Promise.all([mQuery, tQuery]);
+  personWatchedMovieSet = new Set((mRows || []).map(r => r.tmdb_id));
+  personWatchedTvSet = new Set((tRows || []).map(r => r.tmdb_id));
+}
+
+function orderPersonJobNames(groups) {
+  const names = Object.keys(groups);
+  const knownForJob = selectedPerson ? KNOWN_FOR_DEPARTMENT_MAP[selectedPerson.known_for_department] : null;
+  const first = (knownForJob && names.includes(knownForJob)) ? [knownForJob] : [];
+  const rest = names.filter(n => !first.includes(n)).sort((a, b) => (groups[b]?.length || 0) - (groups[a]?.length || 0));
+  return [...first, ...rest];
+}
+
+function renderPersonDetail() {
+  const person = selectedPerson;
+  const el = document.getElementById('person-detail-body');
+  const photo = person.profile_path
+    ? `<img src="https://image.tmdb.org/t/p/w300${person.profile_path}" style="width:112px;height:112px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" />`
+    : `<div class="profile-avatar-lg" style="width:112px;height:112px;font-size:38px;">${escapeHtml((person.name || '?')[0].toUpperCase())}</div>`;
+
+  el.innerHTML = `
+    <div style="padding:26px 20px 4px;text-align:center;">
+      ${photo}
+      <div class="profile-name" style="margin-top:14px;">${escapeHtml(person.name || '')}</div>
+    </div>
+    <div class="tabs" style="padding:0 20px;margin-top:18px;">
+      <div class="tab ${personMediaTab === 'movie' ? 'active' : ''}" id="person-tab-movie" onclick="setPersonMediaTab('movie')">Movies</div>
+      <div class="tab ${personMediaTab === 'tv' ? 'active' : ''}" id="person-tab-tv" onclick="setPersonMediaTab('tv')">TV Shows</div>
+    </div>
+    <div id="person-tab-content" style="padding:18px 20px 30px;"></div>`;
+  renderPersonTabContent();
+}
+
+function setPersonMediaTab(tab) {
+  personMediaTab = tab;
+  document.getElementById('person-tab-movie').classList.toggle('active', tab === 'movie');
+  document.getElementById('person-tab-tv').classList.toggle('active', tab === 'tv');
+  renderPersonTabContent();
+}
+
+function personCreditCardHtml(item) {
+  return `
+    <div class="film-card-wrap" style="flex-shrink:0;width:80px;" onclick="openMovieDetail(${item.id}, 'screen-person', '${item.type === 'tv' ? 'quick' : 'log'}', '${item.type}')">
+      <div class="film-card" style="width:80px;">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label" style="font-size:9px;padding:6px 3px;">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`;
+}
+
+// Same eye icon + tap-to-toggle behavior as the list watch widget
+// (percent watched vs. a raw "X of Y" count). Each job row keeps its own
+// mode, keyed by media type + job name, so toggling one doesn't affect the others.
+function personWatchWidgetHtml(watchedCount, total, type, job) {
+  if (!total) return '';
+  const key = `${type}-${job}`;
+  const mode = personViewModeMap[key] || 'percent';
+  const text = mode === 'percent' ? `${Math.round((watchedCount / total) * 100)}%` : `${watchedCount} of ${total}`;
+  return `
+    <div style="display:flex;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;" onclick="event.stopPropagation();togglePersonViewMode('${jsAttrString(type)}','${jsAttrString(job)}');" title="Tap to toggle">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--purple-light)" stroke-width="2" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span style="font-size:12px;color:var(--purple-light);font-weight:600;">${text}</span>
+    </div>`;
+}
+
+function togglePersonViewMode(type, job) {
+  const key = `${type}-${job}`;
+  const current = personViewModeMap[key] || 'percent';
+  personViewModeMap[key] = current === 'percent' ? 'count' : 'percent';
+  renderPersonTabContent();
+}
+
+function renderPersonTabContent() {
+  const wrap = document.getElementById('person-tab-content');
+  const type = personMediaTab;
+  const groups = personCreditsCache[type] || {};
+  const jobNames = orderPersonJobNames(groups);
+  if (!jobNames.length) {
+    wrap.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:24px 0;text-align:center;">No ${type === 'tv' ? 'TV show' : 'film'} credits found.</div>`;
+    return;
+  }
+  const watchedSet = type === 'tv' ? personWatchedTvSet : personWatchedMovieSet;
+  const PREVIEW_COUNT = 10;
+
+  wrap.innerHTML = jobNames.map(job => {
+    const items = groups[job];
+    const watchedCount = items.filter(i => watchedSet.has(i.id)).length;
+    const preview = items.slice(0, PREVIEW_COUNT);
+    const hasMore = items.length > PREVIEW_COUNT;
+    return `
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;" onclick="openPersonJobDetail('${jsAttrString(job)}','${type}')">
+          <div style="font-size:15px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;">${escapeHtml(job)}</div>
+          ${personWatchWidgetHtml(watchedCount, items.length, type, job)}
+        </div>
+        <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;">
+          ${preview.map(i => personCreditCardHtml(i)).join('')}
+          ${hasMore ? `
+            <div class="film-card-wrap" style="flex-shrink:0;width:80px;" onclick="openPersonJobDetail('${jsAttrString(job)}','${type}')">
+              <div class="film-card" style="width:80px;display:flex;align-items:center;justify-content:center;background:var(--bg3);">
+                <span style="font-size:11px;color:var(--text2);text-align:center;padding:6px;">+${items.length - PREVIEW_COUNT} more</span>
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openPersonJobDetail(job, type) {
+  personJobDetailJob = job;
+  personJobDetailType = type;
+  personJobDetailItems = (personCreditsCache[type] && personCreditsCache[type][job]) || [];
+  document.getElementById('person-job-detail-title').textContent = job;
+  document.getElementById('person-job-detail-subtitle').textContent = `${selectedPerson?.name || ''} · ${type === 'tv' ? 'TV Shows' : 'Films'}`;
+  goTo('screen-person-job-detail');
+  renderPersonJobDetailGrid();
+}
+
+function renderPersonJobDetailGrid() {
+  const grid = document.getElementById('person-job-detail-grid');
+  if (!personJobDetailItems.length) { grid.innerHTML = `<div class="empty-grid">Nothing here.</div>`; return; }
+  grid.innerHTML = personJobDetailItems.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.id}, 'screen-person-job-detail', '${item.type === 'tv' ? 'quick' : 'log'}', '${item.type}')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('');
 }
 
 function renderMovieDetail(item) {
@@ -1944,7 +3074,7 @@ async function toggleWatchedQuick() {
         formQuickWatched = false;
         showToast('Removed from Watched');
         loadLibrary(); loadStats();
-        openMovieDetail(selectedMovie.id, returnScreen, detailMode);
+        openMovieDetail(selectedMovie.id, null, detailMode, selectedMediaType, true);
       }
     });
     return;
@@ -1967,7 +3097,7 @@ async function toggleWatchedQuick() {
   formInWatchlist = false; formQuickWatched = true;
   showToast('Added to Watched');
   loadLibrary(); loadStats();
-  openMovieDetail(selectedMovie.id, returnScreen, detailMode);
+  openMovieDetail(selectedMovie.id, null, detailMode, selectedMediaType, true);
 }
 
 /* ---- LIBRARY ---- */
@@ -1992,6 +3122,19 @@ async function loadLibrary() {
     (data || []).forEach(item => {
       if (item.rating) libraryRatingMapCache[item.tmdb_id] = item.rating;
     });
+    if (mode === 'watched') {
+      libraryWatchedSetCache = new Set(libraryItemsCache.map(i => i.tmdb_id));
+    } else {
+      const ids = [...new Set(libraryItemsCache.map(i => i.tmdb_id))];
+      let wSet = new Set();
+      if (ids.length) {
+        let wq = db.from('tv_status').select('tmdb_id').eq('status', 'watched').in('tmdb_id', ids);
+        if (uid) wq = wq.eq('user_id', uid);
+        const { data: wRows } = await wq;
+        wSet = new Set((wRows || []).map(r => r.tmdb_id));
+      }
+      libraryWatchedSetCache = wSet;
+    }
     await renderFilteredGrid();
   } else {
     const table = mode === 'watched' ? 'watched' : 'watchlist';
@@ -2022,6 +3165,19 @@ async function loadLibrary() {
       reviewedSet = new Set((reviewedRows || []).map(r => r.tmdb_id));
     }
     libraryReviewedSetCache = reviewedSet;
+
+    if (mode === 'watched') {
+      libraryWatchedSetCache = new Set(libraryItemsCache.map(i => i.tmdb_id));
+    } else {
+      let wSet = new Set();
+      if (tmdbIds.length) {
+        let wq = db.from('watched').select('tmdb_id').in('tmdb_id', tmdbIds);
+        if (uid) wq = wq.eq('user_id', uid);
+        const { data: wRows } = await wq;
+        wSet = new Set((wRows || []).map(r => r.tmdb_id));
+      }
+      libraryWatchedSetCache = wSet;
+    }
 
     await renderFilteredGrid();
   }
@@ -2111,8 +3267,13 @@ function renderDiary(entries) {
     }).join('')}`).join('');
 }
 
-function openDiaryEntry(id) {
-  const entry = diaryEntries.find(e => e.id === id);
+function openDiaryEntry(id, sourceArr) {
+  if (!sourceArr) {
+    diaryModalRefreshFn = () => { loadDiary(); loadStats(); };
+    editModalRefreshFn = () => { loadDiary(); loadStats(); };
+  }
+  const arr = sourceArr || diaryEntries;
+  const entry = arr.find(e => e.id === id);
   if (!entry) return;
   const posterImg = document.getElementById('diary-modal-poster');
   if (entry.poster_path) { posterImg.src = `https://image.tmdb.org/t/p/w200${entry.poster_path}`; posterImg.style.display = 'block'; }
@@ -2134,7 +3295,8 @@ function openDiaryEntry(id) {
           const { error } = await db.from('diary').delete().eq('id', entry.id);
           if (error) { showToast('Could not remove entry', 'error'); return; }
           showToast('Entry removed');
-          loadDiary(); loadStats();
+          diaryModalRefreshFn();
+          loadStats();
         }
       });
     }, 220);
@@ -2148,6 +3310,7 @@ function openEditModal(entry) {
   document.getElementById('edit-modal-title').textContent = entry.title;
   document.getElementById('edit-watched-date').value = entry.watched_on;
   document.getElementById('edit-review-text').value = entry.review_text || '';
+  document.getElementById('edit-tags').value = tagsToInputValue(entry.tags);
   document.getElementById('edit-spoilers').checked = !!entry.contains_spoilers;
   document.getElementById('edit-rewatch').checked = !!entry.rewatch;
   document.getElementById('edit-star-row').innerHTML = halfStarRowHtml('setEditRating', editRating);
@@ -2176,31 +3339,452 @@ async function saveEditEntry() {
   const reviewText = document.getElementById('edit-review-text').value.trim();
   const spoilers = document.getElementById('edit-spoilers').checked;
   const rewatch = document.getElementById('edit-rewatch').checked;
-  const { error } = await db.from('diary').update({ watched_on: watchedOn, rating: editRating || null, liked: editLiked, rewatch, review_text: reviewText || null, contains_spoilers: spoilers }).eq('id', editingEntry.id);
+  const tags = parseTagsInput(document.getElementById('edit-tags').value);
+  const payload = { watched_on: watchedOn, rating: editRating || null, liked: editLiked, rewatch, review_text: reviewText || null, contains_spoilers: spoilers, tags };
+  let { error } = await db.from('diary').update(payload).eq('id', editingEntry.id);
+  if (error && (error.code === '42703' || /tags|column/i.test(error.message || ''))) {
+    const rest = { ...payload }; delete rest.tags;
+    ({ error } = await db.from('diary').update(rest).eq('id', editingEntry.id));
+  }
   if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
   if (editingEntry.watched_id) await db.from('watched').update({ rating: editRating || null, liked: editLiked, watched_on: watchedOn }).eq('id', editingEntry.watched_id);
   showToast('Entry updated');
   closeEditModal();
-  loadDiary(); loadStats();
+  editModalRefreshFn();
+  loadStats();
 }
 
 /* ---- STATS (user-scoped) ---- */
+const STATS_PIE_COLORS = ['#7c5cbf', '#9b7fe0', '#4caf75', '#e0584a', '#e0b34a', '#4ac2e0', '#e04ac0', '#8a8a8a'];
+
 async function loadStats() {
+  await renderStatsPeriodBar();
+  await renderStatsBody();
+}
+
+async function renderStatsPeriodBar() {
+  const bar = document.getElementById('stats-period-bar');
+  if (!bar) return;
+  if (!statsYearsList.length) {
+    const { data: { user } } = await db.auth.getUser();
+    const uid = user?.id;
+    let q = db.from('diary').select('watched_on');
+    if (uid) q = q.eq('user_id', uid);
+    const { data } = await q;
+    const years = new Set((data || []).map(d => new Date(d.watched_on).getFullYear()));
+    statsYearsList = [...years].sort((a, b) => b - a);
+  }
+  const currentYear = new Date().getFullYear();
+  const otherYears = statsYearsList.filter(y => y !== currentYear);
+  const chipHtml = (label, value) => {
+    const active = statsPeriod === value;
+    const arg = typeof value === 'number' ? value : `'${value}'`;
+    return `<div style="padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;${active ? 'background:var(--text);color:var(--bg);' : 'background:var(--bg3);color:var(--text3);border:0.5px solid var(--border);'}" onclick="selectStatsPeriod(${arg})">${escapeHtml(label)}</div>`;
+  };
+  bar.innerHTML = chipHtml('ALL TIME', 'all') + chipHtml('THIS YEAR', currentYear) + otherYears.map(y => chipHtml(String(y), y)).join('');
+}
+
+function selectStatsPeriod(value) {
+  if (statsPeriod === value) return;
+  statsPeriod = value;
+  renderStatsPeriodBar();
+  renderStatsBody();
+}
+
+async function ensureMovieGenreList() {
+  if (movieGenres) return;
+  try {
+    const res = await fetch(`${TMDB_BASE}/genre/movie/list?api_key=${TMDB_API_KEY}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    movieGenres = data.genres || [];
+  } catch { movieGenres = movieGenres || []; }
+}
+
+function genreNameByMovieId(id) {
+  const g = (movieGenres || []).find(g => g.id === id);
+  return g ? g.name : String(id);
+}
+
+// Fetches movie detail + credits (cast/director) together, and caches genre
+// ids into the shared genreItemCache so the genre filter reuses this too.
+// Also caches runtime and production countries for the Hours Watched /
+// Countries overview stats.
+async function fetchMovieStatsData(ids) {
+  const todo = ids.filter(id => genreItemCache[`movie-${id}`] === undefined || movieCreditsCache[`movie-${id}`] === undefined);
+  await Promise.all(todo.map(async id => {
+    const key = `movie-${id}`;
+    try {
+      const res = await fetch(`${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`);
+      if (!res.ok) { genreItemCache[key] = []; movieCreditsCache[key] = { cast: [], directors: [], runtime: 0, countries: [] }; return; }
+      const data = await res.json();
+      genreItemCache[key] = (data.genres || []).map(g => g.id);
+      const cast = (data.credits?.cast || []).slice(0, 10).map(p => ({ id: p.id, name: p.name, profile_path: p.profile_path }));
+      const directors = (data.credits?.crew || []).filter(p => p.job === 'Director').map(p => ({ id: p.id, name: p.name, profile_path: p.profile_path }));
+      const runtime = data.runtime || 0;
+      const countries = (data.production_countries || []).map(c => c.iso_3166_1);
+      movieCreditsCache[key] = { cast, directors, runtime, countries };
+    } catch { genreItemCache[key] = []; movieCreditsCache[key] = { cast: [], directors: [], runtime: 0, countries: [] }; }
+  }));
+}
+
+function buildGenrePie(genreCounts) {
+  const total = Object.values(genreCounts).reduce((a, b) => a + b, 0);
+  if (!total) return null;
+  const entries = Object.entries(genreCounts).map(([id, count]) => ({ id: Number(id), name: genreNameByMovieId(Number(id)), count }));
+  entries.sort((a, b) => b.count - a.count);
+  const top = entries.slice(0, 6);
+  const rest = entries.slice(6);
+  const restTotal = rest.reduce((s, e) => s + e.count, 0);
+  if (restTotal > 0) top.push({ id: 'other', name: 'Other', count: restTotal });
+  let cumulative = 0;
+  const legend = top.map((e, i) => {
+    const pct = (e.count / total) * 100;
+    const start = cumulative;
+    cumulative += pct;
+    return { ...e, pct, color: STATS_PIE_COLORS[i % STATS_PIE_COLORS.length], start, end: cumulative };
+  });
+  const gradient = legend.map(l => `${l.color} ${l.start}% ${l.end}%`).join(', ');
+  return { gradient, legend };
+}
+
+function statsPersonCardHtml(person, label, totalFilms) {
+  if (!person) {
+    return `<div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</div>
+      <div style="color:var(--text3);font-size:12px;padding:12px 0;">Not enough data yet</div>
+    </div>`;
+  }
+  const pct = totalFilms ? Math.round((person.count / totalFilms) * 100) : 0;
+  const img = person.profile_path
+    ? `<img src="https://image.tmdb.org/t/p/w185${person.profile_path}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;" />`
+    : `<div class="person-avatar-placeholder" style="width:64px;height:64px;font-size:20px;margin:0 auto;">${escapeHtml((person.name || '?')[0].toUpperCase())}</div>`;
+  return `
+    <div style="flex:1;background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:18px 14px;text-align:center;min-width:0;cursor:pointer;" onclick="openPersonDetail(${person.id})">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${escapeHtml(label)}</div>
+      ${img}
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(person.name)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">${person.count} film${person.count === 1 ? '' : 's'} (${pct}%)</div>
+    </div>`;
+}
+
+function renderStatsHtml({ watchedCount, watchlistCount, avgRating, genreCounts, rewatchList, topActor, topDirector, totalFilms, hoursWatched, countriesCount, directorsCount }) {
+  const overviewHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Overview</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Films Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);">${watchedCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Watchlist</div><div style="font-size:20px;font-weight:600;color:var(--text);">${watchlistCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Avg Rating</div><div style="font-size:20px;font-weight:600;color:var(--text);">${avgRating}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;">
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Hours Watched</div><div style="font-size:20px;font-weight:600;color:var(--text);">${hoursWatched.toLocaleString()}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Countries</div><div style="font-size:20px;font-weight:600;color:var(--text);">${countriesCount}</div></div>
+      <div style="background:var(--bg3);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;"><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Directors</div><div style="font-size:20px;font-weight:600;color:var(--text);">${directorsCount}</div></div>
+    </div>`;
+
+  const pie = buildGenrePie(genreCounts);
+  const genreHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Top Genres</div>
+    ${pie ? `
+      <div style="background:var(--bg3);border-radius:14px;border:0.5px solid var(--border);padding:20px;margin-bottom:28px;display:flex;flex-direction:column;align-items:center;">
+        <div style="width:140px;height:140px;border-radius:50%;background:conic-gradient(${pie.gradient});flex-shrink:0;"></div>
+        <div style="margin-top:16px;width:100%;display:flex;flex-direction:column;gap:7px;">
+          ${pie.legend.map(l => `
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:${l.color};flex-shrink:0;"></span>
+              <span style="flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.name)}</span>
+              <span style="color:var(--text2);">${Math.round(l.pct)}%</span>
+            </div>`).join('')}
+        </div>
+      </div>` : `<div style="color:var(--text3);font-size:13px;padding:0 0 28px;">No genre data for this period yet.</div>`}`;
+
+  const rewatchHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Most Rewatched</div>
+    ${rewatchList.length ? `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+        ${rewatchList.map(f => `
+          <div class="film-card-wrap" onclick="openMovieDetail(${f.tmdbId}, 'screen-stats', 'log', 'movie')">
+            <div class="film-card">
+              ${f.poster_path
+                ? `<img src="https://image.tmdb.org/t/p/w342${f.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+                : `<div class="poster-label">${escapeHtml(f.title)}</div>`}
+              <div style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.72);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;">×${f.total}</div>
+            </div>
+          </div>`).join('')}
+      </div>` : `<div style="color:var(--text3);font-size:13px;padding:0 0 28px;">No rewatches logged for this period yet.</div>`}`;
+
+  const peopleHtml = `
+    <div style="font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Most Watched People</div>
+    <div style="display:flex;gap:10px;">
+      ${statsPersonCardHtml(topActor, 'Actor', totalFilms)}
+      ${statsPersonCardHtml(topDirector, 'Director', totalFilms)}
+    </div>`;
+
+  return overviewHtml + genreHtml + rewatchHtml + peopleHtml;
+}
+
+async function renderStatsBody() {
+  const body = document.getElementById('stats-body');
+  if (!body) return;
+  body.innerHTML = `<div style="padding:60px 0;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+
   const { data: { user } } = await db.auth.getUser();
   const uid = user?.id;
-  let wQuery = db.from('watched').select('*', { count: 'exact', head: true });
+  const period = statsPeriod;
+
+  // Watched rows for the period (unique films, ratings)
+  let wQuery = db.from('watched').select('tmdb_id, rating, watched_on');
+  if (uid) wQuery = wQuery.eq('user_id', uid);
+  if (period !== 'all') wQuery = wQuery.gte('watched_on', `${period}-01-01`).lte('watched_on', `${period}-12-31`);
+  const { data: watchedRows } = await wQuery;
+  const uniqueWatchedIds = [...new Set((watchedRows || []).map(r => r.tmdb_id))];
+
+  // Watchlist is always all-time, regardless of the selected period
   let wlQuery = db.from('watchlist').select('*', { count: 'exact', head: true });
-  let rQuery = db.from('watched').select('rating').not('rating', 'is', null);
-  if (uid) { wQuery = wQuery.eq('user_id', uid); wlQuery = wlQuery.eq('user_id', uid); rQuery = rQuery.eq('user_id', uid); }
-  const [{ count: watchedCount }, { count: watchlistCount }, { data: ratings }] = await Promise.all([wQuery, wlQuery, rQuery]);
-  document.getElementById('stat-watched').textContent = watchedCount ?? 0;
-  document.getElementById('stat-watchlist').textContent = watchlistCount ?? 0;
-  if (ratings && ratings.length) {
-    const avg = ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length;
-    document.getElementById('stat-avg').textContent = avg.toFixed(2);
-  } else {
-    document.getElementById('stat-avg').textContent = '—';
+  if (uid) wlQuery = wlQuery.eq('user_id', uid);
+  const { count: watchlistCount } = await wlQuery;
+
+  // Average rating for the period
+  const ratings = (watchedRows || []).filter(r => r.rating).map(r => Number(r.rating));
+  const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : '—';
+
+  // Diary rows for the period, grouped by film, to work out rewatch counts
+  let dQuery = db.from('diary').select('tmdb_id, title, poster_path, watched_on, rewatch');
+  if (uid) dQuery = dQuery.eq('user_id', uid);
+  if (period !== 'all') dQuery = dQuery.gte('watched_on', `${period}-01-01`).lte('watched_on', `${period}-12-31`);
+  const { data: diaryRows } = await dQuery;
+
+  const byFilm = {};
+  (diaryRows || []).forEach(e => {
+    if (!byFilm[e.tmdb_id]) byFilm[e.tmdb_id] = { title: e.title, poster_path: e.poster_path, entries: [] };
+    byFilm[e.tmdb_id].entries.push(e);
+  });
+  const rewatchList = Object.entries(byFilm).map(([tmdbId, info]) => {
+    const entries = info.entries;
+    const hasFirstWatch = entries.some(e => !e.rewatch);
+    // If every logged entry for this film is flagged as a rewatch, there's no
+    // recorded "first watch" — assume one untracked watch before joining betterboxd.
+    let total = entries.length + (hasFirstWatch ? 0 : 1);
+    return { tmdbId: Number(tmdbId), title: info.title, poster_path: info.poster_path, total };
+  }).filter(f => f.total > 1).sort((a, b) => b.total - a.total).slice(0, 8);
+
+  // Genre / cast / crew data for every unique film watched in the period
+  await ensureMovieGenreList();
+  await fetchMovieStatsData(uniqueWatchedIds);
+
+  const genreCounts = {};
+  const actorCounts = {};
+  const directorCounts = {};
+  let totalMinutes = 0;
+  const countrySet = new Set();
+  uniqueWatchedIds.forEach(id => {
+    const key = `movie-${id}`;
+    (genreItemCache[key] || []).forEach(gid => { genreCounts[gid] = (genreCounts[gid] || 0) + 1; });
+    const meta = movieCreditsCache[key] || { cast: [], directors: [], runtime: 0, countries: [] };
+    meta.cast.forEach(p => {
+      if (!actorCounts[p.id]) actorCounts[p.id] = { id: p.id, name: p.name, profile_path: p.profile_path, count: 0 };
+      actorCounts[p.id].count++;
+    });
+    meta.directors.forEach(p => {
+      if (!directorCounts[p.id]) directorCounts[p.id] = { id: p.id, name: p.name, profile_path: p.profile_path, count: 0 };
+      directorCounts[p.id].count++;
+    });
+    totalMinutes += meta.runtime || 0;
+    (meta.countries || []).forEach(c => countrySet.add(c));
+  });
+  const topActor = Object.values(actorCounts).sort((a, b) => b.count - a.count)[0] || null;
+  const topDirector = Object.values(directorCounts).sort((a, b) => b.count - a.count)[0] || null;
+  const hoursWatched = Math.round(totalMinutes / 60);
+  const countriesCount = countrySet.size;
+  const directorsCount = Object.keys(directorCounts).length;
+
+  if (!uniqueWatchedIds.length) {
+    body.innerHTML = renderStatsHtml({
+      watchedCount: 0, watchlistCount: watchlistCount ?? 0, avgRating, genreCounts: {},
+      rewatchList: [], topActor: null, topDirector: null, totalFilms: 0, hoursWatched: 0, countriesCount: 0, directorsCount: 0
+    });
+    return;
   }
+
+  body.innerHTML = renderStatsHtml({
+    watchedCount: uniqueWatchedIds.length, watchlistCount: watchlistCount ?? 0, avgRating,
+    genreCounts, rewatchList, topActor, topDirector, totalFilms: uniqueWatchedIds.length,
+    hoursWatched, countriesCount, directorsCount
+  });
+}
+
+/* ---- TAGS ---- */
+function tagsDomainToggleHtml() {
+  return `<div style="display:flex;gap:8px;padding:12px 20px 14px;">
+    <div class="filter-chip ${tagsDomain === 'films' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('films')">FILMS</div>
+    <div class="filter-chip ${tagsDomain === 'lists' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('lists')">LISTS</div>
+  </div>`;
+}
+
+function setTagsDomain(domain) {
+  if (tagsDomain === domain) return;
+  tagsDomain = domain;
+  loadTags();
+}
+
+async function loadTags() {
+  const container = document.getElementById('tags-container');
+  container.innerHTML = tagsDomainToggleHtml() + `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+
+  const table = tagsDomain === 'lists' ? 'lists' : 'diary';
+  let q = db.from(table).select('tags');
+  if (uid) q = q.eq('user_id', uid);
+  const { data, error } = await q;
+  if (error) {
+    container.innerHTML = tagsDomainToggleHtml() + `<div class="empty-grid">Couldn't load tags.</div>`;
+    return;
+  }
+  const counts = {};
+  (data || []).forEach(row => (row.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+  tagsListCache = Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  renderTagsList();
+}
+
+function renderTagsList() {
+  const container = document.getElementById('tags-container');
+  const toggle = tagsDomainToggleHtml();
+  if (!tagsListCache.length) {
+    container.innerHTML = toggle + `<div class="empty-grid">No tags yet.<br>Add tags when logging a film or creating a list.</div>`;
+    return;
+  }
+  container.innerHTML = toggle + `<div style="padding:0 20px 20px;">` + tagsListCache.map(t => `
+    <div class="settings-row" onclick="openTagDetail('${jsAttrString(t.name)}')">
+      <div class="settings-row-label"><span>${escapeHtml(t.name)}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:13px;color:var(--text2);">${t.count}</span>
+        <svg class="chev" viewBox="0 0 24 24" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+async function openTagDetail(name) {
+  tagDetailName = name;
+  tagDetailDomain = tagsDomain;
+  tagDetailViewMode = 'films';
+  document.getElementById('tag-detail-title').textContent = name;
+  goTo('screen-tag-detail');
+  await loadTagDetailData();
+}
+
+async function loadTagDetailData() {
+  const body = document.getElementById('tag-detail-body');
+  body.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+
+  if (tagDetailDomain === 'lists') {
+    let q = db.from('lists').select('*').contains('tags', [tagDetailName]).order('created_at', { ascending: false });
+    if (uid) q = q.eq('user_id', uid);
+    const { data, error } = await q;
+    if (error) { body.innerHTML = `<div class="empty-grid">Couldn't load lists.</div>`; return; }
+    tagDetailLists = data || [];
+    renderTagDetailListsView();
+  } else {
+    let q = db.from('diary').select('*').contains('tags', [tagDetailName]).order('watched_on', { ascending: false });
+    if (uid) q = q.eq('user_id', uid);
+    const { data, error } = await q;
+    if (error) { body.innerHTML = `<div class="empty-grid">Couldn't load entries.</div>`; return; }
+    tagDetailDiaryEntries = data || [];
+    const seen = new Set();
+    tagDetailFilms = [];
+    tagDetailDiaryEntries.forEach(e => {
+      if (!seen.has(e.tmdb_id)) { seen.add(e.tmdb_id); tagDetailFilms.push({ tmdb_id: e.tmdb_id, title: e.title, poster_path: e.poster_path }); }
+    });
+    if (tagDetailViewMode === 'diary') renderTagDetailDiaryView(); else renderTagDetailFilmsView();
+  }
+}
+
+function tagDetailToggleHtml() {
+  return `<div style="display:flex;gap:8px;padding:0 20px 14px;">
+    <div class="filter-chip ${tagDetailViewMode === 'films' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagDetailViewMode('films')">FILMS</div>
+    <div class="filter-chip ${tagDetailViewMode === 'diary' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagDetailViewMode('diary')">DIARY</div>
+  </div>`;
+}
+
+function setTagDetailViewMode(mode) {
+  tagDetailViewMode = mode;
+  if (mode === 'diary') renderTagDetailDiaryView(); else renderTagDetailFilmsView();
+}
+
+function renderTagDetailFilmsView() {
+  const body = document.getElementById('tag-detail-body');
+  const toggle = tagDetailToggleHtml();
+  if (!tagDetailFilms.length) {
+    body.innerHTML = toggle + `<div class="empty-grid">No films tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  body.innerHTML = toggle + `<div class="film-grid">` + tagDetailFilms.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-tag-detail', 'log', 'movie')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function renderTagDetailDiaryView() {
+  const body = document.getElementById('tag-detail-body');
+  const toggle = tagDetailToggleHtml();
+  if (!tagDetailDiaryEntries.length) {
+    body.innerHTML = toggle + `<div class="empty-grid">No diary entries tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  // Group by month, same as the main Diary screen (entries already arrive
+  // newest-first from the query, so this preserves that ordering per group).
+  const groups = [];
+  let currentKey = null;
+  tagDetailDiaryEntries.forEach(entry => {
+    const d = new Date(entry.watched_on);
+    const key = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (key !== currentKey) { groups.push({ key, items: [] }); currentKey = key; }
+    groups[groups.length - 1].items.push(entry);
+  });
+  body.innerHTML = toggle + groups.map(g => `
+    <div class="diary-month-header">${g.key}</div>
+    ${g.items.map(entry => {
+      const d = new Date(entry.watched_on);
+      const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      return `
+        <div class="diary-entry" onclick="openTagDiaryEntry('${entry.id}')">
+          ${entry.poster_path ? `<img class="diary-entry-poster" src="https://image.tmdb.org/t/p/w200${entry.poster_path}" />` : `<div class="diary-entry-poster-label">${escapeHtml(entry.title)}</div>`}
+          <div class="diary-entry-info">
+            <div class="diary-entry-title">${escapeHtml(entry.title)}${entry.rewatch ? ` <span class="rewatch-symbol" title="Rewatch">${REWATCH_SYMBOL}</span>` : ''}</div>
+            <div class="diary-entry-meta">
+              <span class="diary-entry-date">${dateStr}</span>
+              ${entry.rating ? `<span class="diary-entry-stars">${starsDisplay(entry.rating)}</span>` : ''}
+              ${entry.liked ? `<span class="heart-icon heart-icon-sm on" style="pointer-events:none;">${heartSVG}</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('')}`).join('') + `<div style="height:6px;"></div>`;
+}
+
+function openTagDiaryEntry(id) {
+  diaryModalRefreshFn = () => { loadTagDetailData(); };
+  editModalRefreshFn = () => { loadTagDetailData(); };
+  openDiaryEntry(id, tagDetailDiaryEntries);
+}
+
+function renderTagDetailListsView() {
+  const body = document.getElementById('tag-detail-body');
+  if (!tagDetailLists.length) {
+    body.innerHTML = `<div class="empty-grid">No lists tagged "${escapeHtml(tagDetailName)}" yet.</div>`;
+    return;
+  }
+  body.innerHTML = `<div style="padding:0 20px 20px;">` + tagDetailLists.map(l => `
+    <div class="list-card" onclick="openListDetail('${l.id}')">
+      <div class="list-card-name">${escapeHtml(l.name)}</div>
+      <div class="list-card-meta">${(l.list_type || listTypeCache[l.id] || 'titles') === 'people' ? 'People' : 'Titles'}${l.is_public === false ? ' · Private' : ''}</div>
+      ${l.description ? `<div class="list-card-desc">${escapeHtml(l.description)}</div>` : ''}
+    </div>`).join('') + `</div>`;
 }
 
 /* ---- LISTS ---- */
@@ -2220,21 +3804,35 @@ async function loadLists() {
   }
 
   const ids = listsCache.map(l => l.id);
-  const { data: items } = await db.from('list_items').select('list_id, media_type').in('list_id', ids);
-  const countMap = {}, typeMap = {};
+  const { data: items } = await db.from('list_items').select('list_id, media_type, title, poster_path, position').in('list_id', ids).order('position', { ascending: true });
+  const countMap = {}, typeMap = {}, previewMap = {};
+  const PREVIEW_MAX = 5;
   (items || []).forEach(it => {
     countMap[it.list_id] = (countMap[it.list_id] || 0) + 1;
     if (!typeMap[it.list_id]) typeMap[it.list_id] = it.media_type === 'person' ? 'people' : 'titles';
+    if (!previewMap[it.list_id]) previewMap[it.list_id] = [];
+    if (previewMap[it.list_id].length < PREVIEW_MAX) previewMap[it.list_id].push(it);
   });
 
   container.innerHTML = listsCache.map(l => {
     const count = countMap[l.id] || 0;
     const type = l.list_type || listTypeCache[l.id] || typeMap[l.id] || 'titles';
     listTypeCache[l.id] = type;
+    const preview = previewMap[l.id] || [];
+    const isPeoplePreview = type === 'people';
+    const previewHtml = preview.length ? `
+      <div class="list-card-preview">
+        ${preview.map(it => it.poster_path
+          ? `<img class="list-card-preview-thumb ${isPeoplePreview ? 'round' : ''}" src="https://image.tmdb.org/t/p/w92${it.poster_path}" />`
+          : `<div class="list-card-preview-thumb list-card-preview-fallback ${isPeoplePreview ? 'round' : ''}">${escapeHtml((it.title || '?')[0])}</div>`
+        ).join('')}
+        ${count > preview.length ? `<div class="list-card-preview-more">+${count - preview.length}</div>` : ''}
+      </div>` : '';
     return `
       <div class="list-card" onclick="openListDetail('${l.id}')">
         <div class="list-card-name">${escapeHtml(l.name)}</div>
         <div class="list-card-meta">${type === 'people' ? 'People' : 'Titles'} · ${count} item${count === 1 ? '' : 's'}${l.is_public === false ? ' · Private' : ''}</div>
+        ${previewHtml}
         ${l.description ? `<div class="list-card-desc">${escapeHtml(l.description)}</div>` : ''}
       </div>`;
   }).join('');
@@ -2287,6 +3885,8 @@ function renderNewListStep2() {
     <input class="form-input" id="new-list-name" placeholder="${newListType === 'people' ? 'e.g. Favorite Directors' : 'e.g. Best of 2026'}" />
     <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
     <textarea class="form-input" id="new-list-desc" placeholder="What's this list about?"></textarea>
+    <div class="md-field-label">TAGS (OPTIONAL)</div>
+    <input class="form-input" id="new-list-tags" placeholder="comma, separated, tags" />
     <label class="checkbox-row" style="margin-top:10px;">
       <input type="checkbox" id="new-list-public" checked> Public List
     </label>
@@ -2299,15 +3899,19 @@ async function createList() {
   const name = nameInput.value.trim();
   if (!name) { showToast('Please give your list a name', 'error'); return; }
   const description = document.getElementById('new-list-desc').value.trim();
+  const tags = parseTagsInput(document.getElementById('new-list-tags').value);
   const isPublic = document.getElementById('new-list-public').checked;
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
 
-  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType };
+  let payload = { user_id: user.id, name, description: description || null, is_public: isPublic, list_type: newListType, tags };
   let { data, error } = await db.from('lists').insert(payload).select().single();
-  if (error && (error.code === '42703' || /list_type|column/i.test(error.message || ''))) {
-    const rest = { ...payload }; delete rest.list_type;
-    ({ data, error } = await db.from('lists').insert(rest).select().single());
+  for (let i = 0; i < 2 && error && (error.code === '42703' || /column/i.test(error.message || '')); i++) {
+    if ('tags' in payload && /tags/i.test(error.message || '')) delete payload.tags;
+    else if ('list_type' in payload && /list_type/i.test(error.message || '')) delete payload.list_type;
+    else if ('tags' in payload) delete payload.tags;
+    else if ('list_type' in payload) delete payload.list_type;
+    ({ data, error } = await db.from('lists').insert(payload).select().single());
   }
   if (error) { showToast('Could not create list: ' + (error.message || ''), 'error'); return; }
 
@@ -2324,6 +3928,7 @@ async function openListDetail(id, prefetched) {
   currentListId = id;
   currentListType = listTypeCache[id] || 'titles';
   listViewMode = 'percent';
+  resetListFilters();
   goTo('screen-list-detail');
   const grid = document.getElementById('list-detail-grid');
   grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
@@ -2351,9 +3956,158 @@ async function loadListItems() {
     currentListType = currentListItems[0].media_type === 'person' ? 'people' : 'titles';
     listTypeCache[currentListId] = currentListType;
   }
-  renderListDetailGrid();
+  const filterBar = document.getElementById('list-filter-bar');
+  if (filterBar) filterBar.style.display = (currentListType === 'people' || !currentListItems.length) ? 'none' : 'flex';
+  await computeListMetaMaps();
+  await renderFilteredListGrid();
   await computeListWatchStats();
   renderListWatchWidget();
+}
+
+// Fetches liked/rating/watched info for every title in the current list, so
+// the list's own Liked / Watched filters and Rating sort have something to
+// work with (list_items itself doesn't store any of this).
+async function computeListMetaMaps() {
+  listLikedMapCache = {};
+  listRatingMapCache = {};
+  listWatchedSetCache = new Set();
+  if (currentListType === 'people' || !currentListItems.length) return;
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user?.id;
+  const movieIds = [...new Set(currentListItems.filter(i => i.media_type === 'movie').map(i => i.tmdb_id))];
+  const tvIds = [...new Set(currentListItems.filter(i => i.media_type === 'tv').map(i => i.tmdb_id))];
+  const tasks = [];
+  if (movieIds.length) {
+    let q = db.from('watched').select('tmdb_id, liked, rating').in('tmdb_id', movieIds);
+    if (uid) q = q.eq('user_id', uid);
+    tasks.push(q.then(({ data }) => {
+      (data || []).forEach(r => {
+        listWatchedSetCache.add(`movie-${r.tmdb_id}`);
+        if (r.liked) listLikedMapCache[r.tmdb_id] = true;
+        if (r.rating && !listRatingMapCache[`movie-${r.tmdb_id}`]) listRatingMapCache[`movie-${r.tmdb_id}`] = r.rating;
+      });
+    }));
+  }
+  if (tvIds.length) {
+    let q = db.from('tv_status').select('tmdb_id, rating').eq('status', 'watched').in('tmdb_id', tvIds);
+    if (uid) q = q.eq('user_id', uid);
+    tasks.push(q.then(({ data }) => {
+      (data || []).forEach(r => {
+        listWatchedSetCache.add(`tv-${r.tmdb_id}`);
+        if (r.rating) listRatingMapCache[`tv-${r.tmdb_id}`] = r.rating;
+      });
+    }));
+  }
+  await Promise.all(tasks);
+}
+
+async function applyListSort(items) {
+  const arr = [...items];
+  switch (listSortValue) {
+    case 'title_az':
+      arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      break;
+    case 'shuffle':
+      return shuffleArray(arr);
+    case 'added_newest':
+      arr.sort((a, b) => (b.position || 0) - (a.position || 0));
+      break;
+    case 'added_oldest':
+      arr.sort((a, b) => (a.position || 0) - (b.position || 0));
+      break;
+    case 'rating_highest':
+      arr.sort((a, b) => (listRatingMapCache[`${b.media_type}-${b.tmdb_id}`] || 0) - (listRatingMapCache[`${a.media_type}-${a.tmdb_id}`] || 0));
+      break;
+    case 'rating_lowest':
+      arr.sort((a, b) => {
+        const ra = listRatingMapCache[`${a.media_type}-${a.tmdb_id}`] || 0, rb = listRatingMapCache[`${b.media_type}-${b.tmdb_id}`] || 0;
+        if (!ra && !rb) return 0;
+        if (!ra) return 1;
+        if (!rb) return -1;
+        return ra - rb;
+      });
+      break;
+    case 'release_newest':
+    case 'release_oldest': {
+      await Promise.all(arr.map(async item => {
+        const key = `${item.media_type}-${item.tmdb_id}`;
+        if (releaseDateCache[key] !== undefined) return;
+        try {
+          const res = await fetch(`${TMDB_BASE}/${item.media_type}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+          if (!res.ok) { releaseDateCache[key] = null; return; }
+          const data = await res.json();
+          releaseDateCache[key] = (item.media_type === 'tv' ? data.first_air_date : data.release_date) || null;
+        } catch { releaseDateCache[key] = null; }
+      }));
+      arr.sort((a, b) => {
+        const da = releaseDateCache[`${a.media_type}-${a.tmdb_id}`], dbv = releaseDateCache[`${b.media_type}-${b.tmdb_id}`];
+        if (!da && !dbv) return 0;
+        if (!da) return 1;
+        if (!dbv) return -1;
+        return listSortValue === 'release_newest' ? new Date(dbv) - new Date(da) : new Date(da) - new Date(dbv);
+      });
+      break;
+    }
+  }
+  return arr;
+}
+
+async function renderFilteredListGrid() {
+  filterContext = 'list';
+  const grid = document.getElementById('list-detail-grid');
+  if (!grid) return;
+  if (currentListType === 'people' || !currentListItems.length) { renderListDetailGrid(); return; }
+
+  let items = [...currentListItems];
+
+  if (listAppliedLikedFilter !== null) {
+    items = items.filter(item => {
+      if (item.media_type !== 'movie') return false;
+      const liked = !!listLikedMapCache[item.tmdb_id];
+      return listAppliedLikedFilter ? liked : !liked;
+    });
+  }
+
+  if (listAppliedWatchedFilter !== null) {
+    items = items.filter(item => {
+      const watched = listWatchedSetCache.has(`${item.media_type}-${item.tmdb_id}`);
+      return listAppliedWatchedFilter ? watched : !watched;
+    });
+  }
+
+  if (listAppliedYearFilter) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await Promise.all(items.map(async item => {
+      const key = `${item.media_type}-${item.tmdb_id}`;
+      if (releaseDateCache[key] !== undefined) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/${item.media_type}/${item.tmdb_id}?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { releaseDateCache[key] = null; return; }
+        const data = await res.json();
+        releaseDateCache[key] = (item.media_type === 'tv' ? data.first_air_date : data.release_date) || null;
+      } catch { releaseDateCache[key] = null; }
+    }));
+    items = items.filter(item => {
+      const key = `${item.media_type}-${item.tmdb_id}`;
+      const rd = releaseDateCache[key];
+      if (!rd) return false;
+      const y = parseInt(rd.slice(0, 4), 10);
+      if (listAppliedYearFilter.type === 'year') return y === listAppliedYearFilter.year;
+      return y >= listAppliedYearFilter.decade && y <= listAppliedYearFilter.decade + 9;
+    });
+  }
+
+  if (listSortValue) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    items = await applyListSort(items);
+  }
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-grid">No items match the current filters.</div>`;
+    return;
+  }
+
+  renderListDetailGrid(items);
 }
 
 async function computeListWatchStats() {
@@ -2403,18 +4157,20 @@ function renderListWatchWidget() {
   }
 }
 
-function renderListDetailGrid() {
+function renderListDetailGrid(items) {
+  const list = items || currentListItems;
   const grid = document.getElementById('list-detail-grid');
   if (!currentListItems.length) {
     grid.innerHTML = `<div class="empty-grid">No items yet.<br>Tap the + button above to add ${currentListType === 'people' ? 'cast &amp; crew' : 'films or shows'}.</div>`;
     return;
   }
   if (currentListType === 'people') {
-    grid.innerHTML = currentListItems.map(item => `
+    grid.innerHTML = list.map(item => `
       <div class="film-card-wrap"
         onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
         ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
-        oncontextmenu="return false;">
+        oncontextmenu="return false;"
+        onclick="handlePersonListItemTap(event, ${item.tmdb_id})">
         <div class="person-grid-card">
           ${item.poster_path
             ? `<img src="https://image.tmdb.org/t/p/w185${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
@@ -2423,7 +4179,11 @@ function renderListDetailGrid() {
         <div class="film-card-meta" style="justify-content:center;text-align:center;"><span style="font-size:11px;color:var(--text2);">${escapeHtml(item.title)}</span></div>
       </div>`).join('');
   } else {
-    grid.innerHTML = currentListItems.map(item => `
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty-grid">No items match the current filters.</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(item => `
       <div class="film-card-wrap"
         onmousedown="startLongPress('${item.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()"
         ontouchstart="startLongPress('${item.id}')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"
@@ -2463,6 +4223,16 @@ function handleListItemTap(e, tmdbId, mediaType) {
   openMovieDetail(tmdbId, 'screen-list-detail', 'quick', mediaType);
 }
 
+function handlePersonListItemTap(e, tmdbId) {
+  if (longPressTriggered) {
+    e.preventDefault();
+    e.stopPropagation();
+    longPressTriggered = false;
+    return;
+  }
+  openPersonDetail(tmdbId);
+}
+
 function confirmRemoveListItem(itemId) {
   showConfirm({ title: 'Remove item?', message: 'This will remove it from the list.', confirmText: 'Remove', danger: true,
     onConfirm: async () => {
@@ -2486,6 +4256,65 @@ function confirmDeleteList() {
       loadLists();
     }
   });
+}
+
+/* -- Edit List modal -- */
+async function openEditListModal() {
+  if (!currentListId) return;
+  const card = document.getElementById('edit-list-card');
+  card.innerHTML = `<div style="padding:40px;display:flex;justify-content:center;"><span class="spinner dark"></span></div>`;
+  document.getElementById('edit-list-modal').classList.add('show');
+  const { data: list, error } = await db.from('lists').select('*').eq('id', currentListId).single();
+  if (error || !list) {
+    showToast('Could not load list', 'error');
+    document.getElementById('edit-list-modal').classList.remove('show');
+    return;
+  }
+  renderEditListForm(list);
+}
+
+function renderEditListForm(list) {
+  const card = document.getElementById('edit-list-card');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">Edit List</div>
+      <div onclick="closeEditListModal()" style="color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;">×</div>
+    </div>
+    <div class="md-field-label" style="margin-top:0;">LIST NAME</div>
+    <input class="form-input" id="edit-list-name" value="${escapeHtml(list.name || '')}" />
+    <div class="md-field-label">DESCRIPTION (OPTIONAL)</div>
+    <textarea class="form-input" id="edit-list-desc">${escapeHtml(list.description || '')}</textarea>
+    <div class="md-field-label">TAGS (OPTIONAL)</div>
+    <input class="form-input" id="edit-list-tags" value="${escapeHtml(tagsToInputValue(list.tags))}" placeholder="comma, separated, tags" />
+    <label class="checkbox-row" style="margin-top:10px;">
+      <input type="checkbox" id="edit-list-public" ${list.is_public !== false ? 'checked' : ''}> Public List
+    </label>
+    <button class="btn-primary" style="margin-top:16px;" onclick="saveEditListModal()">Save Changes</button>`;
+  setTimeout(() => { const inp = document.getElementById('edit-list-name'); if (inp) inp.focus(); }, 100);
+}
+
+function closeEditListModal() {
+  document.getElementById('edit-list-modal').classList.remove('show');
+}
+
+async function saveEditListModal() {
+  const nameInput = document.getElementById('edit-list-name');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('Please give your list a name', 'error'); return; }
+  const description = document.getElementById('edit-list-desc').value.trim();
+  const tags = parseTagsInput(document.getElementById('edit-list-tags').value);
+  const isPublic = document.getElementById('edit-list-public').checked;
+  let { error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic, tags }).eq('id', currentListId);
+  if (error && (error.code === '42703' || /tags|column/i.test(error.message || ''))) {
+    ({ error } = await db.from('lists').update({ name, description: description || null, is_public: isPublic }).eq('id', currentListId));
+  }
+  if (error) { showToast('Could not save changes: ' + (error.message || ''), 'error'); return; }
+  currentListName = name;
+  document.getElementById('list-detail-name').textContent = name;
+  document.getElementById('list-detail-desc').textContent = description || '';
+  closeEditListModal();
+  showToast('List updated');
+  loadLists();
 }
 
 /* -- Add Item to List modal -- */
@@ -2558,8 +4387,9 @@ function renderListItemSearchResults(results) {
     const sub = isPeople ? (item.known_for_department || '') : ((item.release_date || item.first_air_date) ? (item.release_date || item.first_air_date).split('-')[0] : '—');
     const mediaType = isPeople ? 'person' : listItemSearchMediaType;
     const alreadyAdded = currentListItems.some(li => li.tmdb_id === item.id && li.media_type === mediaType);
-    const safeName = escapeHtml(name).replace(/'/g, "\\'");
-    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${imgPath ? `'${imgPath}'` : 'null'})"`;
+    const safeName = jsAttrString(name);
+    const safeImgPath = imgPath ? jsAttrString(imgPath) : null;
+    const onClickAttr = alreadyAdded ? '' : `onclick="addItemToList(${item.id}, '${safeName}', ${safeImgPath !== null ? `'${safeImgPath}'` : 'null'})"`;
     return `
       <div ${onClickAttr}
         style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--bg4);cursor:${alreadyAdded ? 'default' : 'pointer'};border:0.5px solid var(--border);opacity:${alreadyAdded ? '0.5' : '1'};">
@@ -2585,13 +4415,443 @@ async function addItemToList(tmdbId, title, posterPath) {
   };
   const { error } = await db.from('list_items').insert(payload);
   if (error && (error.code === '23514' || /list_items_media_type_check/i.test(error.message || ''))) {
-    showToast('Your list_items table needs "person" added to its media_type check constraint', 'error', 4200);
+    showToast(`Your list_items table needs "${mediaType}" added to its media_type check constraint`, 'error', 4200);
     return;
   }
   if (error) { showToast('Could not add item: ' + (error.message || ''), 'error'); return; }
   showToast('Added to list');
   await loadListItems();
   renderListItemSearchResults(lastListItemSearchResults);
+}
+
+/* ---- IMPORT LETTERBOXD DATA ---- */
+// Lets a person upload a Letterboxd "export your data" .zip and pulls the
+// relevant CSVs out of it: the root watched/watchlist/ratings/reviews/diary
+// files, likes/films.csv (liked films — reviews.csv and lists.csv inside
+// that same likes/ folder are ignored), and every list CSV under lists/.
+// profile.csv, comments.csv, and any other folder are ignored entirely.
+let importTargetUser = null;
+let importState = 'picker'; // 'picker' | 'parsing' | 'summary' | 'importing' | 'done'
+let importZipData = null;
+let importCounts = {};
+let importProgressPct = 0;
+let importProgressLog = [];
+
+function goToImportScreen(user) {
+  importTargetUser = user;
+  importZipData = null;
+  importState = 'picker';
+  importCounts = {};
+  importProgressPct = 0;
+  importProgressLog = [];
+  goTo('screen-import');
+  renderImportBody();
+}
+
+async function openImportFromProfile() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  goToImportScreen(user);
+}
+
+function closeImportScreen() {
+  if (importTargetUser) enterApp(importTargetUser);
+  else goTo('screen-profile');
+}
+function skipImport() { closeImportScreen(); }
+function finishImport() { closeImportScreen(); }
+
+function logImport(msg) {
+  importProgressLog.push(msg);
+  if (importProgressLog.length > 60) importProgressLog.shift();
+}
+
+function importSummaryRow(label, count) {
+  return `<div class="settings-row" style="cursor:default;"><div class="settings-row-label"><span>${escapeHtml(label)}</span></div><span style="color:var(--text2);font-size:13px;">${count}</span></div>`;
+}
+
+function renderImportBody() {
+  const body = document.getElementById('import-body');
+  if (!body) return;
+
+  if (importState === 'picker') {
+    body.innerHTML = `
+      <div style="text-align:center;padding:6px 0 26px;">
+        <div style="font-size:40px;">📦</div>
+        <div class="md-title" style="font-size:19px;margin-top:12px;">Import your Letterboxd data</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:8px;line-height:1.5;">
+          Upload the .zip from a Letterboxd data export and we'll bring over your watched films, watchlist, ratings, diary, likes and lists.
+        </div>
+      </div>
+      <label class="btn-primary" style="display:block;text-align:center;cursor:pointer;">
+        Choose ZIP File
+        <input type="file" accept=".zip" style="display:none;" onchange="handleImportFileSelected(this)" />
+      </label>
+      <div class="btn-text" style="margin-top:16px;" onclick="skipImport()">Skip for now</div>`;
+    return;
+  }
+
+  if (importState === 'parsing') {
+    body.innerHTML = `<div style="padding:70px 0;display:flex;flex-direction:column;align-items:center;gap:14px;"><span class="spinner dark" style="width:28px;height:28px;"></span><div style="font-size:13px;color:var(--text2);">Reading your export...</div></div>`;
+    return;
+  }
+
+  if (importState === 'summary') {
+    const c = importCounts;
+    body.innerHTML = `
+      <div class="md-title" style="font-size:18px;margin-bottom:14px;">We found:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        ${importSummaryRow('Watched films', c.watched)}
+        ${importSummaryRow('Watchlist films', c.watchlist)}
+        ${importSummaryRow('Diary entries', c.diary)}
+        ${importSummaryRow('Ratings', c.ratings)}
+        ${importSummaryRow('Liked films', c.liked)}
+        ${importSummaryRow('Lists', c.lists)}
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.5;">This can take a few minutes — every title needs to be matched against TMDB. Keep this screen open until it finishes.</div>
+      <button class="btn-primary" onclick="runImport()">Start Import</button>
+      <div class="btn-text" style="margin-top:14px;" onclick="skipImport()">Skip for now</div>`;
+    return;
+  }
+
+  if (importState === 'importing') {
+    body.innerHTML = `
+      <div class="md-title" style="font-size:18px;margin-bottom:16px;">Importing your data...</div>
+      <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin-bottom:16px;">
+        <div style="height:100%;background:var(--purple);width:${importProgressPct}%;transition:width 0.3s ease;"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;max-height:320px;overflow-y:auto;scrollbar-width:none;">
+        ${importProgressLog.map(l => `<div>${escapeHtml(l)}</div>`).join('')}
+      </div>`;
+    return;
+  }
+
+  if (importState === 'done') {
+    body.innerHTML = `
+      <div style="text-align:center;padding:36px 0;">
+        <div style="font-size:40px;">🎉</div>
+        <div class="md-title" style="font-size:19px;margin-top:12px;">All done!</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:8px;">Your Letterboxd data has been imported.</div>
+      </div>
+      <button class="btn-primary" onclick="finishImport()">Continue to betterboxd</button>`;
+    return;
+  }
+}
+
+/* -- zip / csv parsing -- */
+function findZipEntry(zip, filename) {
+  const re = new RegExp('(^|/)' + filename.replace('.', '\\.') + '$', 'i');
+  const match = Object.keys(zip.files).find(p => re.test(p) && !zip.files[p].dir);
+  return match ? zip.files[match] : null;
+}
+function findZipEntryInFolder(zip, folderName, filename) {
+  const re = new RegExp('(^|/)' + folderName + '/' + filename.replace('.', '\\.') + '$', 'i');
+  const match = Object.keys(zip.files).find(p => re.test(p) && !zip.files[p].dir);
+  return match ? zip.files[match] : null;
+}
+function findZipFolderCsvs(zip, folderName) {
+  const re = new RegExp('(^|/)' + folderName + '/[^/]+\\.csv$', 'i');
+  return Object.keys(zip.files).filter(p => re.test(p) && !zip.files[p].dir).map(p => zip.files[p]);
+}
+
+// The per-list export files (e.g. "2026-ranked.csv") aren't a simple single
+// header table — they open with a version line, then a one-row metadata
+// table (list Name/Tags/Description), a blank line, then the actual
+// Position/Name/Year/URL/Description item table. Parse with Papa's
+// array-of-arrays mode so quoted multi-line descriptions don't break the
+// row boundaries, then slice out the two tables by hand.
+function parseListCsv(text) {
+  const rows = Papa.parse(text, { skipEmptyLines: false }).data;
+  const itemsHeaderIdx = rows.findIndex(r => r[0] === 'Position');
+  const metaHeader = rows[1] || [];
+  const metaValues = rows[2] || [];
+  const meta = {};
+  metaHeader.forEach((h, i) => { meta[h] = metaValues[i] || ''; });
+  const itemsHeader = itemsHeaderIdx >= 0 ? (rows[itemsHeaderIdx] || []) : [];
+  const items = [];
+  if (itemsHeaderIdx >= 0) {
+    for (let i = itemsHeaderIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row.length || (row.length === 1 && !row[0])) continue;
+      const obj = {};
+      itemsHeader.forEach((h, idx) => { obj[h] = row[idx] || ''; });
+      if (obj.Name) items.push(obj);
+    }
+  }
+  return { meta, items };
+}
+
+async function parseLetterboxdZip(zip) {
+  const readCsv = async (entry) => {
+    if (!entry) return [];
+    const text = await entry.async('string');
+    return Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+  };
+
+  const [watched, watchlist, ratings, reviews, diary, likedFilms] = await Promise.all([
+    readCsv(findZipEntry(zip, 'watched.csv')),
+    readCsv(findZipEntry(zip, 'watchlist.csv')),
+    readCsv(findZipEntry(zip, 'ratings.csv')),
+    readCsv(findZipEntry(zip, 'reviews.csv')),
+    readCsv(findZipEntry(zip, 'diary.csv')),
+    readCsv(findZipEntryInFolder(zip, 'likes', 'films.csv'))
+  ]);
+
+  const lists = [];
+  for (const entry of findZipFolderCsvs(zip, 'lists')) {
+    const text = await entry.async('string');
+    const parsed = parseListCsv(text);
+    if (parsed.meta.Name) lists.push(parsed);
+  }
+
+  return { watched, watchlist, ratings, reviews, diary, likedFilms, lists };
+}
+
+function computeImportCounts(data) {
+  return {
+    watched: data.watched.length,
+    watchlist: data.watchlist.length,
+    diary: data.diary.length,
+    ratings: data.ratings.length,
+    liked: data.likedFilms.length,
+    lists: data.lists.length
+  };
+}
+
+async function handleImportFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  importState = 'parsing';
+  renderImportBody();
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const data = await parseLetterboxdZip(zip);
+    importZipData = data;
+    importCounts = computeImportCounts(data);
+    importState = 'summary';
+  } catch (e) {
+    showToast('Could not read that zip file', 'error');
+    importState = 'picker';
+  }
+  renderImportBody();
+}
+
+/* -- TMDB matching -- */
+function importFilmKey(name, year) {
+  return `${(name || '').trim().toLowerCase()}::${year || ''}`;
+}
+
+async function searchTmdbMovieMatch(name, year) {
+  try {
+    let url = `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`;
+    if (year) url += `&year=${year}`;
+    let res = await fetch(url);
+    let data = res.ok ? await res.json() : { results: [] };
+    let candidates = data.results || [];
+    if (!candidates.length && year) {
+      res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`);
+      data = res.ok ? await res.json() : { results: [] };
+      candidates = data.results || [];
+    }
+    if (!candidates.length) return null;
+    let best = candidates[0];
+    if (year) {
+      const exact = candidates.find(c => c.release_date && c.release_date.slice(0, 4) === String(year));
+      if (exact) best = exact;
+    }
+    return { id: best.id, title: best.title, poster_path: best.poster_path };
+  } catch { return null; }
+}
+
+// Resolves every unique film (by name+year) to a TMDB match, with a small
+// worker pool so hundreds/thousands of titles don't get searched one at a
+// time, and progress reported back via onProgress(done, total).
+async function resolveTmdbMatches(filmKeySet, onProgress) {
+  const results = {};
+  const keys = [...filmKeySet];
+  const CONCURRENCY = 6;
+  let idx = 0, done = 0;
+  async function worker() {
+    while (idx < keys.length) {
+      const myIdx = idx++;
+      const key = keys[myIdx];
+      const sep = key.lastIndexOf('::');
+      const name = key.slice(0, sep);
+      const yearStr = key.slice(sep + 2);
+      const year = yearStr ? parseInt(yearStr, 10) : null;
+      results[key] = await searchTmdbMovieMatch(name, year);
+      done++;
+      onProgress(done, keys.length);
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return results;
+}
+
+/* -- Supabase writes -- */
+// Inserts rows in chunks, and if a column doesn't exist on the person's
+// table (older schema), strips it from `optionalCols` and retries — same
+// forgiving pattern used elsewhere in the app.
+async function bulkInsertWithFallback(table, rows, optionalCols) {
+  if (!rows.length) return;
+  const CHUNK = 250;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    let chunk = rows.slice(i, i + CHUNK);
+    let remainingOptional = [...optionalCols];
+    let { error } = await db.from(table).insert(chunk);
+    let guard = 0;
+    while (error && (error.code === '42703' || /column/i.test(error.message || '')) && remainingOptional.length && guard < optionalCols.length + 1) {
+      const col = remainingOptional.shift();
+      chunk = chunk.map(r => { const rest = { ...r }; delete rest[col]; return rest; });
+      ({ error } = await db.from(table).insert(chunk));
+      guard++;
+    }
+    if (error) logImport(`Some ${table} rows failed to import (${error.message || 'unknown error'}).`);
+  }
+}
+
+async function runImport() {
+  if (!importZipData || !importTargetUser) return;
+  const user = importTargetUser;
+  const data = importZipData;
+
+  importState = 'importing';
+  importProgressLog = [];
+  importProgressPct = 0;
+  logImport('Preparing your export...');
+  renderImportBody();
+
+  const keyFor = importFilmKey;
+  const filmKeySet = new Set();
+  const addKeys = (rows) => rows.forEach(r => { if (r.Name) filmKeySet.add(keyFor(r.Name, r.Year)); });
+  addKeys(data.watched); addKeys(data.watchlist); addKeys(data.diary); addKeys(data.ratings); addKeys(data.likedFilms);
+  data.lists.forEach(l => l.items.forEach(it => { if (it.Name) filmKeySet.add(keyFor(it.Name, it.Year)); }));
+
+  logImport(`Matching ${filmKeySet.size} films with TMDB...`);
+  renderImportBody();
+  const matches = await resolveTmdbMatches(filmKeySet, (done, total) => {
+    importProgressPct = Math.round((done / total) * 55);
+    if (done % 15 === 0 || done === total) {
+      importProgressLog[importProgressLog.length - 1] = `Matching films with TMDB... ${done}/${total}`;
+      renderImportBody();
+    }
+  });
+  const getMatch = (name, year) => matches[keyFor(name, year)] || null;
+
+  const ratingByUri = {};
+  data.ratings.forEach(r => { if (r['Letterboxd URI']) ratingByUri[r['Letterboxd URI']] = r.Rating; });
+  const likedUriSet = new Set(data.likedFilms.map(r => r['Letterboxd URI']).filter(Boolean));
+  const reviewByUriDate = {};
+  data.reviews.forEach(r => { reviewByUriDate[`${r['Letterboxd URI']}::${r['Watched Date'] || ''}`] = r; });
+
+  /* WATCHED */
+  logImport('Importing watched films...');
+  renderImportBody();
+  const watchedRows = [];
+  const seenWatchedUri = new Set();
+  data.watched.forEach(row => {
+    const uri = row['Letterboxd URI'];
+    if (uri) { if (seenWatchedUri.has(uri)) return; seenWatchedUri.add(uri); }
+    const m = getMatch(row.Name, row.Year);
+    if (!m) return;
+    watchedRows.push({
+      user_id: user.id, tmdb_id: m.id, media_type: 'movie',
+      title: m.title || row.Name, poster_path: m.poster_path || null,
+      watched_on: row.Date || new Date().toISOString().slice(0, 10),
+      rating: ratingByUri[uri] ? Number(ratingByUri[uri]) : null,
+      liked: uri ? likedUriSet.has(uri) : false,
+      quick_mark: true
+    });
+  });
+  data.likedFilms.forEach(row => {
+    const uri = row['Letterboxd URI'];
+    if (uri && seenWatchedUri.has(uri)) return;
+    const m = getMatch(row.Name, row.Year);
+    if (!m) return;
+    watchedRows.push({
+      user_id: user.id, tmdb_id: m.id, media_type: 'movie',
+      title: m.title || row.Name, poster_path: m.poster_path || null,
+      watched_on: row.Date || new Date().toISOString().slice(0, 10),
+      rating: null, liked: true, quick_mark: true
+    });
+  });
+  await bulkInsertWithFallback('watched', watchedRows, ['quick_mark']);
+  logImport(`Added ${watchedRows.length} watched films.`);
+  importProgressPct = 68; renderImportBody();
+
+  /* WATCHLIST */
+  logImport('Importing watchlist...');
+  renderImportBody();
+  const watchlistRows = [];
+  data.watchlist.forEach(row => {
+    const m = getMatch(row.Name, row.Year);
+    if (!m) return;
+    watchlistRows.push({
+      user_id: user.id, tmdb_id: m.id, media_type: 'movie',
+      title: m.title || row.Name, poster_path: m.poster_path || null,
+      added_on: row.Date || new Date().toISOString().slice(0, 10)
+    });
+  });
+  await bulkInsertWithFallback('watchlist', watchlistRows, []);
+  logImport(`Added ${watchlistRows.length} watchlist films.`);
+  importProgressPct = 78; renderImportBody();
+
+  /* DIARY */
+  logImport('Importing diary entries...');
+  renderImportBody();
+  const diaryRows = [];
+  data.diary.forEach(row => {
+    const m = getMatch(row.Name, row.Year);
+    if (!m) return;
+    const uri = row['Letterboxd URI'];
+    const reviewMatch = reviewByUriDate[`${uri}::${row['Watched Date'] || ''}`];
+    diaryRows.push({
+      user_id: user.id, tmdb_id: m.id, media_type: 'movie',
+      title: m.title || row.Name, poster_path: m.poster_path || null,
+      watched_on: row['Watched Date'] || row.Date || new Date().toISOString().slice(0, 10),
+      rating: row.Rating ? Number(row.Rating) : null,
+      liked: uri ? likedUriSet.has(uri) : false,
+      rewatch: row.Rewatch === 'Yes',
+      review_text: (reviewMatch && reviewMatch.Review) || null,
+      contains_spoilers: false,
+      tags: parseTagsInput(row.Tags || '')
+    });
+  });
+  await bulkInsertWithFallback('diary', diaryRows, ['tags']);
+  logImport(`Added ${diaryRows.length} diary entries.`);
+  importProgressPct = 88; renderImportBody();
+
+  /* LISTS */
+  logImport('Importing lists...');
+  renderImportBody();
+  let listCount = 0, listItemCount = 0;
+  for (const list of data.lists) {
+    const name = list.meta.Name || 'Imported List';
+    const description = list.meta.Description || null;
+    const tags = parseTagsInput(list.meta.Tags || '');
+    let payload = { user_id: user.id, name, description, is_public: true, list_type: 'titles', tags };
+    let { data: inserted, error } = await db.from('lists').insert(payload).select().single();
+    for (let i = 0; i < 2 && error && (error.code === '42703' || /column/i.test(error.message || '')); i++) {
+      if ('tags' in payload) delete payload.tags;
+      else if ('list_type' in payload) delete payload.list_type;
+      ({ data: inserted, error } = await db.from('lists').insert(payload).select().single());
+    }
+    if (error || !inserted) { logImport(`Could not create list "${name}".`); continue; }
+    listCount++;
+    const itemRows = [];
+    let pos = 0;
+    list.items.forEach(it => {
+      const m = getMatch(it.Name, it.Year);
+      if (!m) return;
+      itemRows.push({ list_id: inserted.id, tmdb_id: m.id, media_type: 'movie', title: m.title || it.Name, poster_path: m.poster_path || null, position: pos++ });
+    });
+    if (itemRows.length) { await bulkInsertWithFallback('list_items', itemRows, []); listItemCount += itemRows.length; }
+  }
+  logImport(`Created ${listCount} lists with ${listItemCount} items.`);
+  importProgressPct = 100;
+  logImport('Import complete!');
+  importState = 'done';
+  renderImportBody();
 }
 
 /* ---- BOOT ---- */
