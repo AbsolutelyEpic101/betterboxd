@@ -4655,16 +4655,33 @@ function importFilmKey(name, year) {
   return `${(name || '').trim().toLowerCase()}::${year || ''}`;
 }
 
+// A plain fetch() can come back non-ok on a rate limit (429) or a transient
+// network hiccup. Since a batch import fires off hundreds/thousands of TMDB
+// searches in quick succession, that's common enough that without a retry
+// here nearly every match can silently fail — which is what makes an import
+// look like it "worked" (the progress bar finishes) while nothing actually
+// got matched, and so nothing gets saved.
+async function tmdbFetchWithRetry(url, retries = 3) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    let res = null;
+    try { res = await fetch(url); } catch { res = null; }
+    if (res && res.ok) return res;
+    if (res && res.status !== 429 && attempt === retries) return res;
+    await new Promise(r => setTimeout(r, res && res.status === 429 ? 1100 * (attempt + 1) : 350));
+  }
+  return null;
+}
+
 async function searchTmdbMovieMatch(name, year) {
   try {
     let url = `${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`;
     if (year) url += `&year=${year}`;
-    let res = await fetch(url);
-    let data = res.ok ? await res.json() : { results: [] };
+    let res = await tmdbFetchWithRetry(url);
+    let data = (res && res.ok) ? await res.json() : { results: [] };
     let candidates = data.results || [];
     if (!candidates.length && year) {
-      res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`);
-      data = res.ok ? await res.json() : { results: [] };
+      res = await tmdbFetchWithRetry(`${TMDB_BASE}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(name)}&include_adult=false`);
+      data = (res && res.ok) ? await res.json() : { results: [] };
       candidates = data.results || [];
     }
     if (!candidates.length) return null;
@@ -4683,7 +4700,7 @@ async function searchTmdbMovieMatch(name, year) {
 async function resolveTmdbMatches(filmKeySet, onProgress) {
   const results = {};
   const keys = [...filmKeySet];
-  const CONCURRENCY = 6;
+  const CONCURRENCY = 4;
   let idx = 0, done = 0;
   async function worker() {
     while (idx < keys.length) {
@@ -4705,10 +4722,15 @@ async function resolveTmdbMatches(filmKeySet, onProgress) {
 /* -- Supabase writes -- */
 // Inserts rows in chunks, and if a column doesn't exist on the person's
 // table (older schema), strips it from `optionalCols` and retries — same
-// forgiving pattern used elsewhere in the app.
+// forgiving pattern used elsewhere in the app. If a whole chunk fails for
+// some other reason (one bad row, a constraint, RLS, etc.) it falls back to
+// inserting that chunk one row at a time so a single bad row can't silently
+// take the rest of the batch down with it. Returns how many rows actually
+// made it in, rather than assuming the attempted count all succeeded.
 async function bulkInsertWithFallback(table, rows, optionalCols) {
-  if (!rows.length) return;
-  const CHUNK = 250;
+  if (!rows.length) return { inserted: 0, failed: 0 };
+  const CHUNK = 100;
+  let inserted = 0, failed = 0;
   for (let i = 0; i < rows.length; i += CHUNK) {
     let chunk = rows.slice(i, i + CHUNK);
     let remainingOptional = [...optionalCols];
@@ -4720,8 +4742,15 @@ async function bulkInsertWithFallback(table, rows, optionalCols) {
       ({ error } = await db.from(table).insert(chunk));
       guard++;
     }
-    if (error) logImport(`Some ${table} rows failed to import (${error.message || 'unknown error'}).`);
+    if (!error) { inserted += chunk.length; continue; }
+    logImport(`${table}: a batch of ${chunk.length} failed (${error.message || 'unknown error'}) — retrying one at a time...`);
+    for (const row of chunk) {
+      const { error: rowError } = await db.from(table).insert([row]);
+      if (rowError) failed++; else inserted++;
+    }
   }
+  if (failed) logImport(`${table}: ${failed} row(s) could not be saved.`);
+  return { inserted, failed };
 }
 
 async function runImport() {
@@ -4751,6 +4780,11 @@ async function runImport() {
     }
   });
   const getMatch = (name, year) => matches[keyFor(name, year)] || null;
+  const matchedCount = Object.values(matches).filter(Boolean).length;
+  logImport(`Matched ${matchedCount} of ${filmKeySet.size} films with TMDB.`);
+  if (filmKeySet.size && matchedCount === 0) {
+    logImport('⚠️ Nothing matched — check your internet connection and try again.');
+  }
 
   const ratingByUri = {};
   data.ratings.forEach(r => { if (r['Letterboxd URI']) ratingByUri[r['Letterboxd URI']] = r.Rating; });
@@ -4789,8 +4823,8 @@ async function runImport() {
       rating: null, liked: true, quick_mark: true
     });
   });
-  await bulkInsertWithFallback('watched', watchedRows, ['quick_mark']);
-  logImport(`Added ${watchedRows.length} watched films.`);
+  const watchedResult = await bulkInsertWithFallback('watched', watchedRows, ['quick_mark']);
+  logImport(`Added ${watchedResult.inserted} of ${watchedRows.length} watched films.`);
   importProgressPct = 68; renderImportBody();
 
   /* WATCHLIST */
@@ -4806,8 +4840,8 @@ async function runImport() {
       added_on: row.Date || new Date().toISOString().slice(0, 10)
     });
   });
-  await bulkInsertWithFallback('watchlist', watchlistRows, []);
-  logImport(`Added ${watchlistRows.length} watchlist films.`);
+  const watchlistResult = await bulkInsertWithFallback('watchlist', watchlistRows, []);
+  logImport(`Added ${watchlistResult.inserted} of ${watchlistRows.length} watchlist films.`);
   importProgressPct = 78; renderImportBody();
 
   /* DIARY */
