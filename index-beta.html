@@ -624,6 +624,14 @@
           <div class="form-label">Password</div>
           <input class="form-input" type="password" id="signup-password" placeholder="Min. 6 characters" autocomplete="new-password">
         </div>
+        <div class="form-group">
+          <div class="form-label">Letterboxd Data (optional)</div>
+          <label class="btn-secondary" style="display:block;text-align:center;cursor:pointer;">
+            <span id="signup-import-label-text">Upload .zip Export</span>
+            <input type="file" accept=".zip" style="display:none;" onchange="handleSignupZipSelected(this)">
+          </label>
+          <div style="font-size:11.5px;color:var(--text3);line-height:1.4;margin-top:2px;">Bring over your watched films, watchlist, ratings, diary, likes and lists from a Letterboxd data export.</div>
+        </div>
       </div>
     </div>
     <div class="auth-footer">
@@ -2099,11 +2107,25 @@ async function handleSignup() {
   success.classList.add('show');
   if (data.session) {
     successText.textContent = "You're all set!";
-    setTimeout(() => { successSpinner.style.display = 'none'; goToImportScreen(data.user); }, 1200);
+    setTimeout(() => {
+      successSpinner.style.display = 'none';
+      if (signupImportFile) goToImportScreen(data.user, signupImportFile);
+      else enterApp(data.user);
+    }, 1200);
   } else {
-    successText.textContent = 'Account created — check your email to confirm, then sign in.';
+    successText.textContent = signupImportFile
+      ? 'Account created — check your email to confirm, then sign in to import your data.'
+      : 'Account created — check your email to confirm, then sign in.';
     setTimeout(() => { successSpinner.style.display = 'none'; document.getElementById('login-email').value = email; goTo('screen-login'); }, 2200);
   }
+}
+
+function handleSignupZipSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  signupImportFile = file;
+  const labelText = document.getElementById('signup-import-label-text');
+  if (labelText) labelText.textContent = `✓ ${file.name}`;
 }
 
 function handleLogout() {
@@ -4429,8 +4451,9 @@ let importZipData = null;
 let importCounts = {};
 let importProgressPct = 0;
 let importProgressLog = [];
+let signupImportFile = null; // zip chosen on the Create Account form, if any
 
-function goToImportScreen(user) {
+function goToImportScreen(user, file) {
   importTargetUser = user;
   importZipData = null;
   importState = 'picker';
@@ -4438,7 +4461,8 @@ function goToImportScreen(user) {
   importProgressPct = 0;
   importProgressLog = [];
   goTo('screen-import');
-  renderImportBody();
+  if (file) processImportFile(file);
+  else renderImportBody();
 }
 
 function closeImportScreen() {
@@ -4604,9 +4628,13 @@ function computeImportCounts(data) {
   };
 }
 
-async function handleImportFileSelected(input) {
+function handleImportFileSelected(input) {
   const file = input.files[0];
   if (!file) return;
+  processImportFile(file);
+}
+
+async function processImportFile(file) {
   importState = 'parsing';
   renderImportBody();
   try {
