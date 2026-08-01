@@ -2691,10 +2691,86 @@ function expandDetailSection(id) {
 
 /* ---- PERSON DETAIL (actor / director / cast / crew pages) ---- */
 
-// Common roles are pinned to the top in this order (mirrors how Letterboxd
-// orders a person's page); any other job the person has done follows,
-// ranked by how many credits they have in it.
-const PERSON_ROLE_PRIORITY = ['Director', 'Actor', 'Writer', 'Screenplay', 'Story', 'Producer', 'Executive Producer', 'Director of Photography', 'Original Music Composer', 'Editor', 'Costume Design', 'Casting'];
+// Only these categories are ever shown on a person's page. Raw TMDB job
+// titles are folded into one of these (e.g. "Screenplay" and "Writer" both
+// become "Writer"); anything not covered here — including "Thanks" — is
+// left out entirely rather than shown as its own section.
+const PERSON_JOB_MAP = {
+  'Director': 'Director',
+  'Producer': 'Producer',
+  'Executive Producer': 'Executive Producer',
+  'Story': 'Story',
+  'Writer': 'Writer',
+  'Screenplay': 'Writer',
+  'Screenstory': 'Writer',
+  'Original Film Writer': 'Original Writer',
+  'Editor': 'Editor',
+  'Title Design': 'Title Design',
+  'Director of Photography': 'Cinematographer',
+  'Camera Operator': 'Camera Operator',
+  'Production Design': 'Production Design',
+  'Visual Effects Supervisor': 'Visual Effects',
+  'Visual Effects Producer': 'Visual Effects',
+  'Visual Effects Editor': 'Visual Effects',
+  'Visual Effects': 'Visual Effects',
+  'Stunts': 'Stunts',
+  'Stunt Coordinator': 'Stunts',
+  'Stunt Double': 'Stunts',
+  'Choreographer': 'Choreography',
+  'Original Music Composer': 'Composer',
+  'Music': 'Composer',
+  'Costume Design': 'Costume Design',
+  'Makeup Artist': 'Makeup',
+  'Makeup Department Head': 'Makeup',
+  'Personal Makeup Artist': 'Makeup',
+  'Hairstylist': 'Hairstyling',
+  'Hair Designer': 'Hairstyling',
+  'Personal Hair Stylist': 'Hairstyling',
+  'Casting': 'Casting Director',
+  'Casting Director': 'Casting Director',
+  'Sound Designer': 'Sound',
+  'Sound Editor': 'Sound',
+  'Sound Mixer': 'Sound',
+  'Sound Re-Recording Mixer': 'Sound',
+  'Supervising Sound Editor': 'Sound',
+  'Production Sound Mixer': 'Sound',
+  'Sound Effects Editor': 'Sound'
+};
+
+// Maps a raw TMDB crew job title to one of the allowed page sections above,
+// falling back to loose keyword matching for job titles TMDB phrases
+// slightly differently across films. Returns null for anything not covered
+// (e.g. "Thanks"), which excludes it from the person's page entirely.
+function normalizePersonJob(job) {
+  if (!job) return null;
+  if (PERSON_JOB_MAP[job]) return PERSON_JOB_MAP[job];
+  const j = job.toLowerCase();
+  if (j === 'thanks') return null;
+  if (j.includes('sound')) return 'Sound';
+  if (j.includes('makeup') || j.includes('make-up')) return 'Makeup';
+  if (j.includes('hair')) return 'Hairstyling';
+  if (j.includes('stunt')) return 'Stunts';
+  if (j.includes('visual effects')) return 'Visual Effects';
+  if (j.includes('casting')) return 'Casting Director';
+  if (j.includes('choreograph')) return 'Choreography';
+  return null;
+}
+
+// TMDB's broad "known for" department, mapped down to the specific section
+// on this page that best represents it. Used only to decide which section
+// (if the person has one) gets pinned to the top of their filmography.
+const KNOWN_FOR_DEPARTMENT_MAP = {
+  'Acting': 'Actor',
+  'Directing': 'Director',
+  'Writing': 'Writer',
+  'Production': 'Producer',
+  'Camera': 'Cinematographer',
+  'Editing': 'Editor',
+  'Art': 'Production Design',
+  'Sound': 'Sound',
+  'Costume & Make-Up': 'Costume Design',
+  'Visual Effects': 'Visual Effects'
+};
 
 async function openPersonDetail(id, silent) {
   if (!silent) {
@@ -2741,7 +2817,8 @@ function groupPersonCredits(person) {
   crew.forEach(c => {
     const type = c.media_type === 'tv' ? 'tv' : (c.media_type === 'movie' ? 'movie' : null);
     if (!type) return;
-    const job = c.job || c.department || 'Crew';
+    const job = normalizePersonJob(c.job || c.department);
+    if (!job) return; // not one of the categories this page shows (e.g. "Thanks")
     const key = `${type}-${c.id}-${job}`;
     if (seenCrew.has(key)) return;
     seenCrew.add(key);
@@ -2774,9 +2851,10 @@ async function loadPersonWatchedSets() {
 
 function orderPersonJobNames(groups) {
   const names = Object.keys(groups);
-  const priorityPresent = PERSON_ROLE_PRIORITY.filter(r => names.includes(r));
-  const rest = names.filter(n => !PERSON_ROLE_PRIORITY.includes(n)).sort((a, b) => (groups[b]?.length || 0) - (groups[a]?.length || 0));
-  return [...priorityPresent, ...rest];
+  const knownForJob = selectedPerson ? KNOWN_FOR_DEPARTMENT_MAP[selectedPerson.known_for_department] : null;
+  const first = (knownForJob && names.includes(knownForJob)) ? [knownForJob] : [];
+  const rest = names.filter(n => !first.includes(n)).sort((a, b) => (groups[b]?.length || 0) - (groups[a]?.length || 0));
+  return [...first, ...rest];
 }
 
 function renderPersonDetail() {
@@ -3519,7 +3597,7 @@ async function renderStatsBody() {
 
 /* ---- TAGS ---- */
 function tagsDomainToggleHtml() {
-  return `<div style="display:flex;gap:8px;padding:4px 20px 14px;">
+  return `<div style="display:flex;gap:8px;padding:12px 20px 14px;">
     <div class="filter-chip ${tagsDomain === 'films' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('films')">FILMS</div>
     <div class="filter-chip ${tagsDomain === 'lists' ? 'active' : ''}" style="flex:1;justify-content:center;" onclick="setTagsDomain('lists')">LISTS</div>
   </div>`;
