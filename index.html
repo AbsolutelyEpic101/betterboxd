@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>betterboxd</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -46,8 +46,8 @@
 
   .phone {
     width: 390px;
-    height: 100svh;
     height: 100vh;
+    height: 100dvh;
     background: var(--bg);
     position: relative;
     overflow: hidden;
@@ -86,7 +86,7 @@
     -webkit-backdrop-filter: blur(24px);
     border-radius: 22px;
     border: 0.5px solid var(--border2);
-    margin: 0 10px 14px;
+    margin: 0 10px calc(14px + env(safe-area-inset-bottom, 0px));
     flex-shrink: 0;
     box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.04) inset;
   }
@@ -111,7 +111,7 @@
   .dots { display: flex; gap: 6px; margin-top: 40px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bg4); }
   .dot.on { background: var(--text); }
-  .onboard-footer { padding: 0 32px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .onboard-footer { padding: 0 32px calc(40px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
 
   .btn-primary { width: 100%; padding: 16px; background: var(--purple); border: none; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s; }
   .btn-primary:active { opacity: 0.8; }
@@ -137,7 +137,7 @@
   .auth-error.show { display: block; }
   .auth-success { background: rgba(76,175,117,0.12); border: 0.5px solid rgba(76,175,117,0.3); border-radius: 10px; padding: 12px 14px; color: var(--green); font-size: 13px; line-height: 1.45; display: none; align-items: center; gap: 8px; }
   .auth-success.show { display: flex; }
-  .auth-footer { padding: 20px 32px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .auth-footer { padding: 20px 32px calc(40px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
   .auth-switch { text-align: center; font-size: 14px; color: var(--text2); }
   .auth-switch span { color: var(--purple-light); font-weight: 500; cursor: pointer; }
 
@@ -673,6 +673,7 @@
     </div>
     <div class="bottom-nav">
       <div class="nav-item active" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item" onclick="goToExplore()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg><span>Explore</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
@@ -689,6 +690,7 @@
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item" onclick="goToExplore()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg><span>Explore</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item active" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
@@ -702,7 +704,35 @@
     <div class="screen-body" id="diary-body"></div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item" onclick="goToExplore()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg><span>Explore</span></div>
       <div class="nav-item active" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
+      <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+      <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
+      <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- EXPLORE -->
+  <div class="screen" id="screen-explore">
+    <div class="home-header"><div class="logo-sm">Explore</div></div>
+    <div class="filter-bar" id="explore-filter-bar">
+      <div class="filter-chip" id="explore-sort-filter-chip" onclick="openExploreSortSheet()">
+        <span style="font-size:14px;line-height:1;font-weight:600;">⇅</span>
+        <span id="explore-sort-chip-label">Most Popular</span>
+      </div>
+      <div class="filter-chip" id="explore-year-filter-chip" onclick="openExploreFilterSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        <span id="explore-year-filter-chip-label">FILTER</span>
+      </div>
+    </div>
+    <div class="screen-body" id="explore-scroll-body" onscroll="onExploreScroll()">
+      <div class="film-grid" id="explore-grid"></div>
+      <div id="explore-loadmore" style="display:none;padding:6px 0 22px;justify-content:center;"><span class="spinner dark"></span></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item active" onclick="goToExplore()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg><span>Explore</span></div>
+      <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
@@ -825,6 +855,7 @@
     </div>
     <div class="bottom-nav">
       <div class="nav-item" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Home</span></div>
+      <div class="nav-item" onclick="goToExplore()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg><span>Explore</span></div>
       <div class="nav-item" onclick="openDiary()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg><span>Diary</span></div>
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
@@ -962,7 +993,26 @@ function resetWatchedFilter() { appliedWatchedFilter = null; updateFilterChip();
 
 // Filter/sort context — lets the shared sort & filter sheets serve either the
 // Home library grid or a List Detail grid without the two states colliding.
-let filterContext = 'home'; // 'home' | 'list'
+let filterContext = 'home'; // 'home' | 'list' | 'explore'
+
+// Explore state — a global, popularity-sorted discovery feed (not limited to
+// the user's own library) so they can find new films to watchlist. Backed
+// by TMDB's /discover/movie endpoint, paginated with infinite scroll.
+let exploreSort = 'popularity.desc';
+let exploreYearFilter = null; // null | { type:'year', year } | { type:'decade', decade }
+let exploreGenreInclude = new Set();
+let exploreGenreExclude = new Set();
+let exploreItems = [];
+let explorePage = 1;
+let exploreTotalPages = 1;
+let exploreLoading = false;
+const EXPLORE_MAX_PAGES = 20; // TMDB discover caps at 500 pages; keep this sane
+const EXPLORE_SORT_OPTIONS = [
+  { value: 'popularity.desc', label: 'Most Popular' },
+  { value: 'vote_average.desc', label: 'Highest Rated' },
+  { value: 'primary_release_date.desc', label: 'Newest First' },
+  { value: 'primary_release_date.asc', label: 'Earliest First' }
+];
 let listSortValue = null;
 let listAppliedYearFilter = null;
 let listAppliedLikedFilter = null;
@@ -1377,6 +1427,17 @@ function sortOptionRowHtml(value, label) {
 
 function renderSortSheetBody() {
   const body = document.getElementById('sort-sheet-body');
+  if (filterContext === 'explore') {
+    body.innerHTML = EXPLORE_SORT_OPTIONS.map(opt => {
+      const selected = exploreSort === opt.value;
+      return `
+        <div class="settings-option-row ${selected ? 'selected' : ''}" onclick="chooseExploreSort('${opt.value}')">
+          <span>${opt.label}</span>
+          <div class="settings-option-check ${selected ? 'checked' : ''}">${selected ? checkSVG : ''}</div>
+        </div>`;
+    }).join('');
+    return;
+  }
   let html = sortOptionRowHtml(SORT_TITLE_OPTION.value, SORT_TITLE_OPTION.label);
   html += sortOptionRowHtml(SORT_SHUFFLE_OPTION.value, SORT_SHUFFLE_OPTION.label);
   SORT_SECTIONS.forEach(section => {
@@ -1409,6 +1470,12 @@ function updateSortChip() {
   if (listChip && listLabel) {
     if (listSortValue) { listChip.classList.add('active'); listLabel.textContent = SORT_LABELS[listSortValue] || 'SORT'; }
     else { listChip.classList.remove('active'); listLabel.textContent = 'SORT'; }
+  }
+  const exploreChip = document.getElementById('explore-sort-filter-chip');
+  const exploreLabel = document.getElementById('explore-sort-chip-label');
+  if (exploreChip && exploreLabel) {
+    exploreChip.classList.add('active');
+    exploreLabel.textContent = exploreSortLabel();
   }
 }
 
@@ -1477,8 +1544,13 @@ async function applyCertFilter() {
 }
 
 async function openGenreStep() {
-  pendingGenreInclude = new Set(appliedGenreInclude);
-  pendingGenreExclude = new Set(appliedGenreExclude);
+  if (filterContext === 'explore') {
+    pendingGenreInclude = new Set(exploreGenreInclude);
+    pendingGenreExclude = new Set(exploreGenreExclude);
+  } else {
+    pendingGenreInclude = new Set(appliedGenreInclude);
+    pendingGenreExclude = new Set(appliedGenreExclude);
+  }
   filterSheetStep = 'genre';
   document.getElementById('filter-sheet-title').textContent = 'Genre';
   document.getElementById('filter-sheet-back').style.display = 'flex';
@@ -1527,6 +1599,15 @@ function selectGenreAny() {
 }
 
 async function applyGenreFilter() {
+  if (filterContext === 'explore') {
+    exploreGenreInclude = new Set(pendingGenreInclude);
+    exploreGenreExclude = new Set(pendingGenreExclude);
+    updateFilterChip();
+    filterSheetStep = 'main';
+    renderFilterSheetStep();
+    await loadExplore(true);
+    return;
+  }
   appliedGenreInclude = new Set(pendingGenreInclude);
   appliedGenreExclude = new Set(pendingGenreExclude);
   updateFilterChip();
@@ -1547,7 +1628,10 @@ function yearFilterLabel() {
   return appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`;
 }
 
-function activeYearFilter() { return filterContext === 'list' ? listAppliedYearFilter : appliedYearFilter; }
+function activeYearFilter() {
+  if (filterContext === 'explore') return exploreYearFilter;
+  return filterContext === 'list' ? listAppliedYearFilter : appliedYearFilter;
+}
 function activeYearFilterLabel() {
   const yf = activeYearFilter();
   if (!yf) return 'ANY';
@@ -1590,11 +1674,14 @@ function servicesFilterLabel() {
   return names.length === 1 ? names[0] : `${names.length} Services`;
 }
 
-function genreFilterLabel() {
-  if (!appliedGenreInclude.size && !appliedGenreExclude.size) return 'ANY';
+function genreFilterLabel(ctx) {
+  ctx = ctx || filterContext;
+  const inc = ctx === 'explore' ? exploreGenreInclude : appliedGenreInclude;
+  const exc = ctx === 'explore' ? exploreGenreExclude : appliedGenreExclude;
+  if (!inc.size && !exc.size) return 'ANY';
   const parts = [];
-  if (appliedGenreInclude.size) parts.push([...appliedGenreInclude].map(genreNameById).join(', '));
-  if (appliedGenreExclude.size) parts.push('not ' + [...appliedGenreExclude].map(genreNameById).join(', '));
+  if (inc.size) parts.push([...inc].map(genreNameById).join(', '));
+  if (exc.size) parts.push('not ' + [...exc].map(genreNameById).join(', '));
   return parts.join(' · ');
 }
 
@@ -1625,7 +1712,11 @@ function renderFilterSheetStep() {
   if (filterSheetStep === 'main') {
     title.textContent = 'Filters';
     back.style.display = 'none';
-    if (filterContext === 'list') {
+    if (filterContext === 'explore') {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()");
+    } else if (filterContext === 'list') {
       body.innerHTML =
         filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
         filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
@@ -1745,10 +1836,13 @@ function renderFilterSheetStep() {
 }
 
 async function applyYearFilterAndClose(val) {
-  if (filterContext === 'list') listAppliedYearFilter = val; else appliedYearFilter = val;
+  if (filterContext === 'explore') exploreYearFilter = val;
+  else if (filterContext === 'list') listAppliedYearFilter = val;
+  else appliedYearFilter = val;
   updateFilterChip();
   document.getElementById('filter-sheet-overlay').classList.remove('show');
-  if (filterContext === 'list') await renderFilteredListGrid();
+  if (filterContext === 'explore') await loadExplore(true);
+  else if (filterContext === 'list') await renderFilteredListGrid();
   else await renderFilteredGrid();
 }
 
@@ -1762,7 +1856,7 @@ function updateFilterChip() {
   if (chip && label) {
     const parts = [];
     if (appliedYearFilter) parts.push(appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`);
-    if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel());
+    if (appliedGenreInclude.size > 0 || appliedGenreExclude.size > 0) parts.push(genreFilterLabel('home'));
     if (appliedCertFilter.size > 0) parts.push([...appliedCertFilter].join('/'));
     if (appliedServiceIds.size > 0) parts.push(servicesFilterLabel());
     if (appliedLikedFilter !== null) parts.push(appliedLikedFilter ? 'Liked' : 'Not Liked');
@@ -1779,6 +1873,15 @@ function updateFilterChip() {
     if (listAppliedWatchedFilter !== null) parts.push(listAppliedWatchedFilter ? 'Watched' : 'Not Watched');
     if (parts.length) { listChip.classList.add('active'); listLabel.textContent = parts.join(' · '); }
     else { listChip.classList.remove('active'); listLabel.textContent = 'FILTER'; }
+  }
+  const exploreChip = document.getElementById('explore-year-filter-chip');
+  const exploreLabel = document.getElementById('explore-year-filter-chip-label');
+  if (exploreChip && exploreLabel) {
+    const parts = [];
+    if (exploreYearFilter) parts.push(exploreYearFilter.type === 'year' ? String(exploreYearFilter.year) : `${exploreYearFilter.decade}s`);
+    if (exploreGenreInclude.size > 0 || exploreGenreExclude.size > 0) parts.push(genreFilterLabel('explore'));
+    if (parts.length) { exploreChip.classList.add('active'); exploreLabel.textContent = parts.join(' · '); }
+    else { exploreChip.classList.remove('active'); exploreLabel.textContent = 'FILTER'; }
   }
 }
 
@@ -1814,7 +1917,7 @@ async function fetchReleaseDatesFor(items, type) {
 
 /* ---- GENRES ---- */
 async function ensureGenreList() {
-  const type = homeMediaType === 'tv' ? 'tv' : 'movie';
+  const type = (filterContext !== 'explore' && homeMediaType === 'tv') ? 'tv' : 'movie';
   if (type === 'tv' && tvGenres) return;
   if (type === 'movie' && movieGenres) return;
   try {
@@ -1828,7 +1931,8 @@ async function ensureGenreList() {
 }
 
 function currentGenreList() {
-  return (homeMediaType === 'tv' ? tvGenres : movieGenres) || [];
+  const isTv = filterContext !== 'explore' && homeMediaType === 'tv';
+  return (isTv ? tvGenres : movieGenres) || [];
 }
 
 function genreNameById(id) {
@@ -1947,6 +2051,16 @@ function goToStats() {
   navStack = [];
   goTo('screen-stats');
   loadStats();
+}
+
+function goToExplore() {
+  navStack = [];
+  filterContext = 'explore';
+  goTo('screen-explore');
+  updateSortChip();
+  updateFilterChip();
+  if (!exploreItems.length) loadExplore(true);
+  else renderExploreGrid();
 }
 
 function goToSearch(purpose) {
@@ -3080,6 +3194,98 @@ async function toggleWatchedQuick() {
   showToast('Added to Watched');
   loadLibrary(); loadStats();
   openMovieDetail(selectedMovie.id, null, detailMode, selectedMediaType, true);
+}
+
+/* ---- EXPLORE ---- */
+function exploreSortLabel() {
+  const opt = EXPLORE_SORT_OPTIONS.find(o => o.value === exploreSort);
+  return opt ? opt.label : 'SORT';
+}
+
+async function loadExplore(reset) {
+  if (exploreLoading) return;
+  if (reset) { explorePage = 1; exploreItems = []; exploreTotalPages = 1; }
+  if (!reset && explorePage > exploreTotalPages) return;
+  if (!reset && explorePage > EXPLORE_MAX_PAGES) return;
+  exploreLoading = true;
+  const grid = document.getElementById('explore-grid');
+  const loadMore = document.getElementById('explore-loadmore');
+  if (reset) grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  else if (loadMore) loadMore.style.display = 'flex';
+  try {
+    let url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&include_adult=false&sort_by=${exploreSort}&page=${explorePage}`;
+    if (exploreSort === 'vote_average.desc') url += `&vote_count.gte=200`; // keep obscure zero-vote titles out of "Highest Rated"
+    if (exploreGenreInclude.size) url += `&with_genres=${[...exploreGenreInclude].join(',')}`;
+    if (exploreGenreExclude.size) url += `&without_genres=${[...exploreGenreExclude].join(',')}`;
+    if (exploreYearFilter) {
+      if (exploreYearFilter.type === 'year') {
+        url += `&primary_release_year=${exploreYearFilter.year}`;
+      } else {
+        url += `&primary_release_date.gte=${exploreYearFilter.decade}-01-01&primary_release_date.lte=${exploreYearFilter.decade + 9}-12-31`;
+      }
+    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const results = data.results || [];
+    exploreItems = reset ? results : [...exploreItems, ...results];
+    exploreTotalPages = data.total_pages || 1;
+    explorePage += 1;
+    renderExploreGrid();
+  } catch {
+    if (reset) grid.innerHTML = `<div class="empty-grid">Couldn't load films right now.<br>Pull down or try again in a moment.</div>`;
+    showToast('Could not load Explore', 'error');
+  } finally {
+    exploreLoading = false;
+    if (loadMore) loadMore.style.display = 'none';
+  }
+}
+
+function renderExploreGrid() {
+  const grid = document.getElementById('explore-grid');
+  if (!grid) return;
+  if (!exploreItems.length) {
+    grid.innerHTML = `<div class="empty-grid">No films match these filters.<br>Try widening your Genre or Year filter.</div>`;
+    return;
+  }
+  grid.innerHTML = exploreItems.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.id}, 'screen-explore', 'log', 'movie')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('');
+}
+
+function onExploreScroll() {
+  const body = document.getElementById('explore-scroll-body');
+  if (!body || exploreLoading) return;
+  if (body.scrollTop + body.clientHeight > body.scrollHeight - 400) {
+    loadExplore(false);
+  }
+}
+
+function openExploreSortSheet() {
+  filterContext = 'explore';
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.add('show');
+}
+
+async function chooseExploreSort(value) {
+  exploreSort = value;
+  updateSortChip();
+  renderSortSheetBody();
+  document.getElementById('sort-sheet-overlay').classList.remove('show');
+  await loadExplore(true);
+}
+
+function openExploreFilterSheet() {
+  filterContext = 'explore';
+  filterSheetStep = 'main';
+  filterSheetDecade = null;
+  renderFilterSheetStep();
+  document.getElementById('filter-sheet-overlay').classList.add('show');
 }
 
 /* ---- LIBRARY ---- */
