@@ -658,6 +658,9 @@
           <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         </div>
         <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div onclick="goToExplore()" style="cursor:pointer;" title="Explore">
+          <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        </div>
         <div class="avatar" id="home-avatar" onclick="goToProfile()" title="Profile">?</div>
       </div>
     </div>
@@ -712,6 +715,28 @@
       <div class="nav-item" onclick="openLogSearchModal()"><div class="nav-add"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
       <div class="nav-item active" onclick="goToStats()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></div>
       <div class="nav-item" onclick="goToProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+    </div>
+  </div>
+
+  <!-- EXPLORE -->
+  <div class="screen" id="screen-explore">
+    <div class="home-header">
+      <div onclick="goTo('screen-home')" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);">
+        <svg viewBox="0 0 24 24" stroke-width="2" width="18" height="18" style="stroke:var(--text2);fill:none;"><polyline points="15 18 9 12 15 6"/></svg>Back
+      </div>
+    </div>
+    <div style="padding:0 20px 10px;display:flex;align-items:center;justify-content:space-between;">
+      <div class="logo-sm">Explore</div>
+      <div class="filter-chip" id="explore-filter-chip" onclick="openExploreFilterSheet()">
+        <svg viewBox="0 0 24 24" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        <span id="explore-filter-chip-label">FILTER</span>
+      </div>
+    </div>
+    <div class="screen-body" id="explore-screen-body" onscroll="handleExploreScroll()">
+      <div class="film-grid" id="explore-grid"></div>
+      <div id="explore-load-more" style="padding:4px 20px 30px;text-align:center;display:none;">
+        <span class="spinner dark"></span>
+      </div>
     </div>
   </div>
 
@@ -1014,6 +1039,44 @@ function resetGenreFilter() { appliedGenreInclude = new Set(); appliedGenreExclu
 
 function resetTemporaryFilters() { resetAllSorts(); resetYearFilter(); resetCertFilter(); resetServiceFilter(); resetGenreFilter(); resetLikedFilter(); resetWatchedFilter(); }
 
+// Explore screen state — a popularity-sorted browse of all movies (via TMDB
+// discover), fetched independently of the user's own library. Supports every
+// Home filter except Liked (which only makes sense for titles you've logged),
+// and intentionally has no sort control since it's always popularity order.
+let exploreItems = [];        // unified { tmdb_id, title, poster_path, release_date, genre_ids, popularity }
+let explorePage = 0;
+let exploreLoading = false;
+let exploreHasMore = true;
+const EXPLORE_MAX_PAGES = 500; // TMDB's own hard limit on discover pages
+let exploreWatchedSet = new Set();
+let exploreAppliedYearFilter = null;
+let exploreAppliedGenreInclude = new Set();
+let exploreAppliedGenreExclude = new Set();
+let exploreAppliedCertFilter = new Set();
+let exploreAppliedServiceIds = new Set();
+let exploreAppliedWatchedFilter = null;
+function resetExploreFilters() {
+  exploreAppliedYearFilter = null;
+  exploreAppliedGenreInclude = new Set();
+  exploreAppliedGenreExclude = new Set();
+  exploreAppliedCertFilter = new Set();
+  exploreAppliedServiceIds = new Set();
+  exploreAppliedWatchedFilter = null;
+  updateFilterChip();
+}
+
+// TMDB occasionally ships a title that doesn't match what the film is
+// actually known as (often a mistranslated/alternate export title). Fix
+// known cases here so they display and save correctly everywhere.
+const TMDB_TITLE_OVERRIDES = {
+  'warriors of the wind': 'Nausicaä of the Valley of the Wind'
+};
+function fixTmdbTitle(title) {
+  if (!title) return title;
+  const fixed = TMDB_TITLE_OVERRIDES[title.trim().toLowerCase()];
+  return fixed || title;
+}
+
 // Sort state — kept separate per media type so switching tabs doesn't carry a sort over.
 // This is intentionally in-memory only (not persisted to localStorage): it resets
 // to "no sort" whenever the user switches tabs or navigates to a different screen.
@@ -1221,7 +1284,7 @@ function showConfirm({ title, message, confirmText = 'Confirm', danger = true, o
 
 /* ---- SERVICE SHEET ---- */
 function openServicesStep() {
-  pendingServiceIds = new Set(appliedServiceIds);
+  pendingServiceIds = new Set(filterContext === 'explore' ? exploreAppliedServiceIds : appliedServiceIds);
   filterSheetStep = 'services';
   renderFilterSheetStep();
 }
@@ -1238,11 +1301,13 @@ function selectServiceAny() {
 }
 
 async function applyServiceFilterNew() {
-  appliedServiceIds = new Set(pendingServiceIds);
+  if (filterContext === 'explore') exploreAppliedServiceIds = new Set(pendingServiceIds);
+  else appliedServiceIds = new Set(pendingServiceIds);
   updateFilterChip();
   filterSheetStep = 'main';
   renderFilterSheetStep();
-  await renderFilteredGrid();
+  if (filterContext === 'explore') await renderFilteredExploreGrid();
+  else await renderFilteredGrid();
 }
 
 async function renderFilteredGrid() {
@@ -1471,7 +1536,7 @@ function openDecadeYears(decade) {
 }
 
 function openAgeRatingStep() {
-  pendingCertFilter = new Set(appliedCertFilter);
+  pendingCertFilter = new Set(filterContext === 'explore' ? exploreAppliedCertFilter : appliedCertFilter);
   filterSheetStep = 'ageRating';
   renderFilterSheetStep();
 }
@@ -1488,16 +1553,18 @@ function selectCertAny() {
 }
 
 async function applyCertFilter() {
-  appliedCertFilter = new Set(pendingCertFilter);
+  if (filterContext === 'explore') exploreAppliedCertFilter = new Set(pendingCertFilter);
+  else appliedCertFilter = new Set(pendingCertFilter);
   updateFilterChip();
   filterSheetStep = 'main';
   renderFilterSheetStep();
-  await renderFilteredGrid();
+  if (filterContext === 'explore') await renderFilteredExploreGrid();
+  else await renderFilteredGrid();
 }
 
 async function openGenreStep() {
-  pendingGenreInclude = new Set(appliedGenreInclude);
-  pendingGenreExclude = new Set(appliedGenreExclude);
+  pendingGenreInclude = new Set(filterContext === 'explore' ? exploreAppliedGenreInclude : appliedGenreInclude);
+  pendingGenreExclude = new Set(filterContext === 'explore' ? exploreAppliedGenreExclude : appliedGenreExclude);
   filterSheetStep = 'genre';
   document.getElementById('filter-sheet-title').textContent = 'Genre';
   document.getElementById('filter-sheet-back').style.display = 'flex';
@@ -1546,12 +1613,18 @@ function selectGenreAny() {
 }
 
 async function applyGenreFilter() {
-  appliedGenreInclude = new Set(pendingGenreInclude);
-  appliedGenreExclude = new Set(pendingGenreExclude);
+  if (filterContext === 'explore') {
+    exploreAppliedGenreInclude = new Set(pendingGenreInclude);
+    exploreAppliedGenreExclude = new Set(pendingGenreExclude);
+  } else {
+    appliedGenreInclude = new Set(pendingGenreInclude);
+    appliedGenreExclude = new Set(pendingGenreExclude);
+  }
   updateFilterChip();
   filterSheetStep = 'main';
   renderFilterSheetStep();
-  await renderFilteredGrid();
+  if (filterContext === 'explore') await resetAndReloadExplore();
+  else await renderFilteredGrid();
 }
 
 function getDecadesList() {
@@ -1566,7 +1639,11 @@ function yearFilterLabel() {
   return appliedYearFilter.type === 'year' ? String(appliedYearFilter.year) : `${appliedYearFilter.decade}s`;
 }
 
-function activeYearFilter() { return filterContext === 'list' ? listAppliedYearFilter : appliedYearFilter; }
+function activeYearFilter() {
+  if (filterContext === 'list') return listAppliedYearFilter;
+  if (filterContext === 'explore') return exploreAppliedYearFilter;
+  return appliedYearFilter;
+}
 function activeYearFilterLabel() {
   const yf = activeYearFilter();
   if (!yf) return 'ANY';
@@ -1578,7 +1655,7 @@ function likedFilterLabel() {
   return v === true ? 'Liked' : v === false ? 'Not Liked' : 'ANY';
 }
 function watchedFilterLabel() {
-  const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+  const v = filterContext === 'list' ? listAppliedWatchedFilter : filterContext === 'explore' ? exploreAppliedWatchedFilter : appliedWatchedFilter;
   return v === true ? 'Watched' : v === false ? 'Not Watched' : 'ANY';
 }
 async function selectLikedFilter(val) {
@@ -1590,30 +1667,37 @@ async function selectLikedFilter(val) {
   else await renderFilteredGrid();
 }
 async function selectWatchedFilter(val) {
-  if (filterContext === 'list') listAppliedWatchedFilter = val; else appliedWatchedFilter = val;
+  if (filterContext === 'list') listAppliedWatchedFilter = val;
+  else if (filterContext === 'explore') exploreAppliedWatchedFilter = val;
+  else appliedWatchedFilter = val;
   updateFilterChip();
   filterSheetStep = 'main';
   renderFilterSheetStep();
   if (filterContext === 'list') await renderFilteredListGrid();
+  else if (filterContext === 'explore') await renderFilteredExploreGrid();
   else await renderFilteredGrid();
 }
 
 function ageRatingFilterLabel() {
-  if (!appliedCertFilter.size) return 'ANY';
-  return [...appliedCertFilter].join(', ');
+  const set = filterContext === 'explore' ? exploreAppliedCertFilter : appliedCertFilter;
+  if (!set.size) return 'ANY';
+  return [...set].join(', ');
 }
 
 function servicesFilterLabel() {
-  if (!appliedServiceIds.size) return 'ANY';
-  const names = STREAMING_SERVICES.filter(s => appliedServiceIds.has(s.id)).map(s => s.name);
+  const set = filterContext === 'explore' ? exploreAppliedServiceIds : appliedServiceIds;
+  if (!set.size) return 'ANY';
+  const names = STREAMING_SERVICES.filter(s => set.has(s.id)).map(s => s.name);
   return names.length === 1 ? names[0] : `${names.length} Services`;
 }
 
-function genreFilterLabel() {
-  if (!appliedGenreInclude.size && !appliedGenreExclude.size) return 'ANY';
+function genreFilterLabel(ctx = filterContext) {
+  const inc = ctx === 'explore' ? exploreAppliedGenreInclude : appliedGenreInclude;
+  const exc = ctx === 'explore' ? exploreAppliedGenreExclude : appliedGenreExclude;
+  if (!inc.size && !exc.size) return 'ANY';
   const parts = [];
-  if (appliedGenreInclude.size) parts.push([...appliedGenreInclude].map(genreNameById).join(', '));
-  if (appliedGenreExclude.size) parts.push('not ' + [...appliedGenreExclude].map(genreNameById).join(', '));
+  if (inc.size) parts.push([...inc].map(id => genreNameById(id, ctx)).join(', '));
+  if (exc.size) parts.push('not ' + [...exc].map(id => genreNameById(id, ctx)).join(', '));
   return parts.join(' · ');
 }
 
@@ -1648,6 +1732,13 @@ function renderFilterSheetStep() {
       body.innerHTML =
         filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
         filterNavRowHtml('Liked', likedFilterLabel(), "goFilterStep('liked')") +
+        filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
+    } else if (filterContext === 'explore') {
+      body.innerHTML =
+        filterNavRowHtml('Year', activeYearFilterLabel(), "goFilterStep('decades')") +
+        filterNavRowHtml('Genre', genreFilterLabel(), "openGenreStep()") +
+        filterNavRowHtml('Age Rating', ageRatingFilterLabel(), "openAgeRatingStep()") +
+        filterNavRowHtml('Services', servicesFilterLabel(), "openServicesStep()") +
         filterNavRowHtml('Watched', watchedFilterLabel(), "goFilterStep('watchedStatus')");
     } else {
       body.innerHTML =
@@ -1708,7 +1799,7 @@ function renderFilterSheetStep() {
   if (filterSheetStep === 'watchedStatus') {
     title.textContent = 'Watched';
     back.style.display = 'flex';
-    const v = filterContext === 'list' ? listAppliedWatchedFilter : appliedWatchedFilter;
+    const v = filterContext === 'list' ? listAppliedWatchedFilter : filterContext === 'explore' ? exploreAppliedWatchedFilter : appliedWatchedFilter;
     body.innerHTML =
       filterOptionRowHtml('ANY', v === null, 'selectWatchedFilter(null)') +
       filterOptionRowHtml('Watched', v === true, 'selectWatchedFilter(true)') +
@@ -1764,10 +1855,13 @@ function renderFilterSheetStep() {
 }
 
 async function applyYearFilterAndClose(val) {
-  if (filterContext === 'list') listAppliedYearFilter = val; else appliedYearFilter = val;
+  if (filterContext === 'list') listAppliedYearFilter = val;
+  else if (filterContext === 'explore') exploreAppliedYearFilter = val;
+  else appliedYearFilter = val;
   updateFilterChip();
   document.getElementById('filter-sheet-overlay').classList.remove('show');
   if (filterContext === 'list') await renderFilteredListGrid();
+  else if (filterContext === 'explore') await resetAndReloadExplore();
   else await renderFilteredGrid();
 }
 
@@ -1833,7 +1927,7 @@ async function fetchReleaseDatesFor(items, type) {
 
 /* ---- GENRES ---- */
 async function ensureGenreList() {
-  const type = homeMediaType === 'tv' ? 'tv' : 'movie';
+  const type = filterContext === 'explore' ? 'movie' : (homeMediaType === 'tv' ? 'tv' : 'movie');
   if (type === 'tv' && tvGenres) return;
   if (type === 'movie' && movieGenres) return;
   try {
@@ -1846,12 +1940,17 @@ async function ensureGenreList() {
   }
 }
 
-function currentGenreList() {
+function genreListForContext(ctx) {
+  if (ctx === 'explore') return movieGenres || [];
   return (homeMediaType === 'tv' ? tvGenres : movieGenres) || [];
 }
 
-function genreNameById(id) {
-  const g = currentGenreList().find(g => g.id === id);
+function currentGenreList() {
+  return genreListForContext(filterContext);
+}
+
+function genreNameById(id, ctx = filterContext) {
+  const g = genreListForContext(ctx).find(g => g.id === id);
   return g ? g.name : String(id);
 }
 
@@ -1945,6 +2044,7 @@ async function applySort(items, type) {
 function goTo(id) {
   const current = document.querySelector('.screen.active');
   const leavingHome = current && current.id === 'screen-home' && id !== 'screen-home';
+  const leavingExplore = current && current.id === 'screen-explore' && id !== 'screen-explore';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(id);
   el.classList.add('active');
@@ -1953,6 +2053,8 @@ function goTo(id) {
   // Sorting and the year filter are only ever meant to be temporary — leaving
   // Home for any other screen/page clears them so they don't silently carry over.
   if (leavingHome) resetTemporaryFilters();
+  if (leavingExplore) resetExploreFilters();
+  if (id === 'screen-explore' && exploreItems.length) renderFilteredExploreGrid();
 }
 
 function goHome() {
@@ -3235,6 +3337,173 @@ function renderHomeGrid(items = [], mediaType = 'movie', ratingMap = {}, likedMa
       ${metaHtml}
     </div>`;
   }).join('');
+}
+
+/* ---- EXPLORE ---- */
+async function goToExplore() {
+  navStack = [];
+  filterContext = 'explore';
+  resetExploreFilters();
+  exploreItems = [];
+  explorePage = 0;
+  exploreHasMore = true;
+  goTo('screen-explore');
+  document.getElementById('explore-grid').innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  await loadExploreWatchedSet();
+  await loadMoreExploreItems();
+}
+
+async function loadExploreWatchedSet() {
+  const { data: { user } } = await db.auth.getUser();
+  let q = db.from('watched').select('tmdb_id');
+  if (user) q = q.eq('user_id', user.id);
+  const { data } = await q;
+  exploreWatchedSet = new Set((data || []).map(r => r.tmdb_id));
+}
+
+function handleExploreScroll() {
+  const body = document.getElementById('explore-screen-body');
+  if (!body || exploreLoading || !exploreHasMore) return;
+  if (body.scrollTop + body.clientHeight > body.scrollHeight - 400) {
+    loadMoreExploreItems();
+  }
+}
+
+// Builds the TMDB discover query for Explore, applying the Year and Genre
+// filters at the API level (TMDB supports both natively) so pagination /
+// infinite-scroll only ever fetches pages that already match those filters
+// — rather than filtering whatever happened to already be loaded locally.
+function buildExploreDiscoverUrl(page) {
+  let url = `${TMDB_BASE}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&include_adult=false&page=${page}&watch_region=GB`;
+  const yf = exploreAppliedYearFilter;
+  if (yf) {
+    if (yf.type === 'year') {
+      url += `&primary_release_year=${yf.year}`;
+    } else {
+      url += `&primary_release_date.gte=${yf.decade}-01-01&primary_release_date.lte=${yf.decade + 9}-12-31`;
+    }
+  }
+  if (exploreAppliedGenreInclude.size) url += `&with_genres=${[...exploreAppliedGenreInclude].join(',')}`;
+  if (exploreAppliedGenreExclude.size) url += `&without_genres=${[...exploreAppliedGenreExclude].join(',')}`;
+  return url;
+}
+
+// Clears whatever's currently loaded and re-fetches from page 1 with the
+// new filters applied server-side. Used whenever Year or Genre change,
+// since those are the two filters TMDB's discover endpoint can apply
+// directly (unlike Age Rating/Services/Watched, which need a per-title
+// lookup and so stay filtered client-side over whatever pages get loaded).
+async function resetAndReloadExplore() {
+  exploreItems = [];
+  explorePage = 0;
+  exploreHasMore = true;
+  const grid = document.getElementById('explore-grid');
+  if (grid) grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+  await loadMoreExploreItems();
+}
+
+async function loadMoreExploreItems() {
+  if (exploreLoading || !exploreHasMore) return;
+  exploreLoading = true;
+  const loadMoreEl = document.getElementById('explore-load-more');
+  if (loadMoreEl && explorePage > 0) loadMoreEl.style.display = 'block';
+  try {
+    const nextPage = explorePage + 1;
+    const res = await fetch(buildExploreDiscoverUrl(nextPage));
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const results = (data.results || []).map(r => ({
+      tmdb_id: r.id,
+      title: fixTmdbTitle(r.title),
+      poster_path: r.poster_path,
+      release_date: r.release_date,
+      genre_ids: r.genre_ids || [],
+      popularity: r.popularity || 0
+    }));
+    exploreItems = exploreItems.concat(results);
+    explorePage = nextPage;
+    exploreHasMore = nextPage < (data.total_pages || 1) && explorePage < EXPLORE_MAX_PAGES;
+  } catch {
+    showToast('Could not load Explore', 'error');
+  }
+  exploreLoading = false;
+  await renderFilteredExploreGrid();
+}
+
+async function renderFilteredExploreGrid() {
+  const grid = document.getElementById('explore-grid');
+  if (!grid) return;
+  // Year and Genre are now applied server-side (see buildExploreDiscoverUrl),
+  // so exploreItems already only contains matching films — no need to
+  // re-filter them here. Only the per-title lookups (cert/services) and the
+  // user-specific Watched filter still need filtering on this loaded set.
+  let items = [...exploreItems];
+
+  if (exploreAppliedCertFilter.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await fetchCertsFor(items, 'movie');
+    items = items.filter(item => {
+      const cert = getCertValue(item, 'movie');
+      return cert && exploreAppliedCertFilter.has(cert);
+    });
+  }
+
+  if (exploreAppliedServiceIds.size > 0) {
+    grid.innerHTML = `<div class="empty-grid"><span class="spinner dark"></span></div>`;
+    await Promise.all(items.map(async item => {
+      const cacheKey = `movie-${item.tmdb_id}`;
+      if (providerCache[cacheKey] !== undefined) return;
+      try {
+        const res = await fetch(`${TMDB_BASE}/movie/${item.tmdb_id}/watch/providers?api_key=${TMDB_API_KEY}`);
+        if (!res.ok) { providerCache[cacheKey] = new Set(); return; }
+        const data = await res.json();
+        const gb = data.results?.GB;
+        const providers = new Set();
+        const addList = arr => (arr || []).forEach(p => providers.add(p.provider_id));
+        addList(gb?.flatrate);
+        addList(gb?.free);
+        providerCache[cacheKey] = providers;
+      } catch { providerCache[cacheKey] = new Set(); }
+    }));
+    items = items.filter(item => {
+      const providers = providerCache[`movie-${item.tmdb_id}`] || new Set();
+      return [...exploreAppliedServiceIds].some(sid => providers.has(sid));
+    });
+  }
+
+  if (exploreAppliedWatchedFilter !== null) {
+    items = items.filter(item => {
+      const watched = exploreWatchedSet.has(item.tmdb_id);
+      return exploreAppliedWatchedFilter ? watched : !watched;
+    });
+  }
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-grid">No films match the selected filters.</div>`;
+    const loadMoreEl = document.getElementById('explore-load-more');
+    if (loadMoreEl) loadMoreEl.style.display = 'none';
+    return;
+  }
+
+  grid.innerHTML = items.map(item => `
+    <div class="film-card-wrap" onclick="openMovieDetail(${item.tmdb_id}, 'screen-explore', 'log', 'movie')">
+      <div class="film-card">
+        ${item.poster_path
+          ? `<img src="https://image.tmdb.org/t/p/w500${item.poster_path}" style="width:100%;height:100%;object-fit:cover;" />`
+          : `<div class="poster-label">${escapeHtml(item.title)}</div>`}
+      </div>
+    </div>`).join('');
+
+  const loadMoreEl = document.getElementById('explore-load-more');
+  if (loadMoreEl) loadMoreEl.style.display = exploreHasMore ? 'block' : 'none';
+}
+
+function openExploreFilterSheet() {
+  filterContext = 'explore';
+  filterSheetStep = 'main';
+  filterSheetDecade = null;
+  renderFilterSheetStep();
+  document.getElementById('filter-sheet-overlay').classList.add('show');
 }
 
 /* ---- DIARY ---- */
